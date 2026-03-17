@@ -73,12 +73,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="px-5 py-6 flex flex-col items-center border-b border-sidebar-border/60">
               <div className="w-full flex flex-col items-center gap-3">
                 <div className="bg-white rounded-xl shadow-md p-2.5 flex items-center justify-center" style={{width:'72px',height:'72px'}}>
-                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="IUAC Logo" className="w-full h-full object-contain" />
+                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="UAI Logo" className="w-full h-full object-contain" />
                 </div>
                 <div className="text-center">
-                  <h2 className="font-bold text-sidebar-foreground text-sm leading-tight tracking-wide">Instituto Universitario</h2>
-                  <h2 className="font-bold text-sidebar-foreground text-sm leading-tight tracking-wide">Autónoma de Caripito</h2>
-                  <p className="text-xs text-sidebar-foreground/50 mt-1 font-medium uppercase tracking-widest">IUAC</p>
+                  <p className="text-xs text-sidebar-foreground/50 font-semibold uppercase tracking-widest mb-1">UNIVERSIDAD</p>
+                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">AUTÓNOMA DE</h2>
+                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">CARIPITO</h2>
+                  <div className="mt-2 pt-2 border-t border-sidebar-border/40">
+                    <p className="text-xs text-sidebar-primary font-semibold">Control Académico · 2026-1</p>
+                  </div>
                 </div>
               </div>
             </div>
