@@ -70,8 +70,11 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-foreground text-center mb-1">
             Portal Académico
           </h1>
-          <p className="text-sm text-muted-foreground text-center mb-7">
-            Universidad Autónoma de Caripito · 2026-1
+          <p className="text-sm text-muted-foreground text-center mb-1">
+            Universidad Autónoma de Ica · 2026-1
+          </p>
+          <p className="text-xs text-muted-foreground/70 text-center mb-7">
+            Estudios Generales
           </p>
 
           {/* Error */}
@@ -143,7 +146,7 @@ export default function Login() {
         </div>
 
         <p className="mt-5 text-center text-xs text-muted-foreground">
-          Sistema de acceso restringido · UAI © {new Date().getFullYear()}
+          Sistema de acceso restringido · Universidad Autónoma de Ica © {new Date().getFullYear()}
         </p>
       </motion.div>
     </div>

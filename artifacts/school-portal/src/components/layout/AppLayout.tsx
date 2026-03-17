@@ -77,10 +77,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-sidebar-foreground/50 font-semibold uppercase tracking-widest mb-1">UNIVERSIDAD</p>
-                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">AUTÓNOMA DE</h2>
-                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">CARIPITO</h2>
+                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">AUTÓNOMA DE ICA</h2>
                   <div className="mt-2 pt-2 border-t border-sidebar-border/40">
-                    <p className="text-xs text-sidebar-primary font-semibold">Control Académico · 2026-1</p>
+                    <p className="text-xs text-sidebar-primary font-semibold">Estudios Generales · 2026-1</p>
                   </div>
                 </div>
               </div>
