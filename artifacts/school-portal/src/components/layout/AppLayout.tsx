@@ -70,16 +70,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full bg-background/50">
         <Sidebar variant="sidebar" className="border-r shadow-xl shadow-primary/5">
           <SidebarContent>
-            <div className="p-6 flex flex-col items-center justify-center border-b border-border/50 bg-primary/5">
-              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-border/50 flex items-center justify-center p-2 mb-4 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="IUAC Logo" className="w-full h-full object-contain relative z-10" />
+            <div className="px-5 py-6 flex flex-col items-center border-b border-sidebar-border/60">
+              <div className="w-full flex flex-col items-center gap-3">
+                <div className="bg-white rounded-xl shadow-md p-2.5 flex items-center justify-center" style={{width:'72px',height:'72px'}}>
+                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="IUAC Logo" className="w-full h-full object-contain" />
+                </div>
+                <div className="text-center">
+                  <h2 className="font-bold text-sidebar-foreground text-sm leading-tight tracking-wide">Instituto Universitario</h2>
+                  <h2 className="font-bold text-sidebar-foreground text-sm leading-tight tracking-wide">Autónoma de Caripito</h2>
+                  <p className="text-xs text-sidebar-foreground/50 mt-1 font-medium uppercase tracking-widest">IUAC</p>
+                </div>
               </div>
-              <h2 className="font-display font-bold text-lg text-primary text-center leading-tight">IUAC</h2>
-              <p className="text-xs text-muted-foreground text-center font-medium">Portal Académico</p>
             </div>
             <SidebarGroup className="px-4 py-6">
-              <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Menú Principal</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-widest text-sidebar-foreground/40 mb-2 px-3">Menú Principal</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
                   {filteredMenu.map((item) => {
@@ -90,15 +94,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           asChild 
                           isActive={isActive}
                           className={`
-                            rounded-xl transition-all duration-200 h-11 px-4
+                            rounded-lg transition-all duration-200 h-10 px-3
                             ${isActive 
-                              ? 'bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground' 
-                              : 'text-foreground/70 hover:bg-primary/10 hover:text-primary hover:font-medium'}
+                              ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold' 
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}
                           `}
                         >
                           <Link href={item.url} className="flex items-center gap-3">
-                            <item.icon className={`w-5 h-5 ${isActive ? 'text-accent-foreground' : 'text-primary/60'}`} />
-                            <span>{item.title}</span>
+                            <item.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/50'}`} />
+                            <span className="text-sm">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -108,28 +112,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="border-t border-border/50 p-4 bg-primary/5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+          <SidebarFooter className="border-t border-sidebar-border/60 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar className="w-9 h-9 shrink-0 border-2 border-sidebar-accent">
+                  <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground font-bold text-sm">
                     {user.fullName.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-foreground leading-tight">{user.fullName}</span>
-                  <span className="text-xs text-accent font-medium capitalize">{user.role}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold text-sidebar-foreground leading-tight truncate">{user.fullName}</span>
+                  <span className="text-xs text-sidebar-primary font-medium capitalize">{user.role}</span>
                 </div>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                className="text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0"
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}
                 title="Cerrar sesión"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </SidebarFooter>

@@ -144,22 +144,47 @@ export default function Login() {
         </motion.div>
       </div>
 
-      {/* Right Image Side */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-primary overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/60 to-accent/80 z-10 mix-blend-multiply" />
-        <img 
-          src={`${import.meta.env.BASE_URL}images/login-bg.png`} 
-          alt="Campus architecture" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white p-12 text-center">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.6 }}>
-            <h2 className="text-4xl font-display font-bold mb-6 leading-tight">Excelencia Académica<br/>Para El Futuro</h2>
-            <p className="text-lg text-white/80 max-w-lg mx-auto font-light">
-              Plataforma de gestión integral diseñada para potenciar la experiencia educativa de nuestra comunidad.
-            </p>
-          </motion.div>
-        </div>
+      {/* Right Institutional Side */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col items-center justify-center"
+        style={{ background: "linear-gradient(135deg, hsl(218,75%,24%) 0%, hsl(218,75%,32%) 50%, hsl(218,65%,20%) 100%)" }}>
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-10" style={{ background: "radial-gradient(circle, white, transparent)", transform: "translate(30%, -30%)" }} />
+        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-10" style={{ background: "radial-gradient(circle, white, transparent)", transform: "translate(-30%, 30%)" }} />
+        <div className="absolute bottom-1/3 right-0 w-40 h-40 rounded-full opacity-5" style={{ background: "radial-gradient(circle, white, transparent)", transform: "translate(40%, 0)" }} />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.3, duration: 0.7 }}
+          className="relative z-10 flex flex-col items-center text-center px-16"
+        >
+          {/* Large Logo */}
+          <div className="w-32 h-32 bg-white/10 rounded-3xl p-4 mb-8 shadow-2xl backdrop-blur-sm border border-white/20">
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="IUAC" className="w-full h-full object-contain" />
+          </div>
+
+          <h2 className="text-3xl font-bold text-white mb-3 leading-tight tracking-tight">
+            Instituto Universitario<br/>Autónoma de Caripito
+          </h2>
+          <div className="w-16 h-1 bg-white/40 rounded-full my-5 mx-auto" />
+          <p className="text-lg text-white/75 max-w-sm leading-relaxed">
+            Sistema de gestión académica integral para nuestra comunidad universitaria.
+          </p>
+
+          {/* Decorative stats */}
+          <div className="mt-12 grid grid-cols-3 gap-6 w-full max-w-sm">
+            {[
+              { label: "Docentes", value: "50+" },
+              { label: "Secciones", value: "20+" },
+              { label: "Cursos", value: "30+" },
+            ].map((s) => (
+              <div key={s.label} className="text-center p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <p className="text-2xl font-bold text-white">{s.value}</p>
+                <p className="text-xs text-white/60 mt-1 font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </div>
   );

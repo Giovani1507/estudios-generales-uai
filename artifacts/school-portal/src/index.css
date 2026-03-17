@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -57,9 +57,10 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'DM Sans', sans-serif;
-  --font-display: 'Cinzel', serif;
-  --font-serif: 'Cinzel', serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -67,7 +68,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE */
+/* ===== LIGHT MODE — Institutional Blue Theme ===== */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -75,107 +76,130 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Academic Theme: Navy Blue and Burgundy */
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 222 47% 11%;
+  /* Institutional Navy Blue #1A3C7A */
+  --background: 215 30% 97%;
+  --foreground: 218 55% 14%;
+
+  --border: 215 25% 88%;
+  --input: 215 25% 88%;
+  --ring: 218 75% 32%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
+  --card-foreground: 218 55% 14%;
+  --card-border: 215 25% 90%;
 
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 214 32% 91%;
-  --sidebar-primary: 222 47% 11%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 210 40% 96%;
-  --sidebar-accent-foreground: 222 47% 11%;
-  --sidebar-ring: 222 47% 11%;
+  /* Sidebar — deep navy */
+  --sidebar: 218 65% 20%;
+  --sidebar-foreground: 210 60% 94%;
+  --sidebar-border: 218 55% 16%;
+  --sidebar-primary: 210 80% 65%;
+  --sidebar-primary-foreground: 218 65% 15%;
+  --sidebar-accent: 218 55% 28%;
+  --sidebar-accent-foreground: 210 60% 96%;
+  --sidebar-ring: 210 80% 65%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover-foreground: 218 55% 14%;
+  --popover-border: 215 25% 88%;
 
-  --primary: 222 47% 11%; /* Navy */
-  --primary-foreground: 210 40% 98%;
+  /* Primary: Institutional Blue */
+  --primary: 218 75% 32%;
+  --primary-foreground: 210 60% 98%;
 
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 215 40% 94%;
+  --secondary-foreground: 218 55% 20%;
 
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 215 30% 93%;
+  --muted-foreground: 218 20% 48%;
 
-  --accent: 345 50% 35%; /* Burgundy */
-  --accent-foreground: 210 40% 98%;
+  /* Accent: Institutional Red (from logo) */
+  --accent: 4 72% 42%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  --chart-1: 222 47% 11%;
-  --chart-2: 345 50% 35%;
-  --chart-3: 199 89% 48%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  --chart-1: 218 75% 32%;
+  --chart-2: 4 72% 42%;
+  --chart-3: 199 80% 45%;
+  --chart-4: 43 90% 55%;
+  --chart-5: 148 55% 42%;
 
-  --radius: 0.75rem;
+  --radius: 0.625rem;
 
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-  --primary-border: hsl(var(--primary));
-  --secondary-border: hsl(var(--secondary));
-  --muted-border: hsl(var(--muted));
-  --accent-border: hsl(var(--accent));
-  --destructive-border: hsl(var(--destructive));
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(218 75% 26%);
+  --secondary-border: hsl(215 40% 88%);
+  --muted-border: hsl(215 30% 87%);
+  --accent-border: hsl(4 72% 36%);
+  --destructive-border: hsl(0 84% 54%);
+  --sidebar-primary-border: hsl(210 80% 58%);
+  --sidebar-accent-border: hsl(218 55% 22%);
 }
 
 .dark {
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
 
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --background: 218 65% 10%;
+  --foreground: 210 60% 95%;
 
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 217.2 32.6% 17.5%;
+  --border: 218 40% 18%;
+  --input: 218 40% 18%;
+  --ring: 210 80% 65%;
 
-  --sidebar: 222 47% 11%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 217.2 32.6% 17.5%;
-  --sidebar-primary: 210 40% 98%;
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 217.2 32.6% 17.5%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 212.7 26.8% 83.9%;
+  --card: 218 55% 14%;
+  --card-foreground: 210 60% 95%;
+  --card-border: 218 40% 18%;
 
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 217.2 32.6% 17.5%;
+  --sidebar: 218 70% 8%;
+  --sidebar-foreground: 210 60% 94%;
+  --sidebar-border: 218 55% 12%;
+  --sidebar-primary: 210 80% 65%;
+  --sidebar-primary-foreground: 218 65% 10%;
+  --sidebar-accent: 218 55% 20%;
+  --sidebar-accent-foreground: 210 60% 96%;
+  --sidebar-ring: 210 80% 65%;
 
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
+  --popover: 218 55% 14%;
+  --popover-foreground: 210 60% 95%;
+  --popover-border: 218 40% 18%;
 
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
+  --primary: 210 80% 65%;
+  --primary-foreground: 218 65% 10%;
 
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --secondary: 218 40% 18%;
+  --secondary-foreground: 210 60% 95%;
 
-  --accent: 345 50% 45%;
-  --accent-foreground: 210 40% 98%;
+  --muted: 218 40% 18%;
+  --muted-foreground: 215 30% 60%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
+  --accent: 4 72% 55%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  --chart-1: 210 80% 65%;
+  --chart-2: 4 72% 55%;
+  --chart-3: 199 80% 55%;
+  --chart-4: 43 90% 65%;
+  --chart-5: 148 55% 52%;
+
+  --primary-border: hsl(210 80% 72%);
+  --secondary-border: hsl(218 40% 22%);
+  --muted-border: hsl(218 40% 22%);
+  --accent-border: hsl(4 72% 48%);
+  --destructive-border: hsl(0 70% 40%);
+  --sidebar-primary-border: hsl(210 80% 72%);
+  --sidebar-accent-border: hsl(218 55% 25%);
 }
 
 @layer base {
@@ -183,9 +207,76 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground selection:bg-accent selection:text-white;
+    @apply font-sans antialiased bg-background text-foreground;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight text-primary;
+}
+
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .no-default-hover-elevate {}
+  .no-default-active-elevate {}
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
+    inset: -1px;
   }
 }
