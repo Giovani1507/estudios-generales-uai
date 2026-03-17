@@ -62,8 +62,9 @@ export default function Login() {
           {/* Logo */}
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
-            alt="UAI Logo"
-            className="h-20 w-auto object-contain mb-5"
+            alt="Universidad Autónoma de Ica"
+            className="object-contain mb-5"
+            style={{ maxWidth: "240px", maxHeight: "72px" }}
           />
 
           {/* Title */}

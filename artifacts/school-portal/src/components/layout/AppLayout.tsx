@@ -70,19 +70,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full bg-background/50">
         <Sidebar variant="sidebar" className="border-r shadow-xl shadow-primary/5">
           <SidebarContent>
-            <div className="px-5 py-6 flex flex-col items-center border-b border-sidebar-border/60">
-              <div className="w-full flex flex-col items-center gap-3">
-                <div className="bg-white rounded-xl shadow-md p-2.5 flex items-center justify-center" style={{width:'72px',height:'72px'}}>
-                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="UAI Logo" className="w-full h-full object-contain" />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-sidebar-foreground/50 font-semibold uppercase tracking-widest mb-1">UNIVERSIDAD</p>
-                  <h2 className="font-bold text-sidebar-foreground text-base leading-tight tracking-wide">AUTÓNOMA DE ICA</h2>
-                  <div className="mt-2 pt-2 border-t border-sidebar-border/40">
-                    <p className="text-xs text-sidebar-primary font-semibold">Estudios Generales · 2026-1</p>
-                  </div>
-                </div>
+            <div className="px-4 pt-6 pb-5 flex flex-col items-center border-b border-sidebar-border/60 gap-3">
+              <div className="bg-white rounded-2xl shadow-md px-4 py-3 w-full flex items-center justify-center" style={{minHeight:'72px'}}>
+                <img
+                  src={`${import.meta.env.BASE_URL}logo.png`}
+                  alt="Universidad Autónoma de Ica"
+                  className="object-contain w-full"
+                  style={{maxHeight:'56px'}}
+                />
               </div>
+              <p className="text-xs font-semibold tracking-wider" style={{color:'hsl(var(--sidebar-primary))'}}>
+                Estudios Generales · 2026-1
+              </p>
             </div>
             <SidebarGroup className="px-4 py-6">
               <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-widest text-sidebar-foreground/40 mb-2 px-3">Menú Principal</SidebarGroupLabel>
