@@ -71,7 +71,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar variant="sidebar" className="border-r shadow-xl shadow-primary/5">
           <SidebarContent>
             <div className="px-4 pt-6 pb-5 flex flex-col items-center border-b border-sidebar-border/60 gap-3">
-              <div className="bg-white rounded-2xl shadow-md px-4 py-3 w-full flex items-center justify-center" style={{minHeight:'72px'}}>
+              <div className="bg-muted/40 border border-border rounded-2xl px-4 py-3 w-full flex items-center justify-center" style={{minHeight:'72px'}}>
                 <img
                   src={`${import.meta.env.BASE_URL}logo.png`}
                   alt="Universidad Autónoma de Ica"
