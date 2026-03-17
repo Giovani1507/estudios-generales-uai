@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Portal Académico"
+version = "1.0.0"
+id = "artifacts/school-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 18112
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/school-portal run dev"
+
+[services.env]
+PORT = "18112"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/school-portal", "run", "build"]
+publicDir = "artifacts/school-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

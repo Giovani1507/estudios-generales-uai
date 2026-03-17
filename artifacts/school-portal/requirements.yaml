@@ -1,0 +1,16 @@
+packages:
+  "framer-motion": "For fluid page transitions and interactive animations"
+  "recharts": "For the reports dashboard visualizations"
+  "date-fns": "For the 2026 calendar generation and date formatting"
+  "@hookform/resolvers": "For Zod form validation"
+  "zod": "For client-side schema validation"
+
+images:
+  - path: "artifacts/school-portal/public/images/login-bg.png"
+    description: "Abstract, elegant, professional university campus architecture blending with geometric navy blue and burgundy gradient overlays"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated React Query hooks from @workspace/api-client-react
+  - Mutations follow Orval format: mutate({ data: payload }) or mutate({ id, data: payload })
+  - Auth is cookie-based, using /api/auth/me to check session
