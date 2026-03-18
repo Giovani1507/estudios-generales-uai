@@ -49,22 +49,22 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen w-full flex items-start justify-center pt-10 p-4"
+      className="min-h-screen w-full flex items-center justify-center p-4"
       style={{ background: "hsl(215 30% 94%)" }}
     >
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="w-full max-w-md"
+        className="w-full max-w-lg"
       >
-        <div className="bg-white rounded-2xl shadow-xl shadow-black/10 p-8 flex flex-col items-center">
+        <div className="bg-white rounded-2xl shadow-xl shadow-black/10 p-10 flex flex-col items-center">
           {/* Logo */}
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt="Universidad Autónoma de Ica"
             className="object-contain mb-5"
-            style={{ maxWidth: "240px", maxHeight: "72px" }}
+            style={{ maxWidth: "280px", maxHeight: "84px" }}
           />
 
           {/* Title */}
