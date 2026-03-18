@@ -1,10 +1,55 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Download, FileText, ExternalLink, ChevronDown, ChevronUp, CalendarDays, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const pdfUrl = `${import.meta.env.BASE_URL}directiva-matricula-2026-1.pdf`;
 
+/* ── Calendario académico ── */
+const calendarioActividades = [
+  { actividad: "Matrícula Regular", fecha: "Del 23 de marzo al 04 de abril 2026", highlight: false },
+  { actividad: "Reserva de Matrícula", fecha: "Del 23 de marzo al 11 de abril 2026", highlight: false },
+  { actividad: "Matrícula Extemporánea", fecha: "Del 06 de abril al 18 de abril 2026", highlight: false },
+  { actividad: "Matrícula por Cobertura", fecha: "Del 20 de abril al 25 de abril 2026", highlight: false },
+  { actividad: "Inicio de Clases del 1° al 12° Ciclo", fecha: "06 de abril de 2026", highlight: true },
+];
+
+const rolEvaluaciones = [
+  { actividad: "Evaluación de Parcial 1", fecha: "Del 04 al 10 de mayo 2026", highlight: false },
+  { actividad: "Evaluación de Parcial 2", fecha: "Del 08 al 14 de junio 2026", highlight: false },
+  { actividad: "Evaluación de Parcial 3", fecha: "Del 20 al 26 de julio 2026", highlight: false },
+  { actividad: "Término de Clases", fecha: "26 de julio de 2026", highlight: true },
+  { actividad: "Exámenes Aplazados", fecha: "03 y 04 de agosto 2026", highlight: false },
+  { actividad: "Cierre de Semestre", fecha: "08 de agosto 2026", highlight: false },
+];
+
+/* ── Cuotas ── */
+const cuotas = [
+  { numero: "Cuota 1", fecha: "06 de abril 2026" },
+  { numero: "Cuota 2", fecha: "02 de mayo 2026" },
+  { numero: "Cuota 3", fecha: "27 de mayo 2026" },
+  { numero: "Cuota 4", fecha: "22 de junio 2026" },
+  { numero: "Cuota 5", fecha: "17 de julio 2026" },
+];
+
+/* ── Cronograma matrícula regular ── */
+const cronograma = [
+  { fechaPago: "16 al 19 de marzo", apertura: "25 de marzo de 2026" },
+  { fechaPago: "20 al 22 de marzo", apertura: "26 de marzo de 2026" },
+  { fechaPago: "23 al 24 de marzo", apertura: "27 de marzo de 2026" },
+  { fechaPago: "25 al 27 de marzo", apertura: "28 de marzo de 2026" },
+  { fechaPago: "28 al 31 de marzo", apertura: "01 de abril de 2026" },
+];
+
+/* ── Montos ── */
+const montos = [
+  { concepto: "Matrícula Regular (FCS y FICA)", monto: "S/ 250.00" },
+  { concepto: "Matrícula Regular (Medicina Humana)", monto: "S/ 280.00" },
+  { concepto: "Carné Universitario (todos)", monto: "S/ 17.70" },
+  { concepto: "Recargo Extemporáneo", monto: "S/ 70.00 adicional" },
+];
+
+/* ── Resumen acordeón ── */
 const sections = [
   {
     number: "1",
@@ -29,51 +74,18 @@ const sections = [
     title: "Normas Generales — Modalidades de Matrícula",
     content: "",
     subsections: [
-      {
-        label: "a. Matrícula Regular",
-        text: "Comprende a los estudiantes que se inscriben en un mínimo de 12 créditos y un máximo de 23. Su matrícula será dentro del periodo establecido en el calendario académico, antes del inicio oficial de clases.",
-      },
-      {
-        label: "b. Matrícula Especial",
-        text: "Comprende a los estudiantes que registran una carga académica menor de 12 créditos.",
-      },
-      {
-        label: "c. Matrícula Excepcional",
-        text: "Modalidad excepcional según normativa vigente.",
-      },
-      {
-        label: "d. Matrícula Libre",
-        text: "Permite a estudiantes de intercambio estudiantil o visitantes matricularse sin registrar carga académica.",
-      },
+      { label: "a. Matrícula Regular", text: "Mínimo 12 créditos y máximo 23, dentro del período del calendario académico." },
+      { label: "b. Matrícula Especial", text: "Carga académica menor de 12 créditos." },
+      { label: "c. Matrícula Excepcional", text: "Modalidad excepcional según normativa vigente." },
+      { label: "d. Matrícula Libre", text: "Para estudiantes de intercambio o visitantes, sin carga académica registrada." },
     ],
   },
 ];
 
-const cronograma = [
-  { fechaPago: "16 al 19 de marzo", apertura: "25 de marzo de 2026" },
-  { fechaPago: "20 al 22 de marzo", apertura: "26 de marzo de 2026" },
-  { fechaPago: "23 al 24 de marzo", apertura: "27 de marzo de 2026" },
-  { fechaPago: "25 al 27 de marzo", apertura: "28 de marzo de 2026" },
-  { fechaPago: "28 al 31 de marzo", apertura: "01 de abril de 2026" },
-];
-
-const montos = [
-  { concepto: "Matrícula Regular (FCS y FICA)", monto: "S/ 250.00" },
-  { concepto: "Matrícula Regular (Medicina Humana)", monto: "S/ 280.00" },
-  { concepto: "Carné Universitario (todos)", monto: "S/ 17.70" },
-  { concepto: "Recargo Extemporáneo", monto: "S/ 70.00 adicional" },
-];
-
 function AccordionItem({
-  number,
-  title,
-  content,
-  subsections,
+  number, title, content, subsections,
 }: {
-  number: string;
-  title: string;
-  content: string;
-  subsections?: { label: string; text: string }[];
+  number: string; title: string; content: string; subsections?: { label: string; text: string }[];
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -86,11 +98,7 @@ function AccordionItem({
           {number}
         </span>
         <span className="flex-1 font-semibold text-foreground">{title}</span>
-        {open ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        )}
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
       <AnimatePresence>
         {open && (
@@ -117,10 +125,22 @@ function AccordionItem({
   );
 }
 
+function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+        <Icon className="w-4 h-4 text-primary" />
+      </div>
+      <h2 className="text-lg font-bold text-foreground">{label}</h2>
+    </div>
+  );
+}
+
 export default function DirectivaMatricula() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -132,9 +152,7 @@ export default function DirectivaMatricula() {
           <h1 className="text-2xl font-bold text-primary leading-tight">
             Directiva del Proceso de Matrícula
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Pregrado 2026-1 · Universidad Autónoma de Ica
-          </p>
+          <p className="text-muted-foreground mt-1">Pregrado 2026-1 · Universidad Autónoma de Ica</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
@@ -152,7 +170,7 @@ export default function DirectivaMatricula() {
         </div>
       </div>
 
-      {/* PDF Viewer */}
+      {/* ── PDF Viewer ── */}
       <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-white">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
           <span className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -176,9 +194,159 @@ export default function DirectivaMatricula() {
         />
       </div>
 
-      {/* Resumen de contenido */}
+      {/* ══════════════════════════════════════════
+          INICIO DE CLASES 2026-1
+      ══════════════════════════════════════════ */}
+      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        {/* Sub-header */}
+        <div className="px-6 py-4 border-b border-border flex items-center gap-3" style={{ background: "hsl(218,75%,32%)" }}>
+          <CalendarDays className="w-5 h-5 text-white" />
+          <h2 className="text-base font-bold text-white tracking-wide uppercase">
+            Inicio de Clases 2026-1
+          </h2>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Tabla de actividades */}
+          <div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: "hsl(218,75%,32%)" }}>
+                  <th className="text-left px-4 py-3 text-white font-bold uppercase tracking-wide rounded-tl-lg">
+                    Actividad
+                  </th>
+                  <th className="text-left px-4 py-3 text-white font-bold uppercase tracking-wide rounded-tr-lg">
+                    Fecha
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {calendarioActividades.map((row, i) => (
+                  <tr
+                    key={i}
+                    className={row.highlight ? "font-bold" : ""}
+                    style={
+                      row.highlight
+                        ? { background: "hsl(199,80%,88%)", color: "hsl(218,75%,25%)" }
+                        : { background: i % 2 === 0 ? "hsl(215 30% 97%)" : "white" }
+                    }
+                  >
+                    <td className="px-4 py-3 border-b border-border/30">{row.actividad}</td>
+                    <td className={`px-4 py-3 border-b border-border/30 ${row.highlight ? "font-extrabold" : "text-primary font-medium"}`}>
+                      {row.fecha}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Rol de evaluaciones */}
+          <div>
+            <div className="px-4 py-2 rounded-t-lg font-bold text-white text-sm uppercase tracking-wide" style={{ background: "hsl(218,75%,32%)" }}>
+              Rol de Evaluaciones
+            </div>
+            <table className="w-full text-sm">
+              <tbody>
+                {rolEvaluaciones.map((row, i) => (
+                  <tr
+                    key={i}
+                    className={row.highlight ? "font-bold" : ""}
+                    style={
+                      row.highlight
+                        ? { background: "hsl(218,75%,32%)", color: "white" }
+                        : { background: i % 2 === 0 ? "hsl(215 30% 97%)" : "white" }
+                    }
+                  >
+                    <td className="px-4 py-3 border-b border-border/30">{row.actividad}</td>
+                    <td className={`px-4 py-3 border-b border-border/30 font-medium ${row.highlight ? "" : "text-primary"}`}>
+                      {row.fecha}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Cuotas + Cronograma matrícula ── */}
+      <div className="grid md:grid-cols-2 gap-6">
+
+        {/* Cronograma de Cuotas */}
+        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3" style={{ background: "hsl(218,75%,32%)" }}>
+            <CreditCard className="w-4 h-4 text-white" />
+            <h3 className="font-bold text-white text-sm uppercase tracking-wide">
+              Cronograma de Cuotas 2026-1
+            </h3>
+          </div>
+          <div className="p-5">
+            <table className="w-full text-sm">
+              <tbody>
+                {cuotas.map((c, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? "hsl(199,80%,93%)" : "white" }}>
+                    <td className="px-4 py-3 border-b border-border/30 font-bold text-primary uppercase">
+                      {c.numero}
+                    </td>
+                    <td className="px-4 py-3 border-b border-border/30 text-foreground font-medium">
+                      {c.fecha}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Cronograma apertura ficha */}
+        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3" style={{ background: "hsl(218,75%,32%)" }}>
+            <CalendarDays className="w-4 h-4 text-white" />
+            <h3 className="font-bold text-white text-sm uppercase tracking-wide">
+              Apertura Ficha de Matrícula
+            </h3>
+          </div>
+          <div className="p-5">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left pb-2 text-muted-foreground font-semibold">Fecha de Pago</th>
+                  <th className="text-left pb-2 text-muted-foreground font-semibold">Apertura Ficha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cronograma.map((c, i) => (
+                  <tr key={i} className="border-b border-border/40 last:border-0">
+                    <td className="py-2.5 text-foreground">{c.fechaPago}</td>
+                    <td className="py-2.5 text-primary font-medium">{c.apertura}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+              <strong>Bancos habilitados:</strong> Scotiabank, BBVA, BCP y Caja Municipal Ica.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Montos */}
+      <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
+        <SectionHeader icon={CreditCard} label="Montos de Pago 2026-1" />
+        <div className="space-y-2">
+          {montos.map((m, i) => (
+            <div key={i} className="flex justify-between items-center py-2 border-b border-border/40 last:border-0">
+              <span className="text-sm text-muted-foreground">{m.concepto}</span>
+              <span className="text-sm font-bold text-primary">{m.monto}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Resumen acordeón */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-4">Resumen de la Directiva</h2>
+        <SectionHeader icon={FileText} label="Resumen de la Directiva" />
         <div className="space-y-3">
           {sections.map((s) => (
             <AccordionItem key={s.number} {...s} />
@@ -186,49 +354,6 @@ export default function DirectivaMatricula() {
         </div>
       </div>
 
-      {/* Cronograma */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-border p-5">
-          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-            Cronograma Matrícula Regular
-          </h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left pb-2 text-muted-foreground font-semibold">Fecha de Pago</th>
-                <th className="text-left pb-2 text-muted-foreground font-semibold">Apertura Ficha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cronograma.map((c, i) => (
-                <tr key={i} className="border-b border-border/40 last:border-0">
-                  <td className="py-2 text-foreground">{c.fechaPago}</td>
-                  <td className="py-2 text-primary font-medium">{c.apertura}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-border p-5">
-          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-            Montos de Pago 2026-1
-          </h3>
-          <div className="space-y-3">
-            {montos.map((m, i) => (
-              <div key={i} className="flex justify-between items-center py-1.5 border-b border-border/40 last:border-0">
-                <span className="text-sm text-muted-foreground">{m.concepto}</span>
-                <span className="text-sm font-bold text-primary">{m.monto}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-            <strong>Bancos habilitados:</strong> Scotiabank, BBVA, BCP y Caja Municipal Ica.
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
