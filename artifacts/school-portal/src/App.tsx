@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,10 +19,16 @@ import Roles from "@/pages/roles";
 import Announcements from "@/pages/announcements";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import StudentsPage from "@/pages/StudentsPage";
+import DirectivaMatricula from "@/pages/directiva-matricula";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+type ProtectedRouteProps = {
+  component: React.ComponentType;
+};
+
+function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   return (
     <AppLayout>
       <Component />
@@ -29,55 +36,77 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
-function Router() {
+function AppRouter() {
   return (
     <Switch>
+      {/* Pública */}
       <Route path="/login" component={Login} />
-      
-      {/* Protected Routes */}
-      <Route path="/">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/horarios-docentes">
-        <ProtectedRoute component={TeacherSchedules} />
-      </Route>
-      <Route path="/horarios-seccion">
-        <ProtectedRoute component={SectionSchedules} />
-      </Route>
-      <Route path="/cursos">
-        <ProtectedRoute component={Courses} />
-      </Route>
-      <Route path="/calendario">
-        <ProtectedRoute component={Calendar2026} />
-      </Route>
-      <Route path="/usuarios">
-        <ProtectedRoute component={Users} />
-      </Route>
-      <Route path="/roles">
-        <ProtectedRoute component={Roles} />
-      </Route>
-      <Route path="/avisos">
-        <ProtectedRoute component={Announcements} />
-      </Route>
-      <Route path="/reportes">
-        <ProtectedRoute component={Reports} />
-      </Route>
-      <Route path="/configuracion">
-        <ProtectedRoute component={Settings} />
-      </Route>
-      
+
+      {/* Protegidas */}
+      <Route
+        path="/"
+        component={() => <ProtectedRoute component={Dashboard} />}
+      />
+      <Route
+        path="/horarios-docentes"
+        component={() => <ProtectedRoute component={TeacherSchedules} />}
+      />
+      <Route
+        path="/horarios-seccion"
+        component={() => <ProtectedRoute component={SectionSchedules} />}
+      />
+      <Route
+        path="/cursos"
+        component={() => <ProtectedRoute component={Courses} />}
+      />
+      <Route
+        path="/calendario"
+        component={() => <ProtectedRoute component={Calendar2026} />}
+      />
+      <Route
+        path="/usuarios"
+        component={() => <ProtectedRoute component={Users} />}
+      />
+      <Route
+        path="/roles"
+        component={() => <ProtectedRoute component={Roles} />}
+      />
+      <Route
+        path="/avisos"
+        component={() => <ProtectedRoute component={Announcements} />}
+      />
+      <Route
+        path="/reportes"
+        component={() => <ProtectedRoute component={Reports} />}
+      />
+      <Route
+        path="/configuracion"
+        component={() => <ProtectedRoute component={Settings} />}
+      />
+      <Route
+        path="/estudiantes"
+        component={() => <ProtectedRoute component={StudentsPage} />}
+      />
+      <Route
+        path="/directiva-matricula"
+        component={() => <ProtectedRoute component={DirectivaMatricula} />}
+      />
+
+      {/* 404 */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  const routerBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={routerBase}>
           <AuthProvider>
-            <Router />
+            <AppRouter />
           </AuthProvider>
         </WouterRouter>
         <Toaster />
