@@ -291,11 +291,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-6 md:p-8 lg:p-10 relative">
+          <main className="flex-1 overflow-auto p-4 md:p-6 relative">
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none translate-x-1/3 -translate-y-1/3" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl -z-10 pointer-events-none -translate-x-1/3 translate-y-1/3" />
 
-            <div className="max-w-7xl mx-auto">{children}</div>
+            <div className="w-full">{children}</div>
           </main>
         </div>
       </div>

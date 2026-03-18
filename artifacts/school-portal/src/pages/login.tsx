@@ -56,7 +56,7 @@ export default function Login() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-md"
       >
         <div className="bg-white rounded-2xl shadow-xl shadow-black/10 p-8 flex flex-col items-center">
           {/* Logo */}
