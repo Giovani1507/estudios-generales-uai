@@ -49,7 +49,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-4"
+      className="min-h-screen w-full flex items-start justify-center pt-10 p-4"
       style={{ background: "hsl(215 30% 94%)" }}
     >
       <motion.div
