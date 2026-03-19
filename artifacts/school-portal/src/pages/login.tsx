@@ -49,14 +49,20 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-4"
-      style={{ background: "hsl(215 30% 94%)" }}
+      className="min-h-screen w-full flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url(${import.meta.env.BASE_URL}campus-bg.jpg)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
+      {/* Overlay oscuro para legibilidad */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="w-full max-w-lg"
+        className="w-full max-w-lg relative z-10"
       >
         <div className="bg-white rounded-2xl shadow-xl shadow-black/10 p-10 flex flex-col items-center">
           {/* Logo */}
@@ -146,7 +152,7 @@ export default function Login() {
           </Form>
         </div>
 
-        <p className="mt-5 text-center text-xs text-muted-foreground">
+        <p className="mt-5 text-center text-xs text-white/70">
           Sistema de acceso restringido · Universidad Autónoma de Ica © {new Date().getFullYear()}
         </p>
       </motion.div>
