@@ -54,12 +54,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Cursos y Asignaturas",
-    url: "/cursos",
-    icon: BookOpen,
-    roles: ["administrador", "coordinador"],
-  },
-  {
     title: "Calendario 2026",
     url: "/calendario",
     icon: CalendarIcon,

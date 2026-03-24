@@ -56,6 +56,9 @@ export default function PlanificacionFCS() {
   const [fPrograma, setFPrograma] = useState("all");
   const [fCiclo, setFCiclo] = useState("all");
   const [fModalidad, setFModalidad] = useState("all");
+  const [fSeccion, setFSeccion] = useState("all");
+  const [fDocente, setFDocente] = useState("");
+  const [fAula, setFAula] = useState("");
   const [fBusqueda, setFBusqueda] = useState("");
 
   useEffect(() => {
@@ -74,6 +77,10 @@ export default function PlanificacionFCS() {
     () => [...new Set(data.map((r) => (r.modalidad || "").toLowerCase()))].filter(Boolean).sort(),
     [data]
   );
+  const secciones = useMemo(
+    () => [...new Set(data.map((r) => r.seccion))].filter(Boolean).sort(),
+    [data]
+  );
 
   const filtered = useMemo(() => {
     let rows = data;
@@ -81,17 +88,25 @@ export default function PlanificacionFCS() {
     if (fPrograma !== "all") rows = rows.filter((r) => r.programa === fPrograma);
     if (fCiclo !== "all") rows = rows.filter((r) => String(r.ciclo) === fCiclo);
     if (fModalidad !== "all") rows = rows.filter((r) => (r.modalidad || "").toLowerCase() === fModalidad);
+    if (fSeccion !== "all") rows = rows.filter((r) => r.seccion === fSeccion);
+    if (fDocente.trim()) {
+      const q = fDocente.toLowerCase();
+      rows = rows.filter((r) => (r.docente || "").toLowerCase().includes(q));
+    }
+    if (fAula.trim()) {
+      const q = fAula.toLowerCase();
+      rows = rows.filter((r) => (r.aula || "").toLowerCase().includes(q));
+    }
     if (fBusqueda.trim()) {
       const q = fBusqueda.toLowerCase();
       rows = rows.filter(
         (r) =>
-          (r.docente || "").toLowerCase().includes(q) ||
           (r.curso || "").toLowerCase().includes(q) ||
           (r.codigo || "").toLowerCase().includes(q)
       );
     }
     return rows;
-  }, [data, fLocal, fPrograma, fCiclo, fModalidad, fBusqueda]);
+  }, [data, fLocal, fPrograma, fCiclo, fModalidad, fSeccion, fDocente, fAula, fBusqueda]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -101,12 +116,16 @@ export default function PlanificacionFCS() {
     setFPrograma("all");
     setFCiclo("all");
     setFModalidad("all");
+    setFSeccion("all");
+    setFDocente("");
+    setFAula("");
     setFBusqueda("");
     setPage(1);
   };
 
   const hasFilters =
-    fLocal !== "all" || fPrograma !== "all" || fCiclo !== "all" || fModalidad !== "all" || fBusqueda.trim() !== "";
+    fLocal !== "all" || fPrograma !== "all" || fCiclo !== "all" || fModalidad !== "all" ||
+    fSeccion !== "all" || fDocente.trim() !== "" || fAula.trim() !== "" || fBusqueda.trim() !== "";
 
   const handleFilterChange = (fn: () => void) => {
     fn();
@@ -158,7 +177,8 @@ export default function PlanificacionFCS() {
           Filtros
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Row 1: dropdowns */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Local */}
           <Select value={fLocal} onValueChange={(v) => handleFilterChange(() => setFLocal(v))}>
             <SelectTrigger className="h-9 text-sm">
@@ -198,6 +218,22 @@ export default function PlanificacionFCS() {
             </SelectContent>
           </Select>
 
+          {/* Sección */}
+          <Select value={fSeccion} onValueChange={(v) => handleFilterChange(() => setFSeccion(v))}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Sección" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las secciones</SelectItem>
+              {secciones.map((s) => (
+                <SelectItem key={s} value={s}>Sección {s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Row 2: text searches */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Modalidad */}
           <Select value={fModalidad} onValueChange={(v) => handleFilterChange(() => setFModalidad(v))}>
             <SelectTrigger className="h-9 text-sm">
@@ -211,16 +247,38 @@ export default function PlanificacionFCS() {
             </SelectContent>
           </Select>
 
-          {/* Búsqueda */}
+          {/* Docente */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
-              placeholder="Buscar docente o curso..."
-              value={fBusqueda}
-              onChange={(e) => handleFilterChange(() => setFBusqueda(e.target.value))}
+              placeholder="Buscar por docente..."
+              value={fDocente}
+              onChange={(e) => handleFilterChange(() => setFDocente(e.target.value))}
               className="h-9 pl-8 text-sm"
             />
           </div>
+
+          {/* Aula */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por aula o laboratorio..."
+              value={fAula}
+              onChange={(e) => handleFilterChange(() => setFAula(e.target.value))}
+              className="h-9 pl-8 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Row 3: curso/código search */}
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar curso o código..."
+            value={fBusqueda}
+            onChange={(e) => handleFilterChange(() => setFBusqueda(e.target.value))}
+            className="h-9 pl-8 text-sm"
+          />
         </div>
 
         {hasFilters && (
