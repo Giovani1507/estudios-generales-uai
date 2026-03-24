@@ -7,6 +7,7 @@ export interface SessionUser {
   email: string;
   role: "administrador" | "coordinador" | "administrativo";
   isActive: boolean;
+  avatarUrl?: string | null;
 }
 
 declare module "express-serve-static-core" {

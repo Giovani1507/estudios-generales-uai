@@ -41,6 +41,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      avatarUrl: user.avatarUrl,
     });
 
     res.cookie("session_token", token, {
@@ -58,6 +59,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        avatarUrl: user.avatarUrl ?? null,
         createdAt: user.createdAt.toISOString(),
       },
     });
@@ -76,17 +78,46 @@ router.post("/logout", (req, res) => {
   res.json({ message: "Sesión cerrada" });
 });
 
-router.get("/me", requireAuth, (req, res) => {
-  const user = (req as any).currentUser;
-  res.json({
-    id: user.id,
-    username: user.username,
-    fullName: user.fullName,
-    email: user.email,
-    role: user.role,
-    isActive: user.isActive,
-    createdAt: new Date().toISOString(),
-  });
+router.get("/me", requireAuth, async (req, res) => {
+  const sessionUser = (req as any).currentUser;
+  try {
+    const users = await db.select().from(usersTable).where(eq(usersTable.id, sessionUser.id)).limit(1);
+    const user = users[0];
+    if (!user) { res.status(404).json({ error: "Usuario no encontrado" }); return; }
+    res.json({
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      avatarUrl: user.avatarUrl ?? null,
+      createdAt: user.createdAt.toISOString(),
+    });
+  } catch (err) {
+    console.error("Me error:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+router.patch("/me/avatar", requireAuth, async (req, res) => {
+  const sessionUser = (req as any).currentUser;
+  const { avatarDataUrl } = req.body;
+  if (!avatarDataUrl || typeof avatarDataUrl !== "string") {
+    res.status(400).json({ error: "avatarDataUrl requerido" });
+    return;
+  }
+  if (!avatarDataUrl.startsWith("data:image/")) {
+    res.status(400).json({ error: "Formato de imagen inválido" });
+    return;
+  }
+  try {
+    await db.update(usersTable).set({ avatarUrl: avatarDataUrl }).where(eq(usersTable.id, sessionUser.id));
+    res.json({ message: "Foto actualizada correctamente", avatarUrl: avatarDataUrl });
+  } catch (err) {
+    console.error("Avatar update error:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 export { hashPassword };

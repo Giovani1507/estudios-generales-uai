@@ -6,17 +6,19 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  refetchUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  refetchUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
-  const { data: user, isLoading, isError } = useGetMe({
+  const { data: user, isLoading, isError, refetch } = useGetMe({
     query: {
       retry: false,
       refetchOnWindowFocus: false,
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: user || null,
       isLoading,
       isAuthenticated: !!user,
+      refetchUser: refetch,
     }}>
       {children}
     </AuthContext.Provider>

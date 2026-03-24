@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Building2, Save, User, Bell, Shield, Check } from "lucide-react";
+import { Building2, Camera, Save, User, Bell, Shield, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Tab = "perfil" | "institucion" | "notificaciones" | "seguridad";
@@ -16,10 +16,56 @@ const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "seguridad", label: "Seguridad", icon: Shield },
 ];
 
+function getInitials(name?: string | null): string {
+  if (!name) return "?";
+  return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0].toUpperCase()).join("");
+}
+
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, refetchUser } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("perfil");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentAvatar = avatarPreview ?? user?.avatarUrl ?? null;
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Archivo inválido", description: "Solo se aceptan imágenes.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Imagen muy grande", description: "El tamaño máximo es 2 MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!avatarPreview) return;
+    setUploadingAvatar(true);
+    try {
+      const res = await fetch("/api/auth/me/avatar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ avatarDataUrl: avatarPreview }),
+      });
+      if (!res.ok) throw new Error("Error al guardar");
+      refetchUser();
+      toast({ title: "Foto actualizada", description: "Tu foto de perfil fue guardada correctamente." });
+    } catch {
+      toast({ title: "Error", description: "No se pudo guardar la foto.", variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,39 +106,108 @@ export default function Settings() {
 
           {/* ── Mi Perfil ── */}
           {activeTab === "perfil" && (
-            <Card className="shadow-sm border-border/50">
-              <CardHeader>
-                <CardTitle>Información Personal</CardTitle>
-                <CardDescription>Sus datos como usuario del sistema.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSave} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Nombre Completo</Label>
-                      <Input defaultValue={user?.fullName} className="bg-muted/50 rounded-xl" disabled />
+            <div className="space-y-4">
+              {/* Photo upload card */}
+              <Card className="shadow-sm border-border/50">
+                <CardHeader>
+                  <CardTitle>Foto de Perfil</CardTitle>
+                  <CardDescription>Esta foto aparecerá en la pantalla de inicio y en su perfil.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6">
+                    {/* Avatar preview */}
+                    <div className="relative shrink-0">
+                      {currentAvatar ? (
+                        <img
+                          src={currentAvatar}
+                          alt="Avatar"
+                          className="rounded-full object-cover border-4 border-border shadow"
+                          style={{ width: 96, height: 96 }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-full flex items-center justify-center border-4 border-border shadow text-white font-bold"
+                          style={{ width: 96, height: 96, fontSize: 28, background: "linear-gradient(135deg, #2f5aa6 0%, #1a3a6b 100%)" }}
+                        >
+                          {getInitials(user?.fullName)}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow hover:bg-primary/90 transition-colors"
+                      >
+                        <Camera className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFile}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Seleccionar imagen
+                      </Button>
+                      <p className="text-xs text-muted-foreground">JPG, PNG o WebP. Máximo 2 MB.</p>
+                      {avatarPreview && (
+                        <Button
+                          type="button"
+                          className="rounded-xl bg-primary text-white gap-2"
+                          onClick={handleSaveAvatar}
+                          disabled={uploadingAvatar}
+                        >
+                          {uploadingAvatar ? "Guardando…" : <><Save className="w-4 h-4" /> Guardar foto</>}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Personal info card */}
+              <Card className="shadow-sm border-border/50">
+                <CardHeader>
+                  <CardTitle>Información Personal</CardTitle>
+                  <CardDescription>Sus datos como usuario del sistema.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSave} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Nombre Completo</Label>
+                        <Input defaultValue={user?.fullName} className="bg-muted/50 rounded-xl" disabled />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Usuario</Label>
+                        <Input defaultValue={user?.username} className="bg-muted/50 rounded-xl" disabled />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Usuario</Label>
-                      <Input defaultValue={user?.username} className="bg-muted/50 rounded-xl" disabled />
+                      <Label>Correo Electrónico</Label>
+                      <Input defaultValue={user?.email ?? ""} className="rounded-xl" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Correo Electrónico</Label>
-                    <Input defaultValue={user?.email ?? ""} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Rol en el Sistema</Label>
-                    <Input defaultValue={user?.role} className="bg-muted/50 rounded-xl capitalize" disabled />
-                  </div>
-                  <div className="pt-4 flex justify-end">
-                    <Button type="submit" className="rounded-xl bg-primary text-white gap-2">
-                      <Save className="w-4 h-4" /> Guardar Cambios
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2">
+                      <Label>Rol en el Sistema</Label>
+                      <Input defaultValue={user?.role} className="bg-muted/50 rounded-xl capitalize" disabled />
+                    </div>
+                    <div className="pt-4 flex justify-end">
+                      <Button type="submit" className="rounded-xl bg-primary text-white gap-2">
+                        <Save className="w-4 h-4" /> Guardar Cambios
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* ── Institución ── */}

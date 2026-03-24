@@ -37,6 +37,7 @@ export interface User {
   email: string;
   role: UserRole;
   isActive: boolean;
+  avatarUrl?: string | null;
   createdAt: string;
 }
 
