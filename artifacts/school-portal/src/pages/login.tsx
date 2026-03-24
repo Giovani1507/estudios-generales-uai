@@ -70,7 +70,7 @@ export default function Login() {
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt="Universidad Autónoma de Ica"
             className="object-contain mb-5"
-            style={{ maxWidth: "280px", maxHeight: "84px" }}
+            style={{ maxWidth: "300px", maxHeight: "90px", mixBlendMode: "multiply" }}
           />
 
           {/* Title */}
