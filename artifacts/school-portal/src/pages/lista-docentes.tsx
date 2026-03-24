@@ -52,6 +52,7 @@ export default function ListaDocentes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [fSede, setFSede] = useState("all");
   const [fCiclo, setFCiclo] = useState<"all" | "1" | "2">("all");
   const [fPrograma, setFPrograma] = useState("all");
   const [fBusqueda, setFBusqueda] = useState("");
@@ -71,15 +72,24 @@ export default function ListaDocentes() {
       });
   }, []);
 
-  const programas = useMemo(() => {
-    const set = new Set(allData.map((r) => r.programa));
-    return Array.from(set).sort();
+  const sedes = useMemo(() => {
+    return [...new Set(allData.map((r) => r.local))].sort();
   }, [allData]);
+
+  const sourceData = useMemo(() => {
+    if (fSede === "all") return allData;
+    return allData.filter((r) => r.local === fSede);
+  }, [allData, fSede]);
+
+  const programas = useMemo(() => {
+    const set = new Set(sourceData.map((r) => r.programa));
+    return Array.from(set).sort();
+  }, [sourceData]);
 
   // Build unique docentes list
   const docentes = useMemo((): DocenteRow[] => {
     const map = new Map<string, DocenteRow>();
-    allData.forEach((r) => {
+    sourceData.forEach((r) => {
       if (!r.docente) return;
       if (!map.has(r.docente)) {
         map.set(r.docente, {
@@ -98,7 +108,7 @@ export default function ListaDocentes() {
       entry.totalHoras += r.totalHoras;
     });
     return Array.from(map.values()).sort((a, b) => a.docente.localeCompare(b.docente));
-  }, [allData]);
+  }, [sourceData]);
 
   const handleFilterChange = (fn: () => void) => {
     fn();
@@ -172,7 +182,22 @@ export default function ListaDocentes() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
+        {/* Sede */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sede</label>
+          <select
+            value={fSede}
+            onChange={(e) => handleFilterChange(() => setFSede(e.target.value))}
+            className="h-9 w-full rounded-lg border border-input bg-white px-3 text-sm"
+          >
+            <option value="all">Todas las sedes</option>
+            {sedes.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Ciclo */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciclo</label>
