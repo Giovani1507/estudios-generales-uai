@@ -53,7 +53,6 @@ export default function ListaDocentes() {
   const [error, setError] = useState<string | null>(null);
 
   const [fSede, setFSede] = useState("all");
-  const [fCiclo, setFCiclo] = useState<"all" | "1" | "2">("all");
   const [fPrograma, setFPrograma] = useState("all");
   const [fBusqueda, setFBusqueda] = useState("");
   const [page, setPage] = useState(1);
@@ -117,7 +116,6 @@ export default function ListaDocentes() {
 
   const filtered = useMemo(() => {
     return docentes.filter((d) => {
-      if (fCiclo !== "all" && !d.ciclos.includes(Number(fCiclo))) return false;
       if (fPrograma !== "all" && !d.programas.includes(fPrograma)) return false;
       if (fBusqueda) {
         const q = fBusqueda.toLowerCase();
@@ -125,7 +123,7 @@ export default function ListaDocentes() {
       }
       return true;
     });
-  }, [docentes, fCiclo, fPrograma, fBusqueda]);
+  }, [docentes, fPrograma, fBusqueda]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -182,7 +180,7 @@ export default function ListaDocentes() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
         {/* Sede */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sede</label>
@@ -196,26 +194,6 @@ export default function ListaDocentes() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-        </div>
-
-        {/* Ciclo */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciclo</label>
-          <div className="flex gap-2">
-            {(["all", "1", "2"] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => handleFilterChange(() => setFCiclo(c))}
-                className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                  fCiclo === c
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white text-foreground border-border hover:border-primary"
-                }`}
-              >
-                {c === "all" ? "Ambos" : `Ciclo ${c}`}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Programa */}
