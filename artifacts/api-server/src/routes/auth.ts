@@ -41,6 +41,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      cargo: user.cargo,
       avatarUrl: user.avatarUrl,
     });
 
@@ -59,6 +60,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        cargo: user.cargo ?? null,
         avatarUrl: user.avatarUrl ?? null,
         createdAt: user.createdAt.toISOString(),
       },
@@ -91,11 +93,28 @@ router.get("/me", requireAuth, async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      cargo: user.cargo ?? null,
       avatarUrl: user.avatarUrl ?? null,
       createdAt: user.createdAt.toISOString(),
     });
   } catch (err) {
     console.error("Me error:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+router.patch("/me/cargo", requireAuth, async (req, res) => {
+  const sessionUser = (req as any).currentUser;
+  const { cargo } = req.body;
+  if (typeof cargo !== "string") {
+    res.status(400).json({ error: "cargo requerido" });
+    return;
+  }
+  try {
+    await db.update(usersTable).set({ cargo: cargo.trim() || null }).where(eq(usersTable.id, sessionUser.id));
+    res.json({ message: "Cargo actualizado correctamente" });
+  } catch (err) {
+    console.error("Cargo update error:", err);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });

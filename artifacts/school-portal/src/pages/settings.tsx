@@ -67,9 +67,27 @@ export default function Settings() {
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const [cargo, setCargo] = useState(user?.cargo ?? "");
+  const [savingCargo, setSavingCargo] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: "Guardado", description: "Configuración actualizada correctamente." });
+    setSavingCargo(true);
+    try {
+      const res = await fetch("/api/auth/me/cargo", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ cargo }),
+      });
+      if (!res.ok) throw new Error("Error");
+      refetchUser();
+      toast({ title: "Guardado", description: "Cargo actualizado correctamente." });
+    } catch {
+      toast({ title: "Error", description: "No se pudo guardar el cargo.", variant: "destructive" });
+    } finally {
+      setSavingCargo(false);
+    }
   };
 
   return (
@@ -199,9 +217,28 @@ export default function Settings() {
                       <Label>Rol en el Sistema</Label>
                       <Input defaultValue={user?.role} className="bg-muted/50 rounded-xl capitalize" disabled />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cargo">Cargo</Label>
+                      <input
+                        id="cargo"
+                        list="cargo-options"
+                        value={cargo}
+                        onChange={(e) => setCargo(e.target.value)}
+                        placeholder="Ej: Directora del Departamento de Estudios Generales"
+                        className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      />
+                      <datalist id="cargo-options">
+                        <option value="Directora del Departamento de Estudios Generales" />
+                        <option value="Director del Departamento de Estudios Generales" />
+                        <option value="Coordinadora del Departamento de Estudios Generales" />
+                        <option value="Coordinador del Departamento de Estudios Generales" />
+                        <option value="Asistente del Departamento de Estudios Generales" />
+                      </datalist>
+                      <p className="text-xs text-muted-foreground">Este cargo se muestra en la pantalla de inicio.</p>
+                    </div>
                     <div className="pt-4 flex justify-end">
-                      <Button type="submit" className="rounded-xl bg-primary text-white gap-2">
-                        <Save className="w-4 h-4" /> Guardar Cambios
+                      <Button type="submit" disabled={savingCargo} className="rounded-xl bg-primary text-white gap-2">
+                        <Save className="w-4 h-4" /> {savingCargo ? "Guardando…" : "Guardar Cambios"}
                       </Button>
                     </div>
                   </form>

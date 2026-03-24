@@ -95,13 +95,18 @@ export default function Dashboard() {
           {roleLabel && (
             <span
               className="mt-1 inline-block px-4 py-1 rounded-full text-sm font-semibold"
-              style={{
-                background: "#2f5aa6",
-                color: "#fff",
-              }}
+              style={{ background: "#2f5aa6", color: "#fff" }}
             >
               {roleLabel}
             </span>
+          )}
+          {user?.cargo && (
+            <p
+              className="font-medium"
+              style={{ color: "#4b5563", fontSize: "clamp(0.8rem, 1.6vw, 0.95rem)", maxWidth: 380 }}
+            >
+              {user.cargo}
+            </p>
           )}
         </div>
 

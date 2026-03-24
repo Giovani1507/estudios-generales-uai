@@ -7,6 +7,7 @@ export interface SessionUser {
   email: string;
   role: "administrador" | "coordinador" | "administrativo";
   isActive: boolean;
+  cargo?: string | null;
   avatarUrl?: string | null;
 }
 
