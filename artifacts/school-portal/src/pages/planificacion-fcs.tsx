@@ -77,10 +77,13 @@ export default function PlanificacionFCS() {
     () => [...new Set(data.map((r) => (r.modalidad || "").toLowerCase()))].filter(Boolean).sort(),
     [data]
   );
-  const secciones = useMemo(
-    () => [...new Set(data.map((r) => r.seccion))].filter(Boolean).sort(),
-    [data]
-  );
+  // Base section groups: unique first characters (A, B, C…)
+  const seccionesBase = useMemo(() => {
+    const bases = new Set(
+      data.map((r) => (r.seccion || "").charAt(0).toUpperCase()).filter(Boolean)
+    );
+    return [...bases].sort();
+  }, [data]);
 
   const filtered = useMemo(() => {
     let rows = data;
@@ -88,7 +91,9 @@ export default function PlanificacionFCS() {
     if (fPrograma !== "all") rows = rows.filter((r) => r.programa === fPrograma);
     if (fCiclo !== "all") rows = rows.filter((r) => String(r.ciclo) === fCiclo);
     if (fModalidad !== "all") rows = rows.filter((r) => (r.modalidad || "").toLowerCase() === fModalidad);
-    if (fSeccion !== "all") rows = rows.filter((r) => r.seccion === fSeccion);
+    if (fSeccion !== "all") rows = rows.filter((r) =>
+      (r.seccion || "").toUpperCase().startsWith(fSeccion)
+    );
     if (fDocente.trim()) {
       const q = fDocente.toLowerCase();
       rows = rows.filter((r) => (r.docente || "").toLowerCase().includes(q));
@@ -225,8 +230,10 @@ export default function PlanificacionFCS() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las secciones</SelectItem>
-              {secciones.map((s) => (
-                <SelectItem key={s} value={s}>Sección {s}</SelectItem>
+              {seccionesBase.map((s) => (
+                <SelectItem key={s} value={s}>
+                  Sección {s} (incluye {s}1, {s}2…)
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
