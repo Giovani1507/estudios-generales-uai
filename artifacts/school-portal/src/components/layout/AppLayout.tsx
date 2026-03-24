@@ -168,15 +168,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar variant="sidebar" className="border-r-0">
           <SidebarContent className="flex flex-col bg-sidebar">
             {/* Logo */}
-            <div className="px-4 py-4 flex items-center justify-center border-b border-white/15">
-              <div className="bg-white rounded-xl px-4 py-2 flex items-center justify-center shadow-sm">
-                <img
-                  src={`${import.meta.env.BASE_URL}logo.png`}
-                  alt="Universidad Autónoma de Ica"
-                  className="object-contain"
-                  style={{ maxWidth: "148px", maxHeight: "52px", mixBlendMode: "multiply" }}
-                />
-              </div>
+            <div className="px-5 py-5 flex items-center justify-center border-b border-white/15">
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="Universidad Autónoma de Ica"
+                className="object-contain"
+                style={{ maxWidth: "180px", maxHeight: "64px", filter: "brightness(0) invert(1)" }}
+              />
             </div>
 
             {/* Menu */}
