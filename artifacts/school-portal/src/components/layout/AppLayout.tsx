@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode, useMemo, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useLogout } from "@workspace/api-client-react";
@@ -31,6 +31,9 @@ import {
   ClipboardList,
   Bell,
   LayoutGrid,
+  FolderOpen,
+  ChevronDown,
+  Stethoscope,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -139,6 +142,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     },
   });
 
+  const [planOpen, setPlanOpen] = useState(
+    location.startsWith("/planificacion")
+  );
+
   const filteredMenu = useMemo(() => {
     if (!user?.role) return [];
     return menuItems.filter((item) =>
@@ -216,6 +223,36 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {/* Planificación collapsible group */}
+            <div className="border-t border-white/15">
+              <button
+                onClick={() => setPlanOpen((o) => !o)}
+                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <FolderOpen className="w-4 h-4 shrink-0 text-white/80" />
+                <span className="text-sm flex-1 text-left font-medium">Planificación</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-white/50 transition-transform ${planOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {planOpen && (
+                <div className="bg-black/15">
+                  <Link
+                    href="/planificacion/fcs"
+                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                      location === "/planificacion/fcs"
+                        ? "bg-white/20 text-white font-semibold"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <Stethoscope className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                    <span className="flex-1">FCS</span>
+                    <ChevronRight className="w-3 h-3 text-white/40" />
+                  </Link>
+                </div>
+              )}
+            </div>
           </SidebarContent>
 
           {/* Logout footer */}

@@ -21,6 +21,7 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
+import PlanificacionFCS from "@/pages/planificacion-fcs";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +91,10 @@ function AppRouter() {
       <Route
         path="/directiva-matricula"
         component={() => <ProtectedRoute component={DirectivaMatricula} />}
+      />
+      <Route
+        path="/planificacion/fcs"
+        component={() => <ProtectedRoute component={PlanificacionFCS} />}
       />
 
       {/* 404 */}
