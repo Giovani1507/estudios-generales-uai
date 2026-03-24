@@ -54,18 +54,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Horarios Docentes",
-    url: "/horarios-docentes",
-    icon: Clock,
-    roles: ["administrador", "coordinador"],
-  },
-  {
-    title: "Horarios por Sección",
-    url: "/horarios-seccion",
-    icon: GraduationCap,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Cursos y Asignaturas",
     url: "/cursos",
     icon: BookOpen,
@@ -188,71 +176,78 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <SidebarGroup className="px-0 py-2 flex-1">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-0">
-                  {filteredMenu.map((item) => {
+                  {filteredMenu.map((item, idx) => {
                     const isActive = location === item.url;
 
                     return (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          className={`
-                            rounded-none border-b border-white/10 h-11 px-4
-                            transition-colors duration-100
-                            ${
-                              isActive
-                                ? "bg-white/20 text-white font-semibold"
-                                : "text-white/90 hover:bg-white/10 hover:text-white"
-                            }
-                          `}
-                        >
-                          <Link
-                            href={item.url}
-                            className="flex items-center gap-3"
+                      <React.Fragment key={item.title}>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive}
+                            className={`
+                              rounded-none border-b border-white/10 h-11 px-4
+                              transition-colors duration-100
+                              ${
+                                isActive
+                                  ? "bg-white/20 text-white font-semibold"
+                                  : "text-white/90 hover:bg-white/10 hover:text-white"
+                              }
+                            `}
                           >
-                            <item.icon className="w-4 h-4 shrink-0 text-white/80" />
-                            <span className="text-sm flex-1 text-left">
-                              {item.title}
-                            </span>
-                            <ChevronRight className="w-3.5 h-3.5 text-white/50" />
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
+                            <Link
+                              href={item.url}
+                              className="flex items-center gap-3"
+                            >
+                              <item.icon className="w-4 h-4 shrink-0 text-white/80" />
+                              <span className="text-sm flex-1 text-left">
+                                {item.title}
+                              </span>
+                              <ChevronRight className="w-3.5 h-3.5 text-white/50" />
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+
+                        {/* Planificación after Inicio (index 0) */}
+                        {idx === 0 && (
+                          <SidebarMenuItem>
+                            <div className="border-b border-white/10">
+                              <button
+                                onClick={() => setPlanOpen((o) => !o)}
+                                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                <FolderOpen className="w-4 h-4 shrink-0 text-white/80" />
+                                <span className="text-sm flex-1 text-left">Planificación</span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${planOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+
+                              {planOpen && (
+                                <div className="bg-black/15">
+                                  <Link
+                                    href="/planificacion/fcs"
+                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                      location === "/planificacion/fcs"
+                                        ? "bg-white/20 text-white font-semibold"
+                                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                                    }`}
+                                  >
+                                    <Stethoscope className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                    <span className="flex-1">FCS</span>
+                                    <ChevronRight className="w-3 h-3 text-white/40" />
+                                  </Link>
+                                </div>
+                              )}
+                            </div>
+                          </SidebarMenuItem>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            {/* Planificación collapsible group */}
-            <div className="border-t border-white/15">
-              <button
-                onClick={() => setPlanOpen((o) => !o)}
-                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                <FolderOpen className="w-4 h-4 shrink-0 text-white/80" />
-                <span className="text-sm flex-1 text-left font-medium">Planificación</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-white/50 transition-transform ${planOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {planOpen && (
-                <div className="bg-black/15">
-                  <Link
-                    href="/planificacion/fcs"
-                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                      location === "/planificacion/fcs"
-                        ? "bg-white/20 text-white font-semibold"
-                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Stethoscope className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                    <span className="flex-1">FCS</span>
-                    <ChevronRight className="w-3 h-3 text-white/40" />
-                  </Link>
-                </div>
-              )}
-            </div>
           </SidebarContent>
 
           {/* Logout footer */}
