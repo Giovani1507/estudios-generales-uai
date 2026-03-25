@@ -1,0 +1,72 @@
+COMPORTAMIENTO DE LA IA
+La IA no debe inventar información.
+Debe responder únicamente con base en la información real que está subida o conectada al sistema.
+Si un dato no existe, no está disponible o no está cargado, debe decirlo claramente.
+Debe usar respuestas exactas, directas y confiables.
+
+Reglas importantes:
+- No alucinar información
+- No asumir cantidades
+- No inventar costos
+- No responder con datos falsos
+- Si no encuentra el dato, responder algo como:
+  “No encontré esa información exacta en los datos cargados.”
+- Si hay varias coincidencias, pedir precisión
+- Si la consulta requiere filtrado, hacerlo según los datos disponibles
+
+FUENTE DE DATOS
+Quiero que el chat consulte la información subida en el sistema.
+Debe poder leer y usar los datos existentes para responder preguntas reales.
+La lógica debe estar preparada para consultar base de datos, archivos cargados o la fuente de datos disponible dentro del proyecto.
+
+Ejemplos de consultas esperadas:
+- contar docentes por área
+- buscar costos
+- filtrar por planificación, FICA, FCS u otras categorías
+- consultar estudiantes, docentes, documentos, reportes y registros
+- mostrar resultados exactos según los datos cargados
+
+INTERFAZ
+Quiero una interfaz moderna y profesional:
+- un botón flotante o panel lateral para abrir el asistente
+- el personaje visible junto al chat
+- diseño limpio y elegante
+- burbujas de conversación
+- input de texto claro
+- indicador de “escribiendo”
+- scroll en historial
+- botón para minimizar/maximizar
+
+EXPERIENCIA DE USUARIO
+- El asistente debe sentirse cercano, útil y educativo
+- Debe responder en español
+- El tono debe ser amable, profesional y claro
+- Debe dar respuestas resumidas pero precisas
+- Si el usuario pide detalle, ampliar la información
+
+ARQUITECTURA
+Quiero que el sistema quede organizado y mantenible.
+Separa:
+- componente visual del personaje
+- componente de chat
+- lógica de animación
+- lógica de consulta de datos
+- backend o funciones para consultar la información real
+
+IMPORTANTE
+No quiero un simple muñeco decorativo.
+Quiero un asistente animado funcional, con chat real, conectado a la información subida del sistema, capaz de responder preguntas exactas con datos verdaderos.
+
+Si hace falta, crea:
+- componente del personaje animado
+- panel de chat
+- lógica para consultar datos
+- estados de animación
+- estructura limpia para escalar luego a voz, audio o más acciones
+
+Además, deja el código listo para que en una siguiente etapa pueda agregar:
+- voz
+- lectura en voz alta
+- respuestas por audio
+- más gestos y expresiones
+- integración con IA más avanzada
