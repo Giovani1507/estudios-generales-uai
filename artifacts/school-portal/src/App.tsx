@@ -22,6 +22,7 @@ import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
 import PlanificacionFCS from "@/pages/planificacion-fcs";
+import PlanificacionFICA from "@/pages/planificacion-fica";
 import ListaDocentes from "@/pages/lista-docentes";
 import ListaDocentesFICA from "@/pages/lista-docentes-fica";
 
@@ -97,6 +98,10 @@ function AppRouter() {
       <Route
         path="/planificacion/fcs"
         component={() => <ProtectedRoute component={PlanificacionFCS} />}
+      />
+      <Route
+        path="/planificacion/fica"
+        component={() => <ProtectedRoute component={PlanificacionFICA} />}
       />
       <Route
         path="/planificacion/lista-docentes"
