@@ -15,7 +15,17 @@ interface DolphinChatProps {
   isLoading: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
+  onSendText: (text: string) => void;
 }
+
+const SUGGESTIONS = [
+  { icon: "👥", label: "¿Cuántos docentes hay en FCS?" },
+  { icon: "🏫", label: "¿Qué sedes tiene FCS?" },
+  { icon: "📚", label: "¿Cuántos docentes hay en FICA?" },
+  { icon: "🎓", label: "¿Qué carreras tiene FICA?" },
+  { icon: "🌙", label: "¿Cuántas sesiones son nocturnas en FICA?" },
+  { icon: "👤", label: "¿Cuántos usuarios tiene el sistema?" },
+];
 
 export function DolphinChat({
   messages,
@@ -23,6 +33,7 @@ export function DolphinChat({
   isLoading,
   onInputChange,
   onSend,
+  onSendText,
 }: DolphinChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,17 +49,39 @@ export function DolphinChat({
     }
   };
 
+  const isEmpty = messages.length === 0;
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 scroll-smooth">
-        {messages.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground pt-4 px-4 leading-relaxed">
-            <p className="font-semibold text-primary mb-1">¡Hola! Soy Ichi 👋</p>
-            <p>Tu asistente del Portal Académico UAI. Puedo responder preguntas sobre docentes, planificación FCS, FICA y más.</p>
+
+        {/* Welcome + suggestions (only when no messages yet) */}
+        {isEmpty && (
+          <div className="space-y-3">
+            <div className="text-center text-xs text-muted-foreground pt-2 px-3 leading-relaxed">
+              <p className="font-bold text-primary text-sm mb-0.5">¡Hola! Soy Ichi 👋</p>
+              <p className="text-[11px]">Puedo responder sobre docentes, planificación y datos del sistema UAI. ¡Prueba una de estas preguntas!</p>
+            </div>
+
+            {/* Suggestion chips */}
+            <div className="flex flex-col gap-1.5 px-1">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s.label}
+                  disabled={isLoading}
+                  onClick={() => onSendText(s.label)}
+                  className="flex items-center gap-2 w-full text-left text-[11px] px-3 py-2 rounded-xl border border-primary/20 bg-white hover:bg-primary/5 hover:border-primary/40 text-foreground transition-all duration-150 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed group"
+                >
+                  <span className="text-base leading-none shrink-0">{s.icon}</span>
+                  <span className="leading-tight group-hover:text-primary transition-colors">{s.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
+        {/* Message bubbles */}
         {messages.map((msg) => (
           <div
             key={msg.id}

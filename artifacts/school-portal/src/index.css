@@ -283,38 +283,70 @@
 
 /* ─── Dolphin Assistant Animations ─────────────────────────── */
 
-@keyframes dolphin-bob {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50%       { transform: translateY(-8px) scale(1.01); }
+/* Full-body hop: launch → stretch → peak → fall → squash-land → recover */
+@keyframes dolphin-hop {
+  0% {
+    transform: translateY(0px) scaleX(1) scaleY(1) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  12% {
+    transform: translateY(-6px) scaleX(0.88) scaleY(1.14) rotate(-6deg);
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  38% {
+    transform: translateY(-34px) scaleX(0.92) scaleY(1.08) rotate(7deg);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+  65% {
+    transform: translateY(-8px) scaleX(1.1) scaleY(0.9) rotate(-4deg);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  76% {
+    transform: translateY(0px) scaleX(1.18) scaleY(0.82) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  88% {
+    transform: translateY(-8px) scaleX(0.96) scaleY(1.04) rotate(3deg);
+  }
+  100% {
+    transform: translateY(0px) scaleX(1) scaleY(1) rotate(0deg);
+  }
 }
 
-@keyframes dolphin-breathe {
-  0%, 100% { transform: scaleX(1) scaleY(1); }
-  50%       { transform: scaleX(1.015) scaleY(0.99); }
+/* Lateral sway between hops for a lively walking feel */
+@keyframes dolphin-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50%       { transform: rotate(4deg); }
 }
 
 @keyframes dolphin-greet {
-  0%   { transform: rotate(0deg) translateY(0px); }
-  10%  { transform: rotate(-14deg) translateY(-12px); }
-  25%  { transform: rotate(14deg) translateY(-14px); }
-  40%  { transform: rotate(-10deg) translateY(-12px); }
-  55%  { transform: rotate(10deg) translateY(-10px); }
-  70%  { transform: rotate(-5deg) translateY(-5px); }
-  85%  { transform: rotate(3deg) translateY(-2px); }
-  100% { transform: rotate(0deg) translateY(0px); }
+  0%   { transform: translateY(0px) rotate(0deg) scaleX(1) scaleY(1); }
+  8%   { transform: translateY(-10px) rotate(-18deg) scaleX(0.86) scaleY(1.16); }
+  22%  { transform: translateY(-28px) rotate(22deg) scaleX(0.91) scaleY(1.09); }
+  38%  { transform: translateY(-22px) rotate(-16deg) scaleX(0.88) scaleY(1.12); }
+  52%  { transform: translateY(-18px) rotate(14deg) scaleX(0.93) scaleY(1.07); }
+  65%  { transform: translateY(-10px) rotate(-8deg) scaleX(0.97) scaleY(1.03); }
+  80%  { transform: translateY(-4px) rotate(5deg) scaleX(0.99) scaleY(1.01); }
+  100% { transform: translateY(0px) rotate(0deg) scaleX(1) scaleY(1); }
 }
 
 @keyframes dolphin-think {
-  0%, 100% { transform: rotate(-4deg) translateY(-6px) translateX(-2px); }
-  50%       { transform: rotate(4deg) translateY(-10px) translateX(2px); }
+  0%   { transform: translateX(-5px) rotate(-8deg) scaleY(1); }
+  25%  { transform: translateX(3px)  rotate(5deg)  scaleY(1.03); }
+  50%  { transform: translateX(-4px) rotate(-6deg) scaleY(0.98); }
+  75%  { transform: translateX(4px)  rotate(7deg)  scaleY(1.02); }
+  100% { transform: translateX(-5px) rotate(-8deg) scaleY(1); }
 }
 
 @keyframes dolphin-talk {
-  0%,100% { transform: translateY(0px) scale(1); }
-  20%     { transform: translateY(-7px) scale(1.04); }
-  40%     { transform: translateY(-3px) scale(1); }
-  60%     { transform: translateY(-6px) scale(1.03); }
-  80%     { transform: translateY(-2px) scale(1.01); }
+  0%   { transform: translateY(0px)   scaleX(1)    scaleY(1)    rotate(0deg); }
+  15%  { transform: translateY(-12px) scaleX(0.9)  scaleY(1.1)  rotate(-8deg); }
+  30%  { transform: translateY(-5px)  scaleX(1.05) scaleY(0.95) rotate(4deg); }
+  45%  { transform: translateY(-14px) scaleX(0.88) scaleY(1.12) rotate(-6deg); }
+  60%  { transform: translateY(-4px)  scaleX(1.06) scaleY(0.94) rotate(5deg); }
+  75%  { transform: translateY(-10px) scaleX(0.93) scaleY(1.07) rotate(-4deg); }
+  90%  { transform: translateY(-2px)  scaleX(1.02) scaleY(0.98) rotate(2deg); }
+  100% { transform: translateY(0px)   scaleX(1)    scaleY(1)    rotate(0deg); }
 }
 
 @keyframes thinking-dot {
@@ -322,29 +354,43 @@
   40%           { transform: scale(1.1); opacity: 1; }
 }
 
+/* Shadow that squashes/stretches with the hop */
+@keyframes dolphin-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.3; }
+  38%      { transform: scaleX(0.5); opacity: 0.12; }
+  76%      { transform: scaleX(1.25); opacity: 0.45; }
+}
+
 .dolphin-char {
   will-change: transform;
-  transition: filter 0.3s ease;
 }
 
 .dolphin-idle {
-  animation: dolphin-bob 3s ease-in-out infinite,
-             dolphin-breathe 4s ease-in-out infinite;
+  animation: dolphin-hop 1.05s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
 .dolphin-greeting {
-  animation: dolphin-greet 1.4s ease-in-out forwards;
+  animation: dolphin-greet 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .dolphin-thinking {
-  animation: dolphin-think 1.2s ease-in-out infinite;
+  animation: dolphin-think 0.75s ease-in-out infinite;
 }
 
 .dolphin-talking {
-  animation: dolphin-talk 0.55s ease-in-out infinite;
+  animation: dolphin-talk 0.48s ease-in-out infinite;
 }
 
 .thinking-dot {
   animation: thinking-dot 1.2s ease-in-out infinite;
   display: inline-block;
+}
+
+.dolphin-shadow {
+  width: 50%;
+  height: 6px;
+  background: radial-gradient(ellipse, rgba(47,90,166,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: dolphin-shadow 1.05s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }

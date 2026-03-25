@@ -10,11 +10,12 @@ export function DolphinCharacter({ state, size = 160 }: DolphinCharacterProps) {
     <div
       style={{
         width: size,
-        height: size * 1.25,
         display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-end",
         flexShrink: 0,
+        gap: 0,
       }}
     >
       <img
@@ -24,14 +25,22 @@ export function DolphinCharacter({ state, size = 160 }: DolphinCharacterProps) {
         className={`dolphin-char dolphin-${state}`}
         style={{
           width: "100%",
-          height: "100%",
+          height: size * 1.25,
           objectFit: "contain",
           objectPosition: "bottom",
           userSelect: "none",
-          filter: "drop-shadow(0 8px 24px rgba(47,90,166,0.25))",
+          filter: "drop-shadow(0 4px 12px rgba(47,90,166,0.20))",
           transformOrigin: "bottom center",
+          display: "block",
         }}
       />
+      {/* Dynamic shadow that squashes/stretches with the hop */}
+      {state === "idle" && (
+        <div
+          className="dolphin-shadow"
+          style={{ marginTop: -4 }}
+        />
+      )}
     </div>
   );
 }

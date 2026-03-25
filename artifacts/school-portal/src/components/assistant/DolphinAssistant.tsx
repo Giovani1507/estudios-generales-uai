@@ -39,13 +39,14 @@ export function DolphinAssistant() {
     }
   }, [isOpen]);
 
-  const handleSend = useCallback(async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const sendMessage = useCallback(async (text: string) => {
+    const content = text.trim();
+    if (!content || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: newId(),
       role: "user",
-      content: inputValue.trim(),
+      content,
       timestamp: new Date(),
     };
 
@@ -59,7 +60,7 @@ export function DolphinAssistant() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message: userMsg.content }),
+        body: JSON.stringify({ message: content }),
       });
 
       const data = await res.json();
@@ -89,7 +90,11 @@ export function DolphinAssistant() {
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, isLoading]);
+  }, [isLoading]);
+
+  const handleSend = useCallback(() => {
+    sendMessage(inputValue);
+  }, [inputValue, sendMessage]);
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -202,6 +207,7 @@ export function DolphinAssistant() {
                 isLoading={isLoading}
                 onInputChange={setInputValue}
                 onSend={handleSend}
+                onSendText={sendMessage}
               />
             </>
           )}
