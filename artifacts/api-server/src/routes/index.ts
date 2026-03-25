@@ -8,7 +8,6 @@ import coursesRouter from "./courses.js";
 import schedulesRouter from "./schedules.js";
 import announcementsRouter from "./announcements.js";
 import reportsRouter from "./reports.js";
-import assistantRouter from "./assistant.js";
 
 const router = Router();
 
@@ -21,6 +20,5 @@ router.use("/courses", coursesRouter);
 router.use("/schedules", schedulesRouter);
 router.use("/announcements", announcementsRouter);
 router.use("/reports", reportsRouter);
-router.use("/assistant", assistantRouter);
 
 export default router;
