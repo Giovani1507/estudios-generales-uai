@@ -1,5 +1,4 @@
 import React, { ReactNode, useMemo, useState } from "react";
-import { DolphinAssistant } from "@/components/assistant/DolphinAssistant";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useLogout } from "@workspace/api-client-react";
@@ -341,8 +340,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
 
-        {/* Floating dolphin assistant – renders on top of everything */}
-        <DolphinAssistant />
       </div>
     </SidebarProvider>
   );
