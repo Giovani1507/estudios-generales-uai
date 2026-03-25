@@ -23,6 +23,7 @@ import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
 import PlanificacionFCS from "@/pages/planificacion-fcs";
 import ListaDocentes from "@/pages/lista-docentes";
+import ListaDocentesFICA from "@/pages/lista-docentes-fica";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,10 @@ function AppRouter() {
       <Route
         path="/planificacion/lista-docentes"
         component={() => <ProtectedRoute component={ListaDocentes} />}
+      />
+      <Route
+        path="/planificacion/lista-docentes-fica"
+        component={() => <ProtectedRoute component={ListaDocentesFICA} />}
       />
 
       {/* 404 */}

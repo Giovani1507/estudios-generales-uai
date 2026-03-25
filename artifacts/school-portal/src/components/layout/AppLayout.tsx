@@ -245,7 +245,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                     }`}
                                   >
                                     <Users className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Lista de Docentes</span>
+                                    <span className="flex-1">Lista de Docentes FCS</span>
+                                    <ChevronRight className="w-3 h-3 text-white/40" />
+                                  </Link>
+                                  <Link
+                                    href="/planificacion/lista-docentes-fica"
+                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                      location === "/planificacion/lista-docentes-fica"
+                                        ? "bg-white/20 text-white font-semibold"
+                                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                                    }`}
+                                  >
+                                    <Users className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                    <span className="flex-1">Lista de Docentes FICA</span>
                                     <ChevronRight className="w-3 h-3 text-white/40" />
                                   </Link>
                                 </div>
