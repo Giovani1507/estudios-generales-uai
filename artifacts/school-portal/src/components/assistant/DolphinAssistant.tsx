@@ -1,218 +1,395 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Minimize2, MessageCircle } from "lucide-react";
-import { DolphinCharacter, DolphinState } from "./DolphinCharacter";
+import { X, ChevronDown, Sparkles } from "lucide-react";
+import { UAIDelfinCharacter, UAIState } from "./DolphinCharacter";
 import { DolphinChat, ChatMessage } from "./DolphinChat";
-
-const API_BASE = "";
 
 let msgCounter = 0;
 function newId() { return `msg-${++msgCounter}-${Date.now()}`; }
 
+const UAI_BLUE   = "#1e4a9b";
+const UAI_MID    = "#2f5aa6";
+const UAI_LIGHT  = "#4C9FFF";
+const UAI_GLOW   = "rgba(76,159,255,0.22)";
+
 export function DolphinAssistant() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [dolpState, setDolpState] = useState<DolphinState>("idle");
-  const [showBadge, setShowBadge] = useState(true);
-  const greetingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const talkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isOpen, setIsOpen]             = useState(false);
+  const [isMinimized, setIsMinimized]   = useState(false);
+  const [messages, setMessages]         = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue]     = useState("");
+  const [isLoading, setIsLoading]       = useState(false);
+  const [charState, setCharState]       = useState<UAIState>("idle");
+  const [attract, setAttract]           = useState(false);
+  const [hovered, setHovered]           = useState(false);
 
-  // Play greeting when opened
-  useEffect(() => {
-    if (isOpen && !isMinimized) {
-      setShowBadge(false);
-      setDolpState("greeting");
-      greetingTimerRef.current = setTimeout(() => setDolpState("idle"), 2000);
-    }
-    return () => {
-      if (greetingTimerRef.current) clearTimeout(greetingTimerRef.current);
-    };
-  }, [isOpen, isMinimized]);
+  const greetTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const talkTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attractTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Badge pulse after 3s of being closed
+  /* Periodic attract animation when closed */
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => setShowBadge(true), 3000);
-      return () => clearTimeout(t);
+      attractTimer.current = setInterval(() => {
+        setAttract(true);
+        setTimeout(() => setAttract(false), 900);
+      }, 8000);
+    } else {
+      if (attractTimer.current) clearInterval(attractTimer.current);
     }
+    return () => { if (attractTimer.current) clearInterval(attractTimer.current); };
   }, [isOpen]);
 
+  /* Greeting when opened */
+  useEffect(() => {
+    if (isOpen && !isMinimized) {
+      setCharState("greeting");
+      greetTimer.current = setTimeout(() => setCharState("idle"), 2200);
+    }
+    return () => { if (greetTimer.current) clearTimeout(greetTimer.current); };
+  }, [isOpen, isMinimized]);
+
+  /* ── Send logic ── */
   const sendMessage = useCallback(async (text: string) => {
     const content = text.trim();
     if (!content || isLoading) return;
 
-    const userMsg: ChatMessage = {
-      id: newId(),
-      role: "user",
-      content,
-      timestamp: new Date(),
-    };
-
+    const userMsg: ChatMessage = { id: newId(), role: "user", content, timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
     setIsLoading(true);
-    setDolpState("thinking");
+    setCharState("thinking");
 
     try {
-      const res = await fetch(`${API_BASE}/api/assistant/chat`, {
+      const res = await fetch("/api/assistant/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ message: content }),
       });
-
       const data = await res.json();
       const reply = res.ok ? data.reply : (data.error ?? "Error al procesar tu consulta.");
 
-      const assistantMsg: ChatMessage = {
-        id: newId(),
-        role: "assistant",
-        content: reply,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
-      setDolpState("talking");
-      talkTimerRef.current = setTimeout(() => setDolpState("idle"), 2500);
+      setMessages((prev) => [...prev, {
+        id: newId(), role: "assistant", content: reply, timestamp: new Date(),
+      }]);
+      setCharState("talking");
+      talkTimer.current = setTimeout(() => setCharState("idle"), 3000);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: "assistant",
-          content: "Lo siento, no pude conectarme al servidor. Intenta de nuevo.",
-          timestamp: new Date(),
-        },
-      ]);
-      setDolpState("idle");
+      setMessages((prev) => [...prev, {
+        id: newId(), role: "assistant",
+        content: "Lo siento, no pude conectarme al servidor. Intenta de nuevo.",
+        timestamp: new Date(),
+      }]);
+      setCharState("idle");
     } finally {
       setIsLoading(false);
     }
   }, [isLoading]);
 
-  const handleSend = useCallback(() => {
-    sendMessage(inputValue);
-  }, [inputValue, sendMessage]);
+  const handleSend = useCallback(() => sendMessage(inputValue), [inputValue, sendMessage]);
 
-  const handleOpen = () => {
-    setIsOpen(true);
-    setIsMinimized(false);
-  };
+  const handleOpen  = () => { setIsOpen(true);  setIsMinimized(false); };
+  const handleClose = () => { setIsOpen(false); setCharState("idle");  };
+  const handleMinimize = () => setIsMinimized((v) => !v);
 
-  const handleClose = () => {
-    setIsOpen(false);
-    setDolpState("idle");
-  };
+  /* ── Status text ── */
+  const statusText =
+    isLoading      ? "Procesando…"    :
+    charState === "thinking" ? "Analizando…"  :
+    charState === "talking"  ? "Respondiendo…":
+    "En línea";
 
-  const handleMinimize = () => {
-    setIsMinimized((v) => !v);
-  };
+  const statusColor = isLoading ? "#f59e0b" : "#22c55e";
 
+  /* ── Effective char state for the image (with attract override) ── */
+  const effectiveState: UAIState =
+    attract && !isOpen ? "greeting" : charState;
+
+  /* ── Layout ── */
   return (
-    <>
-      {/* ── Floating button (closed state) ── */}
-      {!isOpen && (
-        <button
-          onClick={handleOpen}
-          className="fixed bottom-6 right-6 z-50 group"
-          aria-label="Abrir asistente UAI"
-        >
-          <div className="relative w-16 h-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden bg-white border-2 border-primary/20">
-            <img
-              src={`${import.meta.env.BASE_URL}dolphin-assistant.png`}
-              alt="Ichi"
-              className="w-full h-full object-cover object-top dolphin-idle"
-              draggable={false}
-            />
-          </div>
-          {showBadge && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold animate-bounce">
-              !
-            </span>
-          )}
-          <span className="absolute -top-10 right-0 bg-primary text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none">
-            ¡Pregúntame algo!
-          </span>
-        </button>
-      )}
-
-      {/* ── Assistant panel (open state) ── */}
+    <div
+      style={{
+        position: "fixed",
+        bottom: 24,
+        right: 24,
+        zIndex: 50,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 10,
+        pointerEvents: "none",
+      }}
+    >
+      {/* ════════════════════════════
+          CHAT PANEL (above character)
+          ════════════════════════════ */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex flex-col rounded-2xl shadow-2xl border border-border/40 overflow-hidden transition-all duration-300 origin-bottom-right ${
-            isMinimized ? "w-72 h-14" : "w-80 h-[560px]"
-          }`}
-          style={{ background: "linear-gradient(135deg, #f0f4ff 0%, #ffffff 60%)" }}
+          className="uai-panel-in"
+          style={{
+            width: 360,
+            borderRadius: 20,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.97)",
+            backdropFilter: "blur(24px)",
+            boxShadow: [
+              "0 32px 64px rgba(30,74,155,0.18)",
+              "0 8px 24px rgba(0,0,0,0.10)",
+              "0 0 0 1px rgba(255,255,255,0.6)",
+            ].join(", "),
+            display: "flex",
+            flexDirection: "column",
+            height: isMinimized ? 52 : 460,
+            transition: "height 0.35s cubic-bezier(0.22,1,0.36,1)",
+            pointerEvents: "all",
+          }}
         >
-          {/* Header */}
-          <div className="flex items-center gap-2 px-3 py-2.5 bg-primary text-white shrink-0">
-            <div className="w-7 h-7 rounded-full bg-white/20 overflow-hidden shrink-0">
+          {/* ── Panel header ── */}
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${UAI_BLUE} 0%, ${UAI_MID} 55%, ${UAI_LIGHT} 100%)`,
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexShrink: 0,
+            }}
+          >
+            {/* Logo badge */}
+            <div
+              style={{
+                width: 32, height: 32,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.18)",
+                border: "1.5px solid rgba(255,255,255,0.35)",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
               <img
                 src={`${import.meta.env.BASE_URL}dolphin-assistant.png`}
                 alt=""
-                className="w-full h-full object-cover object-top"
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold leading-none">Ichi — Asistente UAI</p>
-              <p className="text-[10px] text-white/70 mt-0.5">
-                {isLoading ? "Pensando…" : dolpState === "talking" ? "Respondiendo…" : "En línea"}
-              </p>
+
+            {/* Title */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{
+                  fontWeight: 900, fontSize: 13, color: "white",
+                  letterSpacing: "0.08em", fontFamily: "inherit",
+                }}>
+                  UAIDELFIN
+                </span>
+                <Sparkles size={11} color="rgba(255,255,255,0.7)" />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: statusColor,
+                  display: "inline-block",
+                  boxShadow: `0 0 6px ${statusColor}`,
+                  animation: "pulse 2s ease-in-out infinite",
+                }} />
+                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.72)" }}>{statusText}</span>
+              </div>
             </div>
+
+            {/* Controls */}
             <button
               onClick={handleMinimize}
-              className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/20 transition-colors"
               title={isMinimized ? "Expandir" : "Minimizar"}
+              style={{
+                width: 26, height: 26, borderRadius: 8,
+                background: "rgba(255,255,255,0.12)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
             >
-              <Minimize2 className="w-3.5 h-3.5" />
+              <ChevronDown size={13} color="white" style={{ transform: isMinimized ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
             </button>
             <button
               onClick={handleClose}
-              className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/20 transition-colors"
               title="Cerrar"
+              style={{
+                width: 26, height: 26, borderRadius: 8,
+                background: "rgba(255,255,255,0.12)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(220,50,50,0.4)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
             >
-              <X className="w-3.5 h-3.5" />
+              <X size={13} color="white" />
             </button>
           </div>
 
-          {/* Body (hidden when minimized) */}
+          {/* ── Chat body ── */}
           {!isMinimized && (
-            <>
-              {/* Dolphin character */}
-              <div className="flex justify-center pt-3 pb-1 shrink-0">
-                <DolphinCharacter state={dolpState} size={120} />
-              </div>
-
-              {/* Status label */}
-              <div className="text-center pb-2 shrink-0">
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-white/70 px-2.5 py-0.5 rounded-full border border-border/30">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isLoading ? "bg-amber-400 animate-pulse" : "bg-green-400"
-                    }`}
-                  />
-                  {isLoading ? "Procesando consulta…" : "Listo para ayudarte"}
-                </span>
-              </div>
-
-              {/* Divider */}
-              <div className="h-px bg-border/30 mx-3 shrink-0" />
-
-              {/* Chat */}
-              <DolphinChat
-                messages={messages}
-                inputValue={inputValue}
-                isLoading={isLoading}
-                onInputChange={setInputValue}
-                onSend={handleSend}
-                onSendText={sendMessage}
-              />
-            </>
+            <DolphinChat
+              messages={messages}
+              inputValue={inputValue}
+              isLoading={isLoading}
+              onInputChange={setInputValue}
+              onSend={handleSend}
+              onSendText={sendMessage}
+            />
           )}
         </div>
       )}
-    </>
+
+      {/* ════════════════════════════════════════════
+          CHARACTER STAGE — always visible, always free
+          ════════════════════════════════════════════ */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: 180,
+          cursor: "pointer",
+          pointerEvents: "all",
+          position: "relative",
+        }}
+        onClick={isOpen ? undefined : handleOpen}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        role="button"
+        aria-label={isOpen ? undefined : "Abrir UAIDELFIN"}
+        tabIndex={isOpen ? -1 : 0}
+        onKeyDown={(e) => { if (e.key === "Enter" && !isOpen) handleOpen(); }}
+      >
+        {/* Glow aura behind character */}
+        <div
+          style={{
+            position: "absolute",
+            inset: "-20px -20px 10px",
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse 120% 110% at 50% 55%, ${UAI_GLOW} 0%, rgba(47,90,166,0.08) 55%, transparent 75%)`,
+            pointerEvents: "none",
+          }}
+          className="uai-glow-ring"
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: "-35px -35px 5px",
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse 130% 120% at 50% 55%, rgba(76,159,255,0.08) 0%, transparent 65%)`,
+            pointerEvents: "none",
+          }}
+          className="uai-glow-ring2"
+        />
+
+        {/* Hover tooltip (only when closed) */}
+        {!isOpen && hovered && (
+          <div
+            style={{
+              position: "absolute",
+              top: -44,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: `linear-gradient(135deg, ${UAI_BLUE} 0%, ${UAI_LIGHT} 100%)`,
+              color: "white",
+              fontSize: 11.5,
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: 20,
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 16px rgba(47,90,166,0.35)",
+              pointerEvents: "none",
+              zIndex: 10,
+            }}
+          >
+            ¡Hola! ¿En qué te ayudo? ✨
+            {/* Caret */}
+            <div style={{
+              position: "absolute",
+              bottom: -5, left: "50%",
+              transform: "translateX(-50%)",
+              width: 10, height: 10,
+              background: UAI_LIGHT,
+              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+            }} />
+          </div>
+        )}
+
+        {/* ── The character itself ── */}
+        <UAIDelfinCharacter
+          state={effectiveState}
+          size={isOpen ? 140 : 160}
+        />
+
+        {/* UAIDELFIN identity label */}
+        <div
+          style={{
+            marginTop: 6,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${UAI_BLUE} 0%, ${UAI_LIGHT} 100%)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              fontWeight: 900,
+              fontSize: 11,
+              letterSpacing: "0.22em",
+              fontFamily: "inherit",
+              textTransform: "uppercase",
+            }}
+          >
+            UAIDELFIN
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: statusColor,
+              boxShadow: `0 0 6px ${statusColor}`,
+              display: "inline-block",
+            }} />
+            <span style={{ fontSize: 9.5, color: "#6b7280", fontWeight: 500 }}>
+              {statusText}
+            </span>
+          </div>
+        </div>
+
+        {/* Click indicator dots (closed state only) */}
+        {!isOpen && (
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              marginTop: 6,
+              opacity: hovered ? 1 : 0.4,
+              transition: "opacity 0.3s",
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: 4, height: 4,
+                  borderRadius: "50%",
+                  background: UAI_MID,
+                  opacity: 0.6,
+                  animation: `uai-dot 1.3s ease-in-out infinite`,
+                  animationDelay: `${i * 0.25}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

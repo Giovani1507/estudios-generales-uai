@@ -281,116 +281,153 @@
   }
 }
 
-/* ─── Dolphin Assistant Animations ─────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   UAIDELFIN — Sistema de Animaciones del Personaje Principal
+   Arquitectura: capas composited (float → breathe → sway → char)
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Full-body hop: launch → stretch → peak → fall → squash-land → recover */
-@keyframes dolphin-hop {
-  0% {
-    transform: translateY(0px) scaleX(1) scaleY(1) rotate(0deg);
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  12% {
-    transform: translateY(-6px) scaleX(0.88) scaleY(1.14) rotate(-6deg);
-    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
-  }
-  38% {
-    transform: translateY(-34px) scaleX(0.92) scaleY(1.08) rotate(7deg);
-    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
-  }
-  65% {
-    transform: translateY(-8px) scaleX(1.1) scaleY(0.9) rotate(-4deg);
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  76% {
-    transform: translateY(0px) scaleX(1.18) scaleY(0.82) rotate(0deg);
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  88% {
-    transform: translateY(-8px) scaleX(0.96) scaleY(1.04) rotate(3deg);
-  }
-  100% {
-    transform: translateY(0px) scaleX(1) scaleY(1) rotate(0deg);
-  }
+/* ── Capa 1: Flotación vertical (wrapper exterior) ── */
+@keyframes uai-float {
+  0%, 100% { transform: translateY(0px);   }
+  30%       { transform: translateY(-9px);  }
+  60%       { transform: translateY(-14px); }
+  80%       { transform: translateY(-7px);  }
 }
 
-/* Lateral sway between hops for a lively walking feel */
-@keyframes dolphin-sway {
-  0%, 100% { transform: rotate(-4deg); }
-  50%       { transform: rotate(4deg); }
+/* ── Capa 2: Respiración / escala (wrapper medio) ── */
+@keyframes uai-breathe {
+  0%, 100% { transform: scale(1.000); }
+  35%       { transform: scale(1.030); }
+  70%       { transform: scale(1.018); }
 }
 
-@keyframes dolphin-greet {
-  0%   { transform: translateY(0px) rotate(0deg) scaleX(1) scaleY(1); }
-  8%   { transform: translateY(-10px) rotate(-18deg) scaleX(0.86) scaleY(1.16); }
-  22%  { transform: translateY(-28px) rotate(22deg) scaleX(0.91) scaleY(1.09); }
-  38%  { transform: translateY(-22px) rotate(-16deg) scaleX(0.88) scaleY(1.12); }
-  52%  { transform: translateY(-18px) rotate(14deg) scaleX(0.93) scaleY(1.07); }
-  65%  { transform: translateY(-10px) rotate(-8deg) scaleX(0.97) scaleY(1.03); }
-  80%  { transform: translateY(-4px) rotate(5deg) scaleX(0.99) scaleY(1.01); }
-  100% { transform: translateY(0px) rotate(0deg) scaleX(1) scaleY(1); }
+/* ── Capa 3: Balanceo lateral (wrapper interno) ── */
+@keyframes uai-sway {
+  0%    { transform: rotate(-2.5deg); }
+  28%   { transform: rotate(-0.5deg); }
+  55%   { transform: rotate(2.8deg);  }
+  80%   { transform: rotate(1.2deg);  }
+  100%  { transform: rotate(-2.5deg); }
 }
 
-@keyframes dolphin-think {
-  0%   { transform: translateX(-5px) rotate(-8deg) scaleY(1); }
-  25%  { transform: translateX(3px)  rotate(5deg)  scaleY(1.03); }
-  50%  { transform: translateX(-4px) rotate(-6deg) scaleY(0.98); }
-  75%  { transform: translateX(4px)  rotate(7deg)  scaleY(1.02); }
-  100% { transform: translateX(-5px) rotate(-8deg) scaleY(1); }
+/* ── SALUDO: salto acrobático + rebote ── */
+@keyframes uai-greet {
+  0%   { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);   }
+  8%   { transform: translateY(-8px) scaleX(0.86) scaleY(1.18) rotate(-12deg); }
+  22%  { transform: translateY(-52px)scaleX(0.91) scaleY(1.10) rotate(22deg);  }
+  38%  { transform: translateY(-40px)scaleX(0.94) scaleY(1.07) rotate(-16deg); }
+  52%  { transform: translateY(-22px)scaleX(1.06) scaleY(0.94) rotate(12deg);  }
+  64%  { transform: translateY(-6px) scaleX(1.14) scaleY(0.86) rotate(-6deg);  }
+  72%  { transform: translateY(0)    scaleX(1.20) scaleY(0.80) rotate(0deg);   }
+  80%  { transform: translateY(-14px)scaleX(0.96) scaleY(1.05) rotate(5deg);   }
+  88%  { transform: translateY(-4px) scaleX(1.03) scaleY(0.97) rotate(-2deg);  }
+  94%  { transform: translateY(-7px) scaleX(0.99) scaleY(1.01) rotate(2deg);   }
+  100% { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);   }
 }
 
-@keyframes dolphin-talk {
-  0%   { transform: translateY(0px)   scaleX(1)    scaleY(1)    rotate(0deg); }
-  15%  { transform: translateY(-12px) scaleX(0.9)  scaleY(1.1)  rotate(-8deg); }
-  30%  { transform: translateY(-5px)  scaleX(1.05) scaleY(0.95) rotate(4deg); }
-  45%  { transform: translateY(-14px) scaleX(0.88) scaleY(1.12) rotate(-6deg); }
-  60%  { transform: translateY(-4px)  scaleX(1.06) scaleY(0.94) rotate(5deg); }
-  75%  { transform: translateY(-10px) scaleX(0.93) scaleY(1.07) rotate(-4deg); }
-  90%  { transform: translateY(-2px)  scaleX(1.02) scaleY(0.98) rotate(2deg); }
-  100% { transform: translateY(0px)   scaleX(1)    scaleY(1)    rotate(0deg); }
+/* ── PENSANDO: inclinación + cabeceo ── */
+@keyframes uai-think {
+  0%   { transform: rotate(-18deg) translateX(-10px) translateY(0px);  }
+  20%  { transform: rotate(-20deg) translateX(-10px) translateY(-5px); }
+  40%  { transform: rotate(-15deg) translateX(-10px) translateY(0px);  }
+  60%  { transform: rotate(-20deg) translateX(-10px) translateY(-4px); }
+  80%  { transform: rotate(-16deg) translateX(-10px) translateY(0px);  }
+  100% { transform: rotate(-18deg) translateX(-10px) translateY(0px);  }
 }
 
-@keyframes thinking-dot {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40%           { transform: scale(1.1); opacity: 1; }
+/* ── HABLANDO: bote enérgico expresivo ── */
+@keyframes uai-talk {
+  0%   { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);  }
+  10%  { transform: translateY(-20px)scaleX(0.89) scaleY(1.13) rotate(-11deg);}
+  22%  { transform: translateY(-6px) scaleX(1.07) scaleY(0.93) rotate(7deg);  }
+  34%  { transform: translateY(-24px)scaleX(0.87) scaleY(1.15) rotate(-9deg); }
+  46%  { transform: translateY(-8px) scaleX(1.06) scaleY(0.94) rotate(8deg);  }
+  58%  { transform: translateY(-18px)scaleX(0.91) scaleY(1.11) rotate(-7deg); }
+  70%  { transform: translateY(-4px) scaleX(1.05) scaleY(0.95) rotate(5deg);  }
+  82%  { transform: translateY(-14px)scaleX(0.93) scaleY(1.08) rotate(-5deg); }
+  92%  { transform: translateY(-2px) scaleX(1.02) scaleY(0.98) rotate(2deg);  }
+  100% { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);  }
 }
 
-/* Shadow that squashes/stretches with the hop */
-@keyframes dolphin-shadow {
-  0%, 100% { transform: scaleX(1); opacity: 0.3; }
-  38%      { transform: scaleX(0.5); opacity: 0.12; }
-  76%      { transform: scaleX(1.25); opacity: 0.45; }
+/* ── EMOCIONADO: presenta opciones con energía ── */
+@keyframes uai-excited {
+  0%   { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);  }
+  12%  { transform: translateY(-35px)scaleX(0.85) scaleY(1.18) rotate(-18deg);}
+  26%  { transform: translateY(-16px)scaleX(1.10) scaleY(0.90) rotate(14deg); }
+  40%  { transform: translateY(-28px)scaleX(0.88) scaleY(1.13) rotate(-12deg);}
+  54%  { transform: translateY(-10px)scaleX(1.08) scaleY(0.92) rotate(10deg); }
+  68%  { transform: translateY(-22px)scaleX(0.91) scaleY(1.10) rotate(-8deg); }
+  80%  { transform: translateY(-6px) scaleX(1.05) scaleY(0.95) rotate(5deg);  }
+  90%  { transform: translateY(-15px)scaleX(0.94) scaleY(1.07) rotate(-4deg); }
+  100% { transform: translateY(0)    scaleX(1)    scaleY(1)    rotate(0deg);  }
 }
 
-.dolphin-char {
+/* ── Aura / halo de brillo pulsante ── */
+@keyframes uai-glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1.00); }
+  50%       { opacity: 0.70; transform: scale(1.10); }
+}
+
+/* ── Segundo anillo de brillo (desfasado) ── */
+@keyframes uai-glow-ring2 {
+  0%, 100% { opacity: 0.15; transform: scale(1.00); }
+  50%       { opacity: 0.40; transform: scale(1.18); }
+}
+
+/* ── Panel de chat: entrada deslizante ── */
+@keyframes uai-panel-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1.00); }
+}
+
+/* ── Puntos de "pensando" ── */
+@keyframes uai-dot {
+  0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; }
+  40%           { transform: scale(1.10); opacity: 1.00; }
+}
+
+/* ── Atracción periódica (microwiggle para llamar atención) ── */
+@keyframes uai-attract {
+  0%, 100% { transform: rotate(0deg); }
+  15%       { transform: rotate(-12deg) scale(1.08); }
+  30%       { transform: rotate(12deg)  scale(1.08); }
+  45%       { transform: rotate(-8deg); }
+  60%       { transform: rotate(8deg);  }
+  75%       { transform: rotate(-4deg); }
+  88%       { transform: rotate(4deg);  }
+}
+
+/* ════════════════════════════════════════════════
+   Clases de aplicación
+   ════════════════════════════════════════════════ */
+
+/* Capas composited para estado idle */
+.uai-float-layer   { animation: uai-float   3.4s ease-in-out infinite; }
+.uai-breathe-layer { animation: uai-breathe 2.6s ease-in-out infinite; }
+.uai-sway-layer    { animation: uai-sway    4.2s ease-in-out infinite; }
+
+/* El img en sí — sólo transform-origin */
+.uai-char {
   will-change: transform;
+  transform-origin: bottom center;
 }
 
-.dolphin-idle {
-  animation: dolphin-hop 1.05s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-}
+/* Estados de interacción (aplicados directamente al img) */
+.uai-greeting { animation: uai-greet   1.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.uai-thinking { animation: uai-think   1.0s ease-in-out infinite; }
+.uai-talking  { animation: uai-talk    0.50s ease-in-out infinite; }
+.uai-excited  { animation: uai-excited 0.65s ease-in-out infinite; }
+.uai-attract  { animation: uai-attract 0.80s ease-in-out 1 forwards; }
 
-.dolphin-greeting {
-  animation: dolphin-greet 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+/* Aura glows */
+.uai-glow-ring  { animation: uai-glow-pulse 2.8s ease-in-out infinite; }
+.uai-glow-ring2 { animation: uai-glow-ring2 2.8s ease-in-out infinite 1.4s; }
 
-.dolphin-thinking {
-  animation: dolphin-think 0.75s ease-in-out infinite;
-}
+/* Panel de chat */
+.uai-panel-in { animation: uai-panel-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-.dolphin-talking {
-  animation: dolphin-talk 0.48s ease-in-out infinite;
-}
-
-.thinking-dot {
-  animation: thinking-dot 1.2s ease-in-out infinite;
+/* Puntos pensando */
+.uai-thinking-dot {
   display: inline-block;
-}
-
-.dolphin-shadow {
-  width: 50%;
-  height: 6px;
-  background: radial-gradient(ellipse, rgba(47,90,166,0.4) 0%, transparent 70%);
-  border-radius: 50%;
-  margin: 0 auto;
-  animation: dolphin-shadow 1.05s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: uai-dot 1.3s ease-in-out infinite;
 }
