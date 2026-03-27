@@ -189,31 +189,44 @@ export default function DocentesRegistro() {
       });
     } catch { /* logo optional */ }
 
-    const show25 = fHoras === "2025" || fHoras === "all";
-    const show26 = fHoras === "2026" || fHoras === "all" || fHoras === "menos12";
-
+    // Print always shows BOTH periods so the reader sees full history
     const theadCols = [
-      `<th style="width:30px">#</th>`,
-      `<th style="width:95px">DNI</th>`,
-      `<th>Apellidos y Nombres</th>`,
-      ...(show25 ? [`<th>Programa 2025-2</th>`,`<th style="width:75px">Cond. 2025</th>`,`<th style="width:50px;text-align:center">H.25</th>`] : []),
-      ...(show26 ? [`<th>Programa 2026-1</th>`,`<th style="width:75px">Cond. 2026</th>`,`<th style="width:50px;text-align:center">H.26</th>`] : []),
-      `<th>Observaciones</th>`,
+      `<th style="width:28px">#</th>`,
+      `<th style="width:90px">DNI</th>`,
+      `<th style="min-width:160px">Apellidos y Nombres</th>`,
+      `<th style="width:55px;text-align:center;background:#1a4080">Cond.<br/>1er Per.</th>`,
+      `<th style="width:42px;text-align:center;background:#1a4080">H.<br/>2025</th>`,
+      `<th style="width:55px;text-align:center;background:#3a6fba">Cond.<br/>2do Per.</th>`,
+      `<th style="width:42px;text-align:center;background:#3a6fba">H.<br/>2026</th>`,
+      `<th>Programa 2026-1</th>`,
+      `<th style="width:80px">Observaciones</th>`,
     ].join("");
 
     const tbodyRows = filtered.map((d, i) => {
+      const h25 = Number(d.horas25 || 0);
       const h26 = Number(d.horas26 || 0);
       const isLow = h26 > 0 && h26 < 12;
+
+      const h25Cell = h25 > 0
+        ? `<td style="text-align:center;font-weight:600;color:#2f5aa6">${h25} H</td>`
+        : `<td style="text-align:center;color:#bbb">—</td>`;
       const h26Cell = h26 > 0
-        ? `<td style="text-align:center;font-weight:700;color:${isLow ? "#dc2626" : "#2f5aa6"}">${h26}${isLow ? " ⚠" : ""}</td>`
-        : `<td style="text-align:center;color:#999">—</td>`;
-      return `<tr style="${isLow ? "background:#fff5f5" : i%2===0?"":"background:#f8f9fb"}">
-        <td style="text-align:center;color:#888">${i+1}</td>
-        <td style="font-family:monospace">${d.dni || ""}</td>
+        ? `<td style="text-align:center;font-weight:700;color:${isLow ? "#dc2626" : "#2f5aa6"}">${h26} H</td>`
+        : `<td style="text-align:center;color:#bbb">—</td>`;
+
+      const cond25 = d.condicion25 || "—";
+      const cond26 = d.condicion26 || "—";
+
+      return `<tr style="${isLow ? "background:#fff5f5" : i%2===0?"":"background:#f7f9fc"}">
+        <td style="text-align:center;color:#999;font-size:9px">${i+1}</td>
+        <td style="font-family:monospace;font-size:10px">${d.dni || ""}</td>
         <td style="font-weight:500">${d.nombre || ""}</td>
-        ${show25 ? `<td style="font-size:10px">${d.programa25||"—"}</td><td style="font-size:10px">${d.condicion25||"—"}</td><td style="text-align:center">${d.horas25||"—"}</td>` : ""}
-        ${show26 ? `<td style="font-size:10px">${d.programa26||"—"}</td><td style="font-size:10px">${d.condicion26||"—"}</td>${h26Cell}` : ""}
-        <td style="font-size:10px;color:#666">${d.observaciones||""}</td>
+        <td style="text-align:center;font-size:10px;color:#1a4080;font-weight:600">${cond25}</td>
+        ${h25Cell}
+        <td style="text-align:center;font-size:10px;color:#3a6fba;font-weight:600">${cond26}</td>
+        ${h26Cell}
+        <td style="font-size:10px;color:#555">${d.programa26||d.programa25||"—"}</td>
+        <td style="font-size:9px;color:#888">${d.observaciones||""}</td>
       </tr>`;
     }).join("");
 
@@ -254,7 +267,15 @@ export default function DocentesRegistro() {
   <div class="meta-item"><strong>Generado</strong>${today}</div>
 </div>
 <table>
-  <thead><tr>${theadCols}</tr></thead>
+  <thead>
+    <tr>
+      <th colspan="3" style="background:#fff;border-bottom:2px solid #2f5aa6"></th>
+      <th colspan="2" style="background:#1a4080;text-align:center;font-size:9px;letter-spacing:.5px;border-right:1px solid #2f5aa6">1er PERÍODO · 2025-2</th>
+      <th colspan="2" style="background:#3a6fba;text-align:center;font-size:9px;letter-spacing:.5px;border-right:1px solid #5585cc">2do PERÍODO · 2026-1</th>
+      <th colspan="2" style="background:#2f5aa6;border-bottom:2px solid #2f5aa6"></th>
+    </tr>
+    <tr>${theadCols}</tr>
+  </thead>
   <tbody>${tbodyRows}</tbody>
 </table>
 <div class="footer">Sistema de Gestión Académica · Universidad Autónoma de Ica · 2026</div>
