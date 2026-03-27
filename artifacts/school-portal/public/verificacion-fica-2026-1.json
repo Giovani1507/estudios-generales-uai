@@ -1,0 +1,1918 @@
+{
+  "generado": "2026-03-27T16:34:30.876Z",
+  "resumen": {
+    "totalEnPlanificacion": 258,
+    "totalEnRegistro": 280,
+    "enAmbos": 258,
+    "enPlanNoRegistro": 0,
+    "enRegistroSinPlan": 71
+  },
+  "enPlanNoRegistro": [],
+  "enRegistroSinPlan": [
+    {
+      "dni": 15612374,
+      "nombre": "ALTAMIRANO JULCA YAMANDU DAUBERT",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 44371485,
+      "nombre": "ANCAJIMA RUIZ ANDREA BETTY",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 21553760,
+      "nombre": "APARCANA HERNANDEZ JOSE CARLOS",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 40385643,
+      "nombre": "ARREDONDO ZELA SONIA OLIVIA",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 21416373,
+      "nombre": "BARRIOS GABRIEL SONIA EDITH",
+      "programa": "INGENIERÍA CIVIL - EEGG"
+    },
+    {
+      "dni": 46909673,
+      "nombre": "BLANCO MANOSALVA FRANKLIN",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 9640297,
+      "nombre": "BRIZUELA LOPEZ MARIELLA PILAR",
+      "programa": "CONTABILIDAD - EEGG"
+    },
+    {
+      "dni": 21787403,
+      "nombre": "CAMPOS MARTINEZ HERNANDO MARTIN",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 44850406,
+      "nombre": "CAMPOS SOBRINO MARIANA ALEJANDRA",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 70442167,
+      "nombre": "CAMPOS SOBRINO MEDALITH DEL ROCIO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 70442166,
+      "nombre": "CAMPOS SOBRINO MORAYMA DEL ROSARIO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 15727165,
+      "nombre": "CANALES INGA WENDY VIVIANA",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 40679546,
+      "nombre": "CARBAJAL MOQUILLAZA LUISA ROSA",
+      "programa": "CONTABILIDAD"
+    },
+    {
+      "dni": 41845220,
+      "nombre": "CASTRO VILCAPUMA NATHIA ERIKA",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 45601701,
+      "nombre": "CHAUCA TAPIA PAMELA AZUCENA",
+      "programa": "CONTABILIDAD"
+    },
+    {
+      "dni": 40965725,
+      "nombre": "COLQUEPISCO PAUCAR NILO TEODORICO",
+      "programa": "INGENIERÍA CIVIL - EEGG"
+    },
+    {
+      "dni": 41350063,
+      "nombre": "CONTRERAS ORELLANA JESSICA GLADYS",
+      "programa": "INGENIERÍA DE SISTEMAS"
+    },
+    {
+      "dni": 44946093,
+      "nombre": "CORDOVA NORIEGA LEYLA ELSA",
+      "programa": "CONTABILIDAD - EEGG"
+    },
+    {
+      "dni": 15586796,
+      "nombre": "DIAZ BAZALAR WILLIAM JESUS",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 44369968,
+      "nombre": "ERAZO CAMACHO MILTON ROYER",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 42240194,
+      "nombre": "ESPINOZA FAJARDO YULIANA KARINA",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 10143243,
+      "nombre": "FELIX PACHAS HILDA LUZMILA",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 21859822,
+      "nombre": "FUENTES VASQUEZ MIGUEL ANGEL",
+      "programa": "INGENIERÍA CIVIL - EEGG"
+    },
+    {
+      "dni": 16799025,
+      "nombre": "GARCIA MERINO LUIS SANTIAGO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 7754590,
+      "nombre": "GARCIA RODRIGUEZ JULIO GUSTAVO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 15722656,
+      "nombre": "GIRONZINI PECHIAROVICH DAVID ALDO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 70306751,
+      "nombre": "HERNANDEZ ESPINO RAUL JONATHAN",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 21870327,
+      "nombre": "HERNANDEZ FELIX JACINTO JULIO CESAR",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 42714271,
+      "nombre": "HERNANDEZ PASACHE FARITZA LISSET",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 70654853,
+      "nombre": "HOCES AZAÑERO REYNALDO EMILIO",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 44081226,
+      "nombre": "JARA ZAMUDIO KELVIN LUCIO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 73605215,
+      "nombre": "JUNCO QUIJANDRIA ISMAEL ALONSO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 21804750,
+      "nombre": "LEVANO AVALOS JUAN ALEJANDRO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 42573866,
+      "nombre": "MARTINEZ LOZA CYNTHIA PAMELA",
+      "programa": "INGENIERÍA INDUSTRIAL - EEGG"
+    },
+    {
+      "dni": 10552634,
+      "nombre": "MAYTA FRANCIA JOSE LUIS REYNALDO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 43889486,
+      "nombre": "MELGAR CUCHO JORGE LUIS",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 80328544,
+      "nombre": "MILLA SAMILLAN MIGUEL ANGEL",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 40804375,
+      "nombre": "MOQUILLAZA ALCA CARMEN ROSA",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 70396979,
+      "nombre": "MOSCOSO ALFARO JHONY VICTOR DANIEL",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 43373909,
+      "nombre": "MUNAICO CASTILLA JIMMY YVAN",
+      "programa": "INGENIERÍA INDUSTRIAL - EEGG"
+    },
+    {
+      "dni": 21887577,
+      "nombre": "OCHOA CARBAJAL HERNAN",
+      "programa": "INGENIERÍA INDUSTRIAL - EEGG"
+    },
+    {
+      "dni": 71051647,
+      "nombre": "PACHECO TAMARIZ JEAN PIERRE",
+      "programa": "INGENIERÍA DE SISTEMAS"
+    },
+    {
+      "dni": 44027232,
+      "nombre": "PINO ANCHANTE EDUARDO ORESTE",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 21882544,
+      "nombre": "POZO CANALES JOEL EMILIO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 7217994,
+      "nombre": "QUIJANDRIA IZQUIERDO VICTOR FERNANDO",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 47025642,
+      "nombre": "QUISPE PEÑA HUMBERTO GABRIEL",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 7757185,
+      "nombre": "RAMOS ESCAJADILLO XENIA KARIN",
+      "programa": "INGENIERÍA INDUSTRIAL - EEGG"
+    },
+    {
+      "dni": 43189097,
+      "nombre": "RAMOS HUAMAN WILFREDO ARTURO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 43673314,
+      "nombre": "REJAS HERNANDEZ JOSE LUIS",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 9217078,
+      "nombre": "ROBLADILLO BRAVO LIZ MARIBEL",
+      "programa": "CONTABILIDAD"
+    },
+    {
+      "dni": 70768072,
+      "nombre": "ROBLES CABRERA YOVER ELVIS",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 15615916,
+      "nombre": "ROBLES HOCES CONSUELO JESUS",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 9714041,
+      "nombre": "ROJAS HILARIO ORLANDO DESIDERIO",
+      "programa": "INGENIERÍA CIVIL"
+    },
+    {
+      "dni": 22252993,
+      "nombre": "ROJAS PAUCAR CLETO MARCELINO",
+      "programa": "INGENIERÍA CIVIL - EEGG"
+    },
+    {
+      "dni": 44565506,
+      "nombre": "ROJAS RUIZ FRANCISCO BERNARDINO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 21870533,
+      "nombre": "SARAVIA YATACO CARMEN ROSA",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 41943420,
+      "nombre": "SOLIS YACTAYO ALEX MARCELINO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 43374447,
+      "nombre": "SUAREZ QUIROZ RONAL ELVIS",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 21780173,
+      "nombre": "TALLA LINDERMAN MAGDALENA CECILIA",
+      "programa": "INGENIERÍA DE SISTEMAS"
+    },
+    {
+      "dni": 73816015,
+      "nombre": "TATAJE CONTRERAS ALLISON HERNANDO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 42023266,
+      "nombre": "TORRES FELICIANO LUIS FELIX",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 42150777,
+      "nombre": "TORRES SOTELO CESAR IVAN",
+      "programa": "ARQUITECTURA - EEGG"
+    },
+    {
+      "dni": 75010564,
+      "nombre": "URDAY ESCOBAR ESTEFANY ALMENDRA",
+      "programa": "INGENIERÍA CIVIL"
+    },
+    {
+      "dni": 22275169,
+      "nombre": "VALDIVIEZO GUEVARA MARLITT",
+      "programa": "INGENIERÍA INDUSTRIAL - EEGG"
+    },
+    {
+      "dni": 44128134,
+      "nombre": "VALVERDE RODRÍGUEZ WILMER EDWIN",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 15714311,
+      "nombre": "VASQUEZ TREJO CESAR WILFREDO",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 42940129,
+      "nombre": "VELASQUEZ MEDINA MARTIN ISIDRO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 46614264,
+      "nombre": "VILLAVERDE LUCANA DANITZA SUSAN",
+      "programa": "DERECHO - EEGG"
+    },
+    {
+      "dni": 2695140,
+      "nombre": "YARLEQUE MORANTE FRANCISCO JAVIER",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 21535273,
+      "nombre": "ZAPATA GRIMALDO ROSSANA ARACELI",
+      "programa": "INGENIERÍA CIVIL"
+    },
+    {
+      "dni": 43753047,
+      "nombre": "ZAVALA ARIAS CINTIA ROSA",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    }
+  ],
+  "enAmbos": [
+    {
+      "dni": 26629386,
+      "nombre": "ABANTO MERINO LUIS ALFREDO",
+      "programa": "AF",
+      "registroNombre": "ABANTO MERINO LUIS ALFREDO"
+    },
+    {
+      "dni": 8689170,
+      "nombre": "ACERO CARDENAS ANA MARIA",
+      "programa": "IN",
+      "registroNombre": "ACERO CARDENAS ANA MARIA"
+    },
+    {
+      "dni": 21814921,
+      "nombre": "AGUADO APOLAYA RAUL HERNANDO",
+      "programa": "IN",
+      "registroNombre": "AGUADO APOLAYA RAUL HERNANDO"
+    },
+    {
+      "dni": 21522173,
+      "nombre": "AGUIRRE ESPINOZA MONICA WENDY",
+      "programa": "DE",
+      "registroNombre": "AGUIRRE ESPINOZA MONICA WENDY"
+    },
+    {
+      "dni": 41461731,
+      "nombre": "ALFARO CAYLLAHUA CARLOS HUGO",
+      "programa": "IC",
+      "registroNombre": "ALFARO CAYLLAHUA CARLOS HUGO"
+    },
+    {
+      "dni": 21814775,
+      "nombre": "ALMEYDA AVALOS CESAR AUGUSTO",
+      "programa": "DE",
+      "registroNombre": "ALMEYDA AVALOS CESAR AUGUSTO"
+    },
+    {
+      "dni": 21783999,
+      "nombre": "ALMEYDA CARBAJAL JOSE ARMANDO",
+      "programa": "IN",
+      "registroNombre": "ALMEYDA CARBAJAL JOSE ARMANDO"
+    },
+    {
+      "dni": 41074586,
+      "nombre": "ALMEYDA MAGALLANES JESUS NEMESIO",
+      "programa": "IN",
+      "registroNombre": "ALMEYDA MAGALLANES JESUS NEMESIO"
+    },
+    {
+      "dni": 45912781,
+      "nombre": "ALMEYDA MORENO JOSE JOSE",
+      "programa": "AR",
+      "registroNombre": "ALMEYDA MORENO JOSE JOSE"
+    },
+    {
+      "dni": 43650447,
+      "nombre": "AMORETTI ARTEAGA ALEJANDRA GUADALUPE",
+      "programa": "CA",
+      "registroNombre": "AMORETTI ARTEAGA ALEJANDRA GUADALUPE"
+    },
+    {
+      "dni": 45493343,
+      "nombre": "ANAMPA ZAMORA SILVIA MARILU",
+      "programa": "IN",
+      "registroNombre": "ANAMPA ZAMORA SILVIA MARILU"
+    },
+    {
+      "dni": 71431209,
+      "nombre": "ANDRADE GONZALES VICTOR MANUEL",
+      "programa": "DE",
+      "registroNombre": "ANDRADE GONZALES VICTOR MANUEL"
+    },
+    {
+      "dni": 44435992,
+      "nombre": "ANICAMA NAVARRETE EVELYN ALINA",
+      "programa": "IN",
+      "registroNombre": "ANICAMA NAVARRETE EVELYN ALINA"
+    },
+    {
+      "dni": 45879356,
+      "nombre": "ANICAMA QUISIVERDE GERALDINE ISABEL",
+      "programa": "IC",
+      "registroNombre": "ANICAMA QUISIVERDE GERALDINE ISABEL"
+    },
+    {
+      "dni": 72049382,
+      "nombre": "APAZA CHINO GRIMALDO",
+      "programa": "DE",
+      "registroNombre": "APAZA CHINO GRIMALDO"
+    },
+    {
+      "dni": 21865174,
+      "nombre": "ARIAS LOPEZ SILVIA LUISA",
+      "programa": "DE",
+      "registroNombre": "ARIAS LOPEZ SILVIA LUISA"
+    },
+    {
+      "dni": 44933501,
+      "nombre": "AYLLON CARDENAS MARIELA LISSETH",
+      "programa": "AF",
+      "registroNombre": "AYLLON CARDENAS MARIELA LISSETH"
+    },
+    {
+      "dni": 29726614,
+      "nombre": "BAHAMONDES GARCIA SINOE GEOFREY",
+      "programa": "IS",
+      "registroNombre": "BAHAMONDES GARCIA SINOE GEOFREY"
+    },
+    {
+      "dni": 41973116,
+      "nombre": "BALBUENA CARRASCO LUIS ANTONIO",
+      "programa": "DE",
+      "registroNombre": "BALBUENA CARRASCO LUIS ANTONIO"
+    },
+    {
+      "dni": 21884864,
+      "nombre": "BARRERA SIGUAS EDGAR DANIEL",
+      "programa": "DE",
+      "registroNombre": "BARRERA SIGUAS EDGAR DANIEL"
+    },
+    {
+      "dni": 40978490,
+      "nombre": "BARTRA BAUTISTA MADELEINE KARIN",
+      "programa": "DE",
+      "registroNombre": "BARTRA BAUTISTA MADELEINE KARIN"
+    },
+    {
+      "dni": 7253926,
+      "nombre": "BECERRA GUTIERREZ ETHEEL ROMILA",
+      "programa": "AE",
+      "registroNombre": "BECERRA GUTIERREZ ETHEEL ROMILA"
+    },
+    {
+      "dni": 41060828,
+      "nombre": "BEJARANO PEREZ JUDITH ROSSANA",
+      "programa": "AR",
+      "registroNombre": "BEJARANO PEREZ JUDITH ROSSANA"
+    },
+    {
+      "dni": 8222581,
+      "nombre": "BENAVIDES MIKKELSEN JORGE LUIS",
+      "programa": "IN",
+      "registroNombre": "BENAVIDES MIKKELSEN JORGE LUIS"
+    },
+    {
+      "dni": 40012522,
+      "nombre": "BENDEZU HERNANDEZ JAVIER ORLANDO",
+      "programa": "IN",
+      "registroNombre": "BENDEZU HERNANDEZ JAVIER ORLANDO"
+    },
+    {
+      "dni": 15607309,
+      "nombre": "BERRIOS VEGA CARMEN LUZ",
+      "programa": "DE",
+      "registroNombre": "BERRIOS VEGA CARMEN LUZ"
+    },
+    {
+      "dni": 21576727,
+      "nombre": "BUENDIA APARCANA ROBERTO REYMUNDO",
+      "programa": "AF",
+      "registroNombre": "BUENDIA APARCANA ROBERTO REYMUNDO"
+    },
+    {
+      "dni": 70108675,
+      "nombre": "BUITRON LLACSA JOSE MANUEL",
+      "programa": "DE",
+      "registroNombre": "BUITRON LLACSA JOSE MANUEL"
+    },
+    {
+      "dni": 21854029,
+      "nombre": "BUSTAMANTE MATEO MARIA YSABEL",
+      "programa": "IN",
+      "registroNombre": "BUSTAMANTE MATEO MARIA YSABEL"
+    },
+    {
+      "dni": 41536992,
+      "nombre": "CABEZA MOLINA LUIS FELIPE",
+      "programa": "DE",
+      "registroNombre": "CABEZA MOLINA LUIS FELIPE"
+    },
+    {
+      "dni": 21505996,
+      "nombre": "CABRERA HUAMAN GISELLA ROSA",
+      "programa": "AE",
+      "registroNombre": "CABRERA HUAMAN GISELLA ROSA"
+    },
+    {
+      "dni": 44296086,
+      "nombre": "CABRERA ZEGOVIA YESSICA JEANETH",
+      "programa": "DE",
+      "registroNombre": "CABRERA ZEGOVIA YESSICA JEANETH"
+    },
+    {
+      "dni": 44579560,
+      "nombre": "CACHO RIOS LUIS ANTONIO",
+      "programa": "DE",
+      "registroNombre": "CACHO RIOS LUIS ANTONIO"
+    },
+    {
+      "dni": 44113156,
+      "nombre": "CAHUANA CASIANO BRIGNER MARK",
+      "programa": "IS",
+      "registroNombre": "CAHUANA CASIANO BRIGNER MARK"
+    },
+    {
+      "dni": 46825060,
+      "nombre": "CALLAN BACILIO RICHARD",
+      "programa": "AF",
+      "registroNombre": "CALLAN BACILIO RICHARD"
+    },
+    {
+      "dni": 16719199,
+      "nombre": "CAMONES MAGO LUIS ALBERTO",
+      "programa": "IN",
+      "registroNombre": "CAMONES MAGO LUIS ALBERTO"
+    },
+    {
+      "dni": 22319279,
+      "nombre": "CANALES SOTOMAYOR JOANNA DIAHANN",
+      "programa": "AF",
+      "registroNombre": "CANALES SOTOMAYOR JOANNA DIAHANN"
+    },
+    {
+      "dni": 70270373,
+      "nombre": "CAPCHA JURADO EDER AROON",
+      "programa": "IC",
+      "registroNombre": "CAPCHA JURADO EDER AROON"
+    },
+    {
+      "dni": 21406933,
+      "nombre": "CASTAÑEDA RIVEROS JOSEFA ELIZABETH",
+      "programa": "CA",
+      "registroNombre": "CASTAÑEDA RIVEROS JOSEFA ELIZABETH"
+    },
+    {
+      "dni": 42679183,
+      "nombre": "CASTILLO ORMEÑO ENZO RENAN",
+      "programa": "IS",
+      "registroNombre": "CASTILLO ORMEÑO ENZO RENAN"
+    },
+    {
+      "dni": 41248557,
+      "nombre": "CASTILLO SALAZAR REGNER NICOLAS",
+      "programa": "AF",
+      "registroNombre": "CASTILLO SALAZAR REGNER NICOLAS"
+    },
+    {
+      "dni": 46198443,
+      "nombre": "CASTILLO SANCHEZ CLAUDIA LORENA",
+      "programa": "DE",
+      "registroNombre": "CASTILLO SANCHEZ CLAUDIA LORENA"
+    },
+    {
+      "dni": 15421219,
+      "nombre": "CASTILLON MATOS OVIDIO JULIAN",
+      "programa": "CA",
+      "registroNombre": "CASTILLON MATOS OVIDIO JULIAN"
+    },
+    {
+      "dni": 70073915,
+      "nombre": "CASTILLON SIGUAS LUIS ALFREDO",
+      "programa": "IN",
+      "registroNombre": "CASTILLON SIGUAS LUIS ALFREDO"
+    },
+    {
+      "dni": 43338252,
+      "nombre": "CASTRO MEJIA PERCY JUNIOR",
+      "programa": "IS",
+      "registroNombre": "CASTRO MEJIA PERCY JUNIOR"
+    },
+    {
+      "dni": 21462443,
+      "nombre": "CAVERO TANG MARIA ISABEL",
+      "programa": "CA",
+      "registroNombre": "CAVERO TANG MARIA ISABEL"
+    },
+    {
+      "dni": 21880139,
+      "nombre": "CHANAVA CONTRERAS JOB HERMES",
+      "programa": "IC",
+      "registroNombre": "CHANAVA CONTRERAS JOB HERMES"
+    },
+    {
+      "dni": 40727418,
+      "nombre": "CHANG HERNANDEZ GUILLERMO ANDRES",
+      "programa": "DE",
+      "registroNombre": "CHANG HERNANDEZ GUILLERMO ANDRES"
+    },
+    {
+      "dni": 15428250,
+      "nombre": "CHAVEZ CARRAZCO CECILIA MARCELINA",
+      "programa": "AE",
+      "registroNombre": "CHAVEZ CARRAZCO CECILIA MARCELINA"
+    },
+    {
+      "dni": 29384319,
+      "nombre": "CHUNG RODRIGUEZ JOSE MARTIN",
+      "programa": "DE",
+      "registroNombre": "CHUNG RODRIGUEZ JOSE MARTIN"
+    },
+    {
+      "dni": 45919468,
+      "nombre": "CONDE CERVANTES GERARDO OMAR",
+      "programa": "DE",
+      "registroNombre": "CONDE CERVANTES GERARDO OMAR"
+    },
+    {
+      "dni": 44006023,
+      "nombre": "CONDE REYES JORGE LUIS",
+      "programa": "DE",
+      "registroNombre": "CONDE REYES JORGE LUIS"
+    },
+    {
+      "dni": 21447676,
+      "nombre": "CONDORCHOA CAMACHO CARLOS JOHN",
+      "programa": "IC",
+      "registroNombre": "CONDORCHOA CAMACHO CARLOS JOHN"
+    },
+    {
+      "dni": 71844864,
+      "nombre": "CORDOVA OSORIO ROLANDO ROTMAN FRIEDERICH",
+      "programa": "DE",
+      "registroNombre": "CORDOVA OSORIO ROLANDO ROTMAN FRIEDERICH"
+    },
+    {
+      "dni": 10359700,
+      "nombre": "CORDOVA RAMIREZ DORIS IVONNE",
+      "programa": "CA",
+      "registroNombre": "CORDOVA RAMIREZ DORIS IVONNE"
+    },
+    {
+      "dni": 21863247,
+      "nombre": "CRUZ CHUNGA CARLOS BIENVENIDO",
+      "programa": "AE",
+      "registroNombre": "CRUZ CHUNGA CARLOS BIENVENIDO"
+    },
+    {
+      "dni": 41160817,
+      "nombre": "CUBAS CORDOVA NILS",
+      "programa": "IN",
+      "registroNombre": "CUBAS CORDOVA NILS"
+    },
+    {
+      "dni": 70276881,
+      "nombre": "CUSTODIO LOYOLA CRISTIAN MAX",
+      "programa": "IN",
+      "registroNombre": "CUSTODIO LOYOLA CRISTIAN MAX"
+    },
+    {
+      "dni": 70113719,
+      "nombre": "DE LA CRUZ MARTINEZ GABRIELA NATALIA",
+      "programa": "DE",
+      "registroNombre": "DE LA CRUZ MARTINEZ GABRIELA NATALIA"
+    },
+    {
+      "dni": 43517817,
+      "nombre": "DE LA CRUZ SOSA JAKELINE MELINA",
+      "programa": "AE",
+      "registroNombre": "DE LA CRUZ SOSA JAKELINE MELINA"
+    },
+    {
+      "dni": 43153608,
+      "nombre": "DIAZ RODRIGUEZ BREITNER GUILLERMO",
+      "programa": "IN",
+      "registroNombre": "DIAZ RODRIGUEZ BREITNER GUILLERMO"
+    },
+    {
+      "dni": 70786643,
+      "nombre": "DIAZ VELASQUEZ JULIO CESAR",
+      "programa": "AF",
+      "registroNombre": "DIAZ VELASQUEZ JULIO CESAR"
+    },
+    {
+      "dni": 22101555,
+      "nombre": "DONAYRE VEGA JULIO ARMANDO",
+      "programa": "DE",
+      "registroNombre": "DONAYRE VEGA JULIO ARMANDO"
+    },
+    {
+      "dni": 44822572,
+      "nombre": "DURÁN RIOS SANDRO ANIBAL",
+      "programa": "DE",
+      "registroNombre": "DURÁN RIOS SANDRO ANIBAL"
+    },
+    {
+      "dni": 43932363,
+      "nombre": "ESPINOZA LEON GUSTAVO FELIPE",
+      "programa": "AE",
+      "registroNombre": "ESPINOZA LEON GUSTAVO FELIPE"
+    },
+    {
+      "dni": 72176698,
+      "nombre": "ESPINOZA MORE CARLA MILAGROS",
+      "programa": "AE",
+      "registroNombre": "ESPINOZA MORE CARLA MILAGROS"
+    },
+    {
+      "dni": 9857971,
+      "nombre": "ESPINOZA SEGURA JAMES WILLIAMS",
+      "programa": "IC",
+      "registroNombre": "ESPINOZA SEGURA JAMES WILLIAMS"
+    },
+    {
+      "dni": 21863704,
+      "nombre": "ESTEBAN MUNAYCO CARLOS ALBERTO",
+      "programa": "AE",
+      "registroNombre": "ESTEBAN MUNAYCO CARLOS ALBERTO"
+    },
+    {
+      "dni": 41807593,
+      "nombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS",
+      "programa": "DE",
+      "registroNombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS"
+    },
+    {
+      "dni": 42711303,
+      "nombre": "FABIAN SOBERANIS MIGUEL ANGEL",
+      "programa": "DE",
+      "registroNombre": "FABIAN SOBERANIS MIGUEL ANGEL"
+    },
+    {
+      "dni": 44070783,
+      "nombre": "FARFAN CARRIANO CARLOS MARTIN",
+      "programa": "DE",
+      "registroNombre": "FARFAN CARRIANO CARLOS MARTIN"
+    },
+    {
+      "dni": 43437121,
+      "nombre": "FELIX BENAVENTE ERICK NIXON",
+      "programa": "DE",
+      "registroNombre": "FELIX BENAVENTE ERICK NIXON"
+    },
+    {
+      "dni": 40165347,
+      "nombre": "FERREYRA RUIZ PATRICIA DEL CARMEN",
+      "programa": "AF",
+      "registroNombre": "FERREYRA RUIZ PATRICIA DEL CARMEN"
+    },
+    {
+      "dni": 2442123,
+      "nombre": "FERREYROS YUCRA JAIR EMERSON",
+      "programa": "IS",
+      "registroNombre": "FERREYROS YUCRA JAIR EMERSON"
+    },
+    {
+      "dni": 41730649,
+      "nombre": "FLORES ARRIOLA ADRIANA LORENA",
+      "programa": "AR",
+      "registroNombre": "FLORES ARRIOLA ADRIANA LORENA"
+    },
+    {
+      "dni": 21793368,
+      "nombre": "FLORES MENENDEZ LUIS ENRIQUE",
+      "programa": "IN",
+      "registroNombre": "FLORES MENENDEZ LUIS ENRIQUE"
+    },
+    {
+      "dni": 25662813,
+      "nombre": "FLORES MINCHON CARLOS ALBERTO",
+      "programa": "IC",
+      "registroNombre": "FLORES MINCHON CARLOS ALBERTO"
+    },
+    {
+      "dni": 6708096,
+      "nombre": "FRIAS LIAU HING MELVA",
+      "programa": "IC",
+      "registroNombre": "FRIAS LIAU HING MELVA"
+    },
+    {
+      "dni": 45191542,
+      "nombre": "GAGO CHÁVEZ JOHANNA DE JESÚS STEPHANIE",
+      "programa": "CA",
+      "registroNombre": "GAGO CHÁVEZ JOHANNA DE JESÚS STEPHANIE"
+    },
+    {
+      "dni": 44699467,
+      "nombre": "GALLARDO REYES ALEXANDER DARIO",
+      "programa": "IN",
+      "registroNombre": "GALLARDO REYES ALEXANDER DARIO"
+    },
+    {
+      "dni": 32942379,
+      "nombre": "GAMARRA NORIEGA WILLIAN VLADIMIR",
+      "programa": "IN",
+      "registroNombre": "GAMARRA NORIEGA WILLIAN VLADIMIR"
+    },
+    {
+      "dni": 8681131,
+      "nombre": "GAMARRA RAMIREZ HELEN CAROL",
+      "programa": "AF",
+      "registroNombre": "GAMARRA RAMIREZ HELEN CAROL"
+    },
+    {
+      "dni": 41507055,
+      "nombre": "GARAYAR TTITO ANA MELIZA",
+      "programa": "IS",
+      "registroNombre": "GARAYAR TTITO ANA MELIZA"
+    },
+    {
+      "dni": 21492225,
+      "nombre": "GARCIA AQUIJE PEDRO CARLOS",
+      "programa": "IN",
+      "registroNombre": "GARCIA AQUIJE PEDRO CARLOS"
+    },
+    {
+      "dni": 46335754,
+      "nombre": "GARCIA DONAYRE JOEIS MIGUEL",
+      "programa": "DE",
+      "registroNombre": "GARCIA DONAYRE JOEIS MIGUEL"
+    },
+    {
+      "dni": 21884432,
+      "nombre": "GARCIA PISCONTE GINO GUSTAVO",
+      "programa": "AE",
+      "registroNombre": "GARCIA PISCONTE GINO GUSTAVO"
+    },
+    {
+      "dni": 21863698,
+      "nombre": "GARCIA PISCONTE SILVIA KARINA",
+      "programa": "AE",
+      "registroNombre": "GARCIA PISCONTE SILVIA KARINA"
+    },
+    {
+      "dni": 21447220,
+      "nombre": "GAVILAN ORE ADOLFO GUILLERMO",
+      "programa": "DE",
+      "registroNombre": "GAVILAN ORE ADOLFO GUILLERMO"
+    },
+    {
+      "dni": 75168136,
+      "nombre": "GAVINO SANCHEZ JOHN STEVENS",
+      "programa": "DE",
+      "registroNombre": "GAVINO SANCHEZ JOHN STEVENS"
+    },
+    {
+      "dni": 41258221,
+      "nombre": "GIRALDO MENDOZA DANTE MARTIN",
+      "programa": "CA",
+      "registroNombre": "GIRALDO MENDOZA DANTE MARTIN"
+    },
+    {
+      "dni": 44114929,
+      "nombre": "GOMERO MANCESIDOR JOHNNY MITCHELL",
+      "programa": "AE",
+      "registroNombre": "GOMERO MANCESIDOR JOHNNY MITCHELL"
+    },
+    {
+      "dni": 45609294,
+      "nombre": "GONZALES FLORES ANA KRISTEL",
+      "programa": "DE",
+      "registroNombre": "GONZALES FLORES ANA KRISTEL"
+    },
+    {
+      "dni": 21886134,
+      "nombre": "GONZALES MOSQUERA WUILIAN",
+      "programa": "IN",
+      "registroNombre": "GONZALES MOSQUERA WUILIAN"
+    },
+    {
+      "dni": 45023124,
+      "nombre": "GUARDIA PANIURA CANDY HAYDEE",
+      "programa": "IN",
+      "registroNombre": "GUARDIA PANIURA CANDY HAYDEE"
+    },
+    {
+      "dni": 15738084,
+      "nombre": "GUERRERO CERVERA JULIA DEL PILAR",
+      "programa": "AF",
+      "registroNombre": "GUERRERO CERVERA JULIA DEL PILAR"
+    },
+    {
+      "dni": 17535600,
+      "nombre": "GUERRERO MILLONES ANA MARIA",
+      "programa": "IN",
+      "registroNombre": "GUERRERO MILLONES ANA MARIA"
+    },
+    {
+      "dni": 42711623,
+      "nombre": "GUERRERO ZELA GUSTAVO ADOLFO",
+      "programa": "CA",
+      "registroNombre": "GUERRERO ZELA GUSTAVO ADOLFO"
+    },
+    {
+      "dni": 45303683,
+      "nombre": "GUTIERREZ JIMENEZ CINDY FIORELLA",
+      "programa": "CA",
+      "registroNombre": "GUTIERREZ JIMENEZ CINDY FIORELLA"
+    },
+    {
+      "dni": 41112631,
+      "nombre": "HAYASHI AMORETTI YADHIRA SALOME",
+      "programa": "AF",
+      "registroNombre": "HAYASHI AMORETTI YADHIRA SALOME"
+    },
+    {
+      "dni": 72687785,
+      "nombre": "HERNANDEZ DIAZ STEFANI MADELHEYN MARGARITA",
+      "programa": "IC",
+      "registroNombre": "HERNANDEZ DIAZ STEFANI MADELHEYN MARGARITA"
+    },
+    {
+      "dni": 21575934,
+      "nombre": "HERNANDEZ MAYTAHUARI PATRICIA DEL ROSARIO",
+      "programa": "AE",
+      "registroNombre": "HERNANDEZ MAYTAHUARI PATRICIA DEL ROSARIO"
+    },
+    {
+      "dni": 15357430,
+      "nombre": "HERNANDEZ PEVES JUAN GUSTAVO",
+      "programa": "IC",
+      "registroNombre": "HERNANDEZ PEVES JUAN GUSTAVO"
+    },
+    {
+      "dni": 40497460,
+      "nombre": "HERRERA MAGUIÑA DANNY EDUARDO",
+      "programa": "DE",
+      "registroNombre": "HERRERA MAGUIÑA DANNY EDUARDO"
+    },
+    {
+      "dni": 71883055,
+      "nombre": "HUALLANCA CARBAJAL JOSE JONATHAN",
+      "programa": "IS",
+      "registroNombre": "HUALLANCA CARBAJAL JOSE JONATHAN"
+    },
+    {
+      "dni": 21813726,
+      "nombre": "HUALLANCA CONTRERAS MARIO CESAR",
+      "programa": "AE",
+      "registroNombre": "HUALLANCA CONTRERAS MARIO CESAR"
+    },
+    {
+      "dni": 41959229,
+      "nombre": "HUAMAN ESPINO ZORAIDA FELIPA",
+      "programa": "IC",
+      "registroNombre": "HUAMAN ESPINO ZORAIDA FELIPA"
+    },
+    {
+      "dni": 42627418,
+      "nombre": "HUAMAN FLORES ELIO JAVIER",
+      "programa": "AF",
+      "registroNombre": "HUAMAN FLORES ELIO JAVIER"
+    },
+    {
+      "dni": 43958773,
+      "nombre": "HUAMANI CANALES ANALI MARIELLA",
+      "programa": "IC",
+      "registroNombre": "HUAMANI CANALES ANALI MARIELLA"
+    },
+    {
+      "dni": 41076019,
+      "nombre": "HUAMANI SALAZAR CESAR JOEL",
+      "programa": "AR",
+      "registroNombre": "HUAMANI SALAZAR CESAR JOEL"
+    },
+    {
+      "dni": 42734786,
+      "nombre": "HUANCAHUIRE BRAVO CLAUDIO ISAIAS",
+      "programa": "IS",
+      "registroNombre": "HUANCAHUIRE BRAVO CLAUDIO ISAIAS"
+    },
+    {
+      "dni": 21530042,
+      "nombre": "HUAROTO HUACHIN AMALIA ESPERANZA",
+      "programa": "AR",
+      "registroNombre": "HUAROTO HUACHIN AMALIA ESPERANZA"
+    },
+    {
+      "dni": 21869681,
+      "nombre": "HUASASQUICHE ABREGU MIGUEL ANGEL",
+      "programa": "IC",
+      "registroNombre": "HUASASQUICHE ABREGU MIGUEL ANGEL"
+    },
+    {
+      "dni": 40744353,
+      "nombre": "HUAYTA CONISLLA WALTER OSWALDO",
+      "programa": "IN",
+      "registroNombre": "HUAYTA CONISLLA WALTER OSWALDO"
+    },
+    {
+      "dni": 21517153,
+      "nombre": "INJANTE LIMA EMILIO DOMINGO",
+      "programa": "IN",
+      "registroNombre": "INJANTE LIMA EMILIO DOMINGO"
+    },
+    {
+      "dni": 46078496,
+      "nombre": "JAYO HIGA JOSE JUAN",
+      "programa": "IS",
+      "registroNombre": "JAYO HIGA JOSE JUAN"
+    },
+    {
+      "dni": 6187939,
+      "nombre": "JORDAN PALOMINO JERRI ARTURO",
+      "programa": "DE",
+      "registroNombre": "JORDAN PALOMINO JERRI ARTURO"
+    },
+    {
+      "dni": 71543911,
+      "nombre": "JUAREZ CAQUIAMARCA LUIS MIGUEL",
+      "programa": "DE",
+      "registroNombre": "JUAREZ CAQUIAMARCA LUIS MIGUEL"
+    },
+    {
+      "dni": 72973076,
+      "nombre": "LANDEO LOPEZ CESAR CAMILO",
+      "programa": "IN",
+      "registroNombre": "LANDEO LOPEZ CESAR CAMILO"
+    },
+    {
+      "dni": 72658536,
+      "nombre": "LANDEO LOPEZ JEFFERSON OMAR",
+      "programa": "IC",
+      "registroNombre": "LANDEO LOPEZ JEFFERSON OMAR"
+    },
+    {
+      "dni": 43370751,
+      "nombre": "LEVANO MESIAS ADRIAN PASCUAL",
+      "programa": "IN",
+      "registroNombre": "LEVANO MESIAS ADRIAN PASCUAL"
+    },
+    {
+      "dni": 70477271,
+      "nombre": "LEVANO SARAVIA EMILY BRISEIDA",
+      "programa": "IN",
+      "registroNombre": "LEVANO SARAVIA EMILY BRISEIDA"
+    },
+    {
+      "dni": 42146692,
+      "nombre": "LINO FLORES LUIS ANTONIO",
+      "programa": "AE",
+      "registroNombre": "LINO FLORES LUIS ANTONIO"
+    },
+    {
+      "dni": 43262214,
+      "nombre": "LLANCARES SUXE JORGE ARMANDO",
+      "programa": "AE",
+      "registroNombre": "LLANCARES SUXE JORGE ARMANDO"
+    },
+    {
+      "dni": 46654470,
+      "nombre": "LLANCARES SUXE MINERVA MELCHORITA",
+      "programa": "AE",
+      "registroNombre": "LLANCARES SUXE MINERVA MELCHORITA"
+    },
+    {
+      "dni": 42707186,
+      "nombre": "LOO PARIAN LUIS ALBERTO",
+      "programa": "IS",
+      "registroNombre": "LOO PARIAN LUIS ALBERTO"
+    },
+    {
+      "dni": 71484441,
+      "nombre": "LOPEZ CHAVEZ GRACIELA YADIRA",
+      "programa": "IC",
+      "registroNombre": "LOPEZ CHAVEZ GRACIELA YADIRA"
+    },
+    {
+      "dni": 45294530,
+      "nombre": "LUNA VICTORIA GOMEZ JUAN ANGHIELLO",
+      "programa": "IC",
+      "registroNombre": "LUNA VICTORIA GOMEZ JUAN ANGHIELLO"
+    },
+    {
+      "dni": 43454918,
+      "nombre": "LUYO LOLI TAYMA NAIROBIS",
+      "programa": "AE",
+      "registroNombre": "LUYO LOLI TAYMA NAIROBIS"
+    },
+    {
+      "dni": 46144315,
+      "nombre": "MALASPINA CHUQUE JAVIER JESUS",
+      "programa": "AF",
+      "registroNombre": "MALASPINA CHUQUE JAVIER JESUS"
+    },
+    {
+      "dni": 40428220,
+      "nombre": "MANDAMIENTO GRADOS DAMARIS TELMA",
+      "programa": "AE",
+      "registroNombre": "MANDAMIENTO GRADOS DAMARIS TELMA"
+    },
+    {
+      "dni": 41519363,
+      "nombre": "MANRIQUE CERVANTES JOSE ANTONIO",
+      "programa": "DE",
+      "registroNombre": "MANRIQUE CERVANTES JOSE ANTONIO"
+    },
+    {
+      "dni": 46741053,
+      "nombre": "MARCELO GUTIERREZ RUTH KATHERINE",
+      "programa": "CA",
+      "registroNombre": "MARCELO GUTIERREZ RUTH KATHERINE"
+    },
+    {
+      "dni": 21575575,
+      "nombre": "MARQUEZ JIMENEZ NARDA CRISTINA",
+      "programa": "AF",
+      "registroNombre": "MARQUEZ JIMENEZ NARDA CRISTINA"
+    },
+    {
+      "dni": 10658694,
+      "nombre": "MARTINEZ QUISÑAY JULIO RODOLFO",
+      "programa": "AE",
+      "registroNombre": "MARTINEZ QUISÑAY JULIO RODOLFO"
+    },
+    {
+      "dni": 15981186,
+      "nombre": "MARTINEZ ZULOAGA NORA TERESA",
+      "programa": "IS",
+      "registroNombre": "MARTINEZ ZULOAGA NORA TERESA"
+    },
+    {
+      "dni": 72681156,
+      "nombre": "MAS VILLANUEVA KENY ARNOLD",
+      "programa": "CA",
+      "registroNombre": "MAS VILLANUEVA KENY ARNOLD"
+    },
+    {
+      "dni": 21546491,
+      "nombre": "MATTA FERREYRA FRANCIS GISELA",
+      "programa": "DE",
+      "registroNombre": "MATTA FERREYRA FRANCIS GISELA"
+    },
+    {
+      "dni": 40153172,
+      "nombre": "MAURTUA FERREYRA MANUEL SANTIAGO",
+      "programa": "DE",
+      "registroNombre": "MAURTUA FERREYRA MANUEL SANTIAGO"
+    },
+    {
+      "dni": 44386497,
+      "nombre": "MEDINA ACASIETE JOSE LUIS",
+      "programa": "IN",
+      "registroNombre": "MEDINA ACASIETE JOSE LUIS"
+    },
+    {
+      "dni": 44656290,
+      "nombre": "MENDO MONTALVO VICTOR ENRIQUE",
+      "programa": "IS",
+      "registroNombre": "MENDO MONTALVO VICTOR ENRIQUE"
+    },
+    {
+      "dni": 43608561,
+      "nombre": "MENDOZA CASTILLO JUAN JOSE",
+      "programa": "AE",
+      "registroNombre": "MENDOZA CASTILLO JUAN JOSE"
+    },
+    {
+      "dni": 71052752,
+      "nombre": "MENESES VASQUEZ KARINA OLENKA",
+      "programa": "IC",
+      "registroNombre": "MENESES VASQUEZ KARINA OLENKA"
+    },
+    {
+      "dni": 40444414,
+      "nombre": "MESIAS MEJIA EDGAR YVAN",
+      "programa": "AE",
+      "registroNombre": "MESIAS MEJIA EDGAR YVAN"
+    },
+    {
+      "dni": 21885297,
+      "nombre": "MESIAS REYES JORGE LUIS",
+      "programa": "DE",
+      "registroNombre": "MESIAS REYES JORGE LUIS"
+    },
+    {
+      "dni": 40432935,
+      "nombre": "MIRANDA BAZALAR ROBERTO WILLIAM",
+      "programa": "DE",
+      "registroNombre": "MIRANDA BAZALAR ROBERTO WILLIAM"
+    },
+    {
+      "dni": 40716850,
+      "nombre": "MISSA FRANCO ALEX RADOMIR",
+      "programa": "AE",
+      "registroNombre": "MISSA FRANCO ALEX RADOMIR"
+    },
+    {
+      "dni": 46075693,
+      "nombre": "MORALES CHAVEZ GISSEL JOCELINE",
+      "programa": "AF",
+      "registroNombre": "MORALES CHAVEZ GISSEL JOCELINE"
+    },
+    {
+      "dni": 70066929,
+      "nombre": "MORÁN CAMACHO SIRENA STEFANI",
+      "programa": "AR",
+      "registroNombre": "MORÁN CAMACHO SIRENA STEFANI"
+    },
+    {
+      "dni": 18005964,
+      "nombre": "MORENO HEREDIA ARMANDO JOSE",
+      "programa": "IN",
+      "registroNombre": "MORENO HEREDIA ARMANDO JOSE"
+    },
+    {
+      "dni": 70084444,
+      "nombre": "MORON AGUILAR KEVIN CHRISTIAN",
+      "programa": "DE",
+      "registroNombre": "MORON AGUILAR KEVIN CHRISTIAN"
+    },
+    {
+      "dni": 21857087,
+      "nombre": "MUNAYCO VIVANCO JUAN CALIXTO",
+      "programa": "AE",
+      "registroNombre": "MUNAYCO VIVANCO JUAN CALIXTO"
+    },
+    {
+      "dni": 40176163,
+      "nombre": "MUÑANTE CAHUA NIDIA PATRICIA",
+      "programa": "DE",
+      "registroNombre": "MUÑANTE CAHUA NIDIA PATRICIA"
+    },
+    {
+      "dni": 40105460,
+      "nombre": "MUÑANTE SIHUES CESAR ARTURO",
+      "programa": "DE",
+      "registroNombre": "MUÑANTE SIHUES CESAR ARTURO"
+    },
+    {
+      "dni": 43128103,
+      "nombre": "MUÑOZ ALVA FIORELLA DEL PILAR",
+      "programa": "DE",
+      "registroNombre": "MUÑOZ ALVA FIORELLA DEL PILAR"
+    },
+    {
+      "dni": 42129291,
+      "nombre": "MUÑOZ FELIX ALAN PIER",
+      "programa": "IN",
+      "registroNombre": "MUÑOZ FELIX ALAN PIER"
+    },
+    {
+      "dni": 21507863,
+      "nombre": "NAVARRETE VELARDE RAUL ANTONIO",
+      "programa": "IN",
+      "registroNombre": "NAVARRETE VELARDE RAUL ANTONIO"
+    },
+    {
+      "dni": 21422843,
+      "nombre": "NAVARRETE VELARDE VICKY MARLENE",
+      "programa": "CA",
+      "registroNombre": "NAVARRETE VELARDE VICKY MARLENE"
+    },
+    {
+      "dni": 21541461,
+      "nombre": "NUÑEZ ROMAN HUGO",
+      "programa": "IN",
+      "registroNombre": "NUÑEZ ROMAN HUGO"
+    },
+    {
+      "dni": 16662940,
+      "nombre": "ORDINOLA BRENIS JUAN MANUEL",
+      "programa": "IN",
+      "registroNombre": "ORDINOLA BRENIS JUAN MANUEL"
+    },
+    {
+      "dni": 15353604,
+      "nombre": "ORDOÑEZ CENTENO CARLOS YTALO",
+      "programa": "IN",
+      "registroNombre": "ORDOÑEZ CENTENO CARLOS YTALO"
+    },
+    {
+      "dni": 21850336,
+      "nombre": "ORTIZ ALMEYDA JOSE LUIS",
+      "programa": "AE",
+      "registroNombre": "ORTIZ ALMEYDA JOSE LUIS"
+    },
+    {
+      "dni": 21575158,
+      "nombre": "ORTIZ ANDRES JULIO ALEX",
+      "programa": "CA",
+      "registroNombre": "ORTIZ ANDRES JULIO ALEX"
+    },
+    {
+      "dni": 21839369,
+      "nombre": "ORTIZ CASTILLA LUIS ENRIQUE",
+      "programa": "IN",
+      "registroNombre": "ORTIZ CASTILLA LUIS ENRIQUE"
+    },
+    {
+      "dni": 70277443,
+      "nombre": "OSCCO INJANTE JOSE LUIS",
+      "programa": "CA",
+      "registroNombre": "OSCCO INJANTE JOSE LUIS"
+    },
+    {
+      "dni": 72459969,
+      "nombre": "PACHAS BARRIENTOS LUZ MILAGROS",
+      "programa": "IN",
+      "registroNombre": "PACHAS BARRIENTOS LUZ MILAGROS"
+    },
+    {
+      "dni": 41239504,
+      "nombre": "PADILLA HIZO PEDRO HERNAN",
+      "programa": "AE",
+      "registroNombre": "PADILLA HIZO PEDRO HERNAN"
+    },
+    {
+      "dni": 9596989,
+      "nombre": "PALACIOS CABEL MARTIN EDUARDO",
+      "programa": "IN",
+      "registroNombre": "PALACIOS CABEL MARTIN EDUARDO"
+    },
+    {
+      "dni": 10299078,
+      "nombre": "PALOMINO ZARATE JOSE LUIS",
+      "programa": "AF",
+      "registroNombre": "PALOMINO ZARATE JOSE LUIS"
+    },
+    {
+      "dni": 43901199,
+      "nombre": "PAREDES MENDOZA JUAN MIGUEL",
+      "programa": "DE",
+      "registroNombre": "PAREDES MENDOZA JUAN MIGUEL"
+    },
+    {
+      "dni": 33826021,
+      "nombre": "PARIHUAMAN QUINDE GERALDINA REBECA",
+      "programa": "AE",
+      "registroNombre": "PARIHUAMAN QUINDE GERALDINA REBECA"
+    },
+    {
+      "dni": 43596886,
+      "nombre": "PASACHE LAGOS SERGIO LUIS",
+      "programa": "IC",
+      "registroNombre": "PASACHE LAGOS SERGIO LUIS"
+    },
+    {
+      "dni": 21838457,
+      "nombre": "PEÑA ALARCON LUIS ALEJANDRO",
+      "programa": "IN",
+      "registroNombre": "PEÑA ALARCON LUIS ALEJANDRO"
+    },
+    {
+      "dni": 21881487,
+      "nombre": "PEÑA RONCEROS JOSE IVAN",
+      "programa": "DE",
+      "registroNombre": "PEÑA RONCEROS JOSE IVAN"
+    },
+    {
+      "dni": 43322342,
+      "nombre": "PEREZ CABREJOS RUTH GISSELA",
+      "programa": "IN",
+      "registroNombre": "PEREZ CABREJOS RUTH GISSELA"
+    },
+    {
+      "dni": 42212783,
+      "nombre": "PEREZ RETUERTO RONY GEANCARLO",
+      "programa": "DE",
+      "registroNombre": "PEREZ RETUERTO RONY GEANCARLO"
+    },
+    {
+      "dni": 18071852,
+      "nombre": "PESANTES SALAVARRIA MARCO ALFONSO",
+      "programa": "IC",
+      "registroNombre": "PESANTES SALAVARRIA MARCO ALFONSO"
+    },
+    {
+      "dni": 40822577,
+      "nombre": "PIMENTEL RETUERTO CARMEN ANDREA",
+      "programa": "DE",
+      "registroNombre": "PIMENTEL RETUERTO CARMEN ANDREA"
+    },
+    {
+      "dni": 21563342,
+      "nombre": "PINEDA URBANO JORGE LUIS",
+      "programa": "DE",
+      "registroNombre": "PINEDA URBANO JORGE LUIS"
+    },
+    {
+      "dni": 73788382,
+      "nombre": "PISCOCHE CHINCHAY RICHERSON HAROLD",
+      "programa": "IN",
+      "registroNombre": "PISCOCHE CHINCHAY RICHERSON HAROLD"
+    },
+    {
+      "dni": 42515290,
+      "nombre": "PIZARRO OSORIO BETSABE LILIA",
+      "programa": "DE",
+      "registroNombre": "PIZARRO OSORIO BETSABE LILIA"
+    },
+    {
+      "dni": 41391761,
+      "nombre": "POZO GUTIERREZ ANGEL ALBERTO",
+      "programa": "AR",
+      "registroNombre": "POZO GUTIERREZ ANGEL ALBERTO"
+    },
+    {
+      "dni": 21876127,
+      "nombre": "POZO GUTIERREZ ROBERTO CARLOS",
+      "programa": "IN",
+      "registroNombre": "POZO GUTIERREZ ROBERTO CARLOS"
+    },
+    {
+      "dni": 2651788,
+      "nombre": "PUPPI UGAZ LUIS MIGUEL",
+      "programa": "DE",
+      "registroNombre": "PUPPI UGAZ LUIS MIGUEL"
+    },
+    {
+      "dni": 21871273,
+      "nombre": "PURIZACA GUERRERO JULIO EDUARDO",
+      "programa": "IN",
+      "registroNombre": "PURIZACA GUERRERO JULIO EDUARDO"
+    },
+    {
+      "dni": 15591781,
+      "nombre": "QUINTEROS NICHO LUIS FERNANDO",
+      "programa": "DE",
+      "registroNombre": "QUINTEROS NICHO LUIS FERNANDO"
+    },
+    {
+      "dni": 2885494,
+      "nombre": "QUIROGA PAIVA DAVID EDUARDO",
+      "programa": "CA",
+      "registroNombre": "QUIROGA PAIVA DAVID EDUARDO"
+    },
+    {
+      "dni": 70466213,
+      "nombre": "QUIROZ SÁNCHEZ LUPE VIRGINIA",
+      "programa": "AF",
+      "registroNombre": "QUIROZ SÁNCHEZ LUPE VIRGINIA"
+    },
+    {
+      "dni": 21884462,
+      "nombre": "QUISPE ALMEIDA JOSE DAMIAN",
+      "programa": "IC",
+      "registroNombre": "QUISPE ALMEIDA JOSE DAMIAN"
+    },
+    {
+      "dni": 10622951,
+      "nombre": "QUISPE FARFAN DANTE IQUE",
+      "programa": "IC",
+      "registroNombre": "QUISPE FARFAN DANTE IQUE"
+    },
+    {
+      "dni": 21564811,
+      "nombre": "QUISPE TINCOPA LINO MARTIN",
+      "programa": "IN",
+      "registroNombre": "QUISPE TINCOPA LINO MARTIN"
+    },
+    {
+      "dni": 70688751,
+      "nombre": "RAMIREZ YAÑEZ MAURO ALBERTO",
+      "programa": "CA",
+      "registroNombre": "RAMIREZ YAÑEZ MAURO ALBERTO"
+    },
+    {
+      "dni": 21866560,
+      "nombre": "RAMOS FERNANDEZ MIRTHA ISABEL",
+      "programa": "DE",
+      "registroNombre": "RAMOS FERNANDEZ MIRTHA ISABEL"
+    },
+    {
+      "dni": 40382257,
+      "nombre": "REA MORENO FLOR MAGALY",
+      "programa": "DE",
+      "registroNombre": "REA MORENO FLOR MAGALY"
+    },
+    {
+      "dni": 40339321,
+      "nombre": "REATEGUI GUERRA DARWIN",
+      "programa": "DE",
+      "registroNombre": "REATEGUI GUERRA DARWIN"
+    },
+    {
+      "dni": 40435228,
+      "nombre": "RECUAY SALAZAR CARLOS ALBERTO",
+      "programa": "AE",
+      "registroNombre": "RECUAY SALAZAR CARLOS ALBERTO"
+    },
+    {
+      "dni": 8684196,
+      "nombre": "REQUENA GARCIA MARIA DEL ROSARIO",
+      "programa": "AE",
+      "registroNombre": "REQUENA GARCIA MARIA DEL ROSARIO"
+    },
+    {
+      "dni": 22313729,
+      "nombre": "REYES CAMASCA ROSARIO CRISTINA",
+      "programa": "DE",
+      "registroNombre": "REYES CAMASCA ROSARIO CRISTINA"
+    },
+    {
+      "dni": 41902268,
+      "nombre": "REYES MARTINEZ MARIO GUSTAVO",
+      "programa": "AF",
+      "registroNombre": "REYES MARTINEZ MARIO GUSTAVO"
+    },
+    {
+      "dni": 41208519,
+      "nombre": "REYES ROMAN CARLOS ARTURO",
+      "programa": "AE",
+      "registroNombre": "REYES ROMAN CARLOS ARTURO"
+    },
+    {
+      "dni": 44398451,
+      "nombre": "RIOS SANTIAGO WILSON CESAR",
+      "programa": "AE",
+      "registroNombre": "RIOS SANTIAGO WILSON CESAR"
+    },
+    {
+      "dni": 72703241,
+      "nombre": "RODRIGUEZ CRUZ BRYAN SIMON",
+      "programa": "CA",
+      "registroNombre": "RODRIGUEZ CRUZ BRYAN SIMON"
+    },
+    {
+      "dni": 15590660,
+      "nombre": "RODRIGUEZ RAMIREZ MARIA ISABEL",
+      "programa": "AE",
+      "registroNombre": "RODRIGUEZ RAMIREZ MARIA ISABEL"
+    },
+    {
+      "dni": 40021221,
+      "nombre": "ROJAS GUTIERREZ WILLIAM JESUS",
+      "programa": "DE",
+      "registroNombre": "ROJAS GUTIERREZ WILLIAM JESUS"
+    },
+    {
+      "dni": 15688249,
+      "nombre": "ROJAS GUZMAN TITO",
+      "programa": "AE",
+      "registroNombre": "ROJAS GUZMAN TITO"
+    },
+    {
+      "dni": 46405327,
+      "nombre": "ROMAN VERONA PATRICIA DEL PILAR",
+      "programa": "DE",
+      "registroNombre": "ROMAN VERONA PATRICIA DEL PILAR"
+    },
+    {
+      "dni": 46590523,
+      "nombre": "ROMERO CARAZAS RAFAEL",
+      "programa": "AF",
+      "registroNombre": "ROMERO CARAZAS RAFAEL"
+    },
+    {
+      "dni": 70401891,
+      "nombre": "RUIZ MAGALLANES GUADALUPE STEFANIA",
+      "programa": "IC",
+      "registroNombre": "RUIZ MAGALLANES GUADALUPE STEFANIA"
+    },
+    {
+      "dni": 72608111,
+      "nombre": "SACHUN BECERRA PERCY ALEXANDER",
+      "programa": "AE",
+      "registroNombre": "SACHUN BECERRA PERCY ALEXANDER"
+    },
+    {
+      "dni": 6105629,
+      "nombre": "SACHUN NUÑEZ FREDDY JHONNY",
+      "programa": "AF",
+      "registroNombre": "SACHUN NUÑEZ FREDDY JHONNY"
+    },
+    {
+      "dni": 40740790,
+      "nombre": "SACRAMENTO LAZARO ROSA ALBINA",
+      "programa": "DE",
+      "registroNombre": "SACRAMENTO LAZARO ROSA ALBINA"
+    },
+    {
+      "dni": 46730566,
+      "nombre": "SALAZAR GAMBOA OSCAR FRITZ ALEXANDER",
+      "programa": "DE",
+      "registroNombre": "SALAZAR GAMBOA OSCAR FRITZ ALEXANDER"
+    },
+    {
+      "dni": 16756416,
+      "nombre": "SALCEDO RODAS PERCY ISMAEL",
+      "programa": "AE",
+      "registroNombre": "SALCEDO RODAS PERCY ISMAEL"
+    },
+    {
+      "dni": 40814844,
+      "nombre": "SALINAS PEREZ HECTOR CLEMENTE",
+      "programa": "IN",
+      "registroNombre": "SALINAS PEREZ HECTOR CLEMENTE"
+    },
+    {
+      "dni": 15725118,
+      "nombre": "SAMANAMUD VALENTIN MIGUEL ANGEL MOISES",
+      "programa": "AE",
+      "registroNombre": "SAMANAMUD VALENTIN MIGUEL ANGEL MOISES"
+    },
+    {
+      "dni": 44859703,
+      "nombre": "SANCHEZ NAVARRETE CARLOS RICARDO",
+      "programa": "IC",
+      "registroNombre": "SANCHEZ NAVARRETE CARLOS RICARDO"
+    },
+    {
+      "dni": 45165102,
+      "nombre": "SANCHEZ SOTIL KENNICK ENRIQUE",
+      "programa": "DE",
+      "registroNombre": "SANCHEZ SOTIL KENNICK ENRIQUE"
+    },
+    {
+      "dni": 42862602,
+      "nombre": "SANCHEZ TORRES WILLIAM JUNIOR",
+      "programa": "AE",
+      "registroNombre": "SANCHEZ TORRES WILLIAM JUNIOR"
+    },
+    {
+      "dni": 2183433,
+      "nombre": "SANJUAN GARCIA VERONICA",
+      "programa": "IC",
+      "registroNombre": "SANJUAN GARCIA VERONICA"
+    },
+    {
+      "dni": 46417761,
+      "nombre": "SANTIAGO CHOQUE FLOR DE MARIA",
+      "programa": "AF",
+      "registroNombre": "SANTIAGO CHOQUE FLOR DE MARIA"
+    },
+    {
+      "dni": 45954213,
+      "nombre": "SARAVIA VILCHEZ VICTOR JOE",
+      "programa": "IN",
+      "registroNombre": "SARAVIA VILCHEZ VICTOR JOE"
+    },
+    {
+      "dni": 21864558,
+      "nombre": "SARAVIA YATACO NELLY PATRICIA",
+      "programa": "DE",
+      "registroNombre": "SARAVIA YATACO NELLY PATRICIA"
+    },
+    {
+      "dni": 41126222,
+      "nombre": "SEBASTIAN MOSCAIZA CESAR RAUL",
+      "programa": "AE",
+      "registroNombre": "SEBASTIAN MOSCAIZA CESAR RAUL"
+    },
+    {
+      "dni": 44070775,
+      "nombre": "SIGUAS FLORES CARLOS JAVIER",
+      "programa": "DE",
+      "registroNombre": "SIGUAS FLORES CARLOS JAVIER"
+    },
+    {
+      "dni": 21498728,
+      "nombre": "SIGUAS HUARHUA GUILLERMO GREGORIO",
+      "programa": "CA",
+      "registroNombre": "SIGUAS HUARHUA GUILLERMO GREGORIO"
+    },
+    {
+      "dni": 45770362,
+      "nombre": "SOTELO RAZZETO LUIS FELIPE",
+      "programa": "DE",
+      "registroNombre": "SOTELO RAZZETO LUIS FELIPE"
+    },
+    {
+      "dni": 45207956,
+      "nombre": "SOTO CAYHUALLA MARIO YANCARLOS",
+      "programa": "DE",
+      "registroNombre": "SOTO CAYHUALLA MARIO YANCARLOS"
+    },
+    {
+      "dni": 40583004,
+      "nombre": "SOTOMAYOR ALBITES GEORGE ANTONHY",
+      "programa": "AE",
+      "registroNombre": "SOTOMAYOR ALBITES GEORGE ANTONHY"
+    },
+    {
+      "dni": 21566262,
+      "nombre": "SUAREZ ESCRIBA MARIELLA ROSARIO",
+      "programa": "IN",
+      "registroNombre": "SUAREZ ESCRIBA MARIELLA ROSARIO"
+    },
+    {
+      "dni": 4743751,
+      "nombre": "TACO COAYLA RENZO ALBERTO",
+      "programa": "IS",
+      "registroNombre": "TACO COAYLA RENZO ALBERTO"
+    },
+    {
+      "dni": 43529007,
+      "nombre": "TAFUR HUAMAN ERLITH",
+      "programa": "CA",
+      "registroNombre": "TAFUR HUAMAN ERLITH"
+    },
+    {
+      "dni": 43660977,
+      "nombre": "TARAZONA VEGA ESHEK",
+      "programa": "AE",
+      "registroNombre": "TARAZONA VEGA ESHEK"
+    },
+    {
+      "dni": 74176001,
+      "nombre": "TASAYCO MARTINEZ RENZO LEONARDO",
+      "programa": "AE",
+      "registroNombre": "TASAYCO MARTINEZ RENZO LEONARDO"
+    },
+    {
+      "dni": 80063288,
+      "nombre": "TASAYCO RODRIGUEZ JOSE LUIS",
+      "programa": "DE",
+      "registroNombre": "TASAYCO RODRIGUEZ JOSE LUIS"
+    },
+    {
+      "dni": 15431618,
+      "nombre": "TAYA YACTAYO PEDRO ALEX",
+      "programa": "IS",
+      "registroNombre": "TAYA YACTAYO PEDRO ALEX"
+    },
+    {
+      "dni": 41876321,
+      "nombre": "TEJEDA LEON CARLOS ALBERTO",
+      "programa": "DE",
+      "registroNombre": "TEJEDA LEON CARLOS ALBERTO"
+    },
+    {
+      "dni": 41916771,
+      "nombre": "TEMOCHE ALMORA LUIS GERMAN",
+      "programa": "DE",
+      "registroNombre": "TEMOCHE ALMORA LUIS GERMAN"
+    },
+    {
+      "dni": 20111776,
+      "nombre": "TORALVA GONZALES PAUL EDWARDO",
+      "programa": "IS",
+      "registroNombre": "TORALVA GONZALES PAUL EDWARDO"
+    },
+    {
+      "dni": 42591559,
+      "nombre": "TRELLES CHANG WENDY ELIZABETH",
+      "programa": "IN",
+      "registroNombre": "TRELLES CHANG WENDY ELIZABETH"
+    },
+    {
+      "dni": 43027985,
+      "nombre": "TRUJILLO APONTE WAGNER ABRAHAM",
+      "programa": "DE",
+      "registroNombre": "TRUJILLO APONTE WAGNER ABRAHAM"
+    },
+    {
+      "dni": 45007560,
+      "nombre": "ULLOQUE SAMATELO CARLOS AUGUSTO",
+      "programa": "DE",
+      "registroNombre": "ULLOQUE SAMATELO CARLOS AUGUSTO"
+    },
+    {
+      "dni": 16621586,
+      "nombre": "VALDIVIA SALAZAR CARLOS ALBERTO",
+      "programa": "IS",
+      "registroNombre": "VALDIVIA SALAZAR CARLOS ALBERTO"
+    },
+    {
+      "dni": 21878050,
+      "nombre": "VALLE FUENTES JOSE ANDRES",
+      "programa": "AR",
+      "registroNombre": "VALLE FUENTES JOSE ANDRES"
+    },
+    {
+      "dni": 21870795,
+      "nombre": "VARGAS DEL RIO MIGUEL ANGEL",
+      "programa": "AF",
+      "registroNombre": "VARGAS DEL RIO MIGUEL ANGEL"
+    },
+    {
+      "dni": 40401768,
+      "nombre": "VASQUEZ GALVEZ DAYANA CRISTY",
+      "programa": "IN",
+      "registroNombre": "VASQUEZ GALVEZ DAYANA CRISTY"
+    },
+    {
+      "dni": 44848536,
+      "nombre": "VASQUEZ RAMOS SOLANGE JULISSA",
+      "programa": "DE",
+      "registroNombre": "VASQUEZ RAMOS SOLANGE JULISSA"
+    },
+    {
+      "dni": 42952070,
+      "nombre": "VEGA BENAVIDES CESAR AUGUSTO",
+      "programa": "DE",
+      "registroNombre": "VEGA BENAVIDES CESAR AUGUSTO"
+    },
+    {
+      "dni": 10004675,
+      "nombre": "VEGA PAVIA CAROLINA NIEVES",
+      "programa": "AR",
+      "registroNombre": "VEGA PAVIA CAROLINA NIEVES"
+    },
+    {
+      "dni": 45221222,
+      "nombre": "VEGA ROSALES JORGE MARTIN",
+      "programa": "IN",
+      "registroNombre": "VEGA ROSALES JORGE MARTIN"
+    },
+    {
+      "dni": 76129345,
+      "nombre": "VELASQUEZ CHUNGA JOSE LUIS",
+      "programa": "IC",
+      "registroNombre": "VELASQUEZ CHUNGA JOSE LUIS"
+    },
+    {
+      "dni": 21431497,
+      "nombre": "VELAZCO LOPEZ ANGELA BETSY",
+      "programa": "DE",
+      "registroNombre": "VELAZCO LOPEZ ANGELA BETSY"
+    },
+    {
+      "dni": 42963458,
+      "nombre": "VICUÑA VILCA LUIS MIGUEL",
+      "programa": "AF",
+      "registroNombre": "VICUÑA VILCA LUIS MIGUEL"
+    },
+    {
+      "dni": 70179483,
+      "nombre": "VILLANUEVA CAMAC GUILLERMO ARTURO",
+      "programa": "AE",
+      "registroNombre": "VILLANUEVA CAMAC GUILLERMO ARTURO"
+    },
+    {
+      "dni": 42647316,
+      "nombre": "VIZCARRA MEDINA DAVID SAMUEL",
+      "programa": "DE",
+      "registroNombre": "VIZCARRA MEDINA DAVID SAMUEL"
+    },
+    {
+      "dni": 40793210,
+      "nombre": "WINCHO CHILQUILLO VICTOR MANUEL",
+      "programa": "AR",
+      "registroNombre": "WINCHO CHILQUILLO VICTOR MANUEL"
+    },
+    {
+      "dni": 6767672,
+      "nombre": "WU MATTA JULIO",
+      "programa": "IN",
+      "registroNombre": "WU MATTA JULIO"
+    },
+    {
+      "dni": 21864691,
+      "nombre": "YATACO VALDEZ PALMER EDWIN",
+      "programa": "AE",
+      "registroNombre": "YATACO VALDEZ PALMER EDWIN"
+    },
+    {
+      "dni": 45156306,
+      "nombre": "ZAFRA SALAS MARCO ANDRE",
+      "programa": "AE",
+      "registroNombre": "ZAFRA SALAS MARCO ANDRE"
+    },
+    {
+      "dni": 21435528,
+      "nombre": "ZUMAETA BERAMENDI JACQUELINE DIANA",
+      "programa": "AF",
+      "registroNombre": "ZUMAETA BERAMENDI JACQUELINE DIANA"
+    }
+  ]
+}

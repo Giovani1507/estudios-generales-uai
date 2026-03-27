@@ -27,6 +27,7 @@ import ListaDocentes from "@/pages/lista-docentes";
 import ListaDocentesFICA from "@/pages/lista-docentes-fica";
 import ExtractorDocentes from "@/pages/extractor-docentes";
 import DocentesRegistro from "@/pages/docentes-registro";
+import VerificacionFICA from "@/pages/verificacion-fica";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,10 @@ function AppRouter() {
       <Route
         path="/docentes/registro"
         component={() => <ProtectedRoute component={DocentesRegistro} />}
+      />
+      <Route
+        path="/docentes/verificacion-fica"
+        component={() => <ProtectedRoute component={VerificacionFICA} />}
       />
 
       {/* 404 */}
