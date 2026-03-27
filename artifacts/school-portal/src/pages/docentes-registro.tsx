@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { exportExcelWithLogo } from "@/lib/excel-export";
 import {
-  Search, Download, Users, Building2, Stethoscope, FileText, X,
+  Search, Download, Users, Building2, Stethoscope, FileText, X, Printer,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -167,6 +167,104 @@ export default function DocentesRegistro() {
     a.click();
   };
 
+  /* Export Print / PDF */
+  const exportPrint = async () => {
+    const today = new Date().toLocaleDateString("es-PE", { day:"2-digit", month:"long", year:"numeric" });
+    const periodo = fHoras === "2025" ? "2025-2" : "2026-1";
+    const facultadLabel = fFac === "FICA" ? "Facultad de Ingeniería, Ciencias y Administración (FICA)"
+      : fFac === "FCS" ? "Facultad de Ciencias de la Salud (FCS)"
+      : "Todas las Facultades";
+    const filtroLabel = fHoras === "menos12" ? "Docentes con menos de 12 horas asignadas (2026-1)"
+      : fHoras === "2026" ? "Docentes con horas en 2026-1"
+      : fHoras === "2025" ? "Docentes con horas en 2025-2"
+      : "Todos los docentes";
+
+    // Logo → base64
+    let logoSrc = "";
+    try {
+      const resp = await fetch(`${import.meta.env.BASE_URL}logo-uai.png`);
+      const blob2 = await resp.blob();
+      logoSrc = await new Promise<string>((res) => {
+        const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob2);
+      });
+    } catch { /* logo optional */ }
+
+    const show25 = fHoras === "2025" || fHoras === "all";
+    const show26 = fHoras === "2026" || fHoras === "all" || fHoras === "menos12";
+
+    const theadCols = [
+      `<th style="width:30px">#</th>`,
+      `<th style="width:95px">DNI</th>`,
+      `<th>Apellidos y Nombres</th>`,
+      ...(show25 ? [`<th>Programa 2025-2</th>`,`<th style="width:75px">Cond. 2025</th>`,`<th style="width:50px;text-align:center">H.25</th>`] : []),
+      ...(show26 ? [`<th>Programa 2026-1</th>`,`<th style="width:75px">Cond. 2026</th>`,`<th style="width:50px;text-align:center">H.26</th>`] : []),
+      `<th>Observaciones</th>`,
+    ].join("");
+
+    const tbodyRows = filtered.map((d, i) => {
+      const h26 = Number(d.horas26 || 0);
+      const isLow = h26 > 0 && h26 < 12;
+      const h26Cell = h26 > 0
+        ? `<td style="text-align:center;font-weight:700;color:${isLow ? "#dc2626" : "#2f5aa6"}">${h26}${isLow ? " ⚠" : ""}</td>`
+        : `<td style="text-align:center;color:#999">—</td>`;
+      return `<tr style="${isLow ? "background:#fff5f5" : i%2===0?"":"background:#f8f9fb"}">
+        <td style="text-align:center;color:#888">${i+1}</td>
+        <td style="font-family:monospace">${d.dni || ""}</td>
+        <td style="font-weight:500">${d.nombre || ""}</td>
+        ${show25 ? `<td style="font-size:10px">${d.programa25||"—"}</td><td style="font-size:10px">${d.condicion25||"—"}</td><td style="text-align:center">${d.horas25||"—"}</td>` : ""}
+        ${show26 ? `<td style="font-size:10px">${d.programa26||"—"}</td><td style="font-size:10px">${d.condicion26||"—"}</td>${h26Cell}` : ""}
+        <td style="font-size:10px;color:#666">${d.observaciones||""}</td>
+      </tr>`;
+    }).join("");
+
+    const html = `<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"/>
+<title>Registro Docentes ${periodo} – UAI</title>
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a2e; padding: 20px; }
+  .header { display:flex; align-items:center; gap:16px; border-bottom:3px solid #2f5aa6; padding-bottom:12px; margin-bottom:16px; }
+  .logo { height:60px; }
+  .header-text h1 { font-size:13px; font-weight:700; color:#2f5aa6; text-transform:uppercase; letter-spacing:.5px; }
+  .header-text h2 { font-size:11px; color:#555; margin-top:2px; }
+  .meta { display:flex; gap:24px; background:#f0f4ff; border:1px solid #dbe4ff; border-radius:6px; padding:10px 14px; margin-bottom:14px; font-size:10.5px; }
+  .meta-item strong { display:block; font-size:9px; color:#888; text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:#2f5aa6; color:#fff; padding:6px 8px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px; }
+  td { padding:5px 8px; border-bottom:1px solid #e8ecf0; font-size:11px; }
+  .footer { margin-top:14px; font-size:9px; color:#aaa; text-align:center; border-top:1px solid #e0e0e0; padding-top:8px; }
+  @media print {
+    body { padding:12px; }
+    .no-print { display:none; }
+    tr { page-break-inside: avoid; }
+  }
+</style>
+</head><body>
+<div class="header">
+  ${logoSrc ? `<img class="logo" src="${logoSrc}" alt="UAI"/>` : ""}
+  <div class="header-text">
+    <h1>Universidad Autónoma de Ica</h1>
+    <h2>Registro de Docentes · ${facultadLabel}</h2>
+  </div>
+</div>
+<div class="meta">
+  <div class="meta-item"><strong>Período</strong>${periodo}</div>
+  <div class="meta-item"><strong>Filtro</strong>${filtroLabel}${fProg !== "all" ? ` · ${fProg}` : ""}</div>
+  <div class="meta-item"><strong>Total docentes</strong>${filtered.length}</div>
+  <div class="meta-item"><strong>Generado</strong>${today}</div>
+</div>
+<table>
+  <thead><tr>${theadCols}</tr></thead>
+  <tbody>${tbodyRows}</tbody>
+</table>
+<div class="footer">Sistema de Gestión Académica · Universidad Autónoma de Ica · 2026</div>
+<script>window.onload=()=>{ window.print(); }</script>
+</body></html>`;
+
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -272,6 +370,9 @@ export default function DocentesRegistro() {
           </Button>
           <Button onClick={exportCSV} variant="outline" className="gap-2 h-9 text-sm">
             <Download className="w-4 h-4" /> CSV
+          </Button>
+          <Button onClick={exportPrint} variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50">
+            <Printer className="w-4 h-4" /> PDF / Imprimir
           </Button>
         </div>
       </div>
