@@ -26,6 +26,8 @@ type FICARow = {
   horaFin: string;
   curso: string;
   docente: string;
+  horasT: number;
+  horasP: number;
   horas: number;
 };
 
@@ -118,6 +120,12 @@ export default function PlanificacionFICA() {
     return rows;
   }, [data, fCarrera, fCiclo, fSeccion, fTurno, fDocente, fCurso]);
 
+  const totals = useMemo(() => ({
+    horasT: filtered.reduce((s, r) => s + (r.horasT || 0), 0),
+    horasP: filtered.reduce((s, r) => s + (r.horasP || 0), 0),
+    horas:  filtered.reduce((s, r) => s + (r.horas  || 0), 0),
+  }), [filtered]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -141,10 +149,10 @@ export default function PlanificacionFICA() {
   };
 
   const exportCSV = () => {
-    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Local", "Día", "Hora Inicio", "Hora Fin", "Tipo", "Horas", "Curso", "Docente"];
+    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Local", "Día", "Hora Inicio", "Hora Fin", "Tipo", "H.Teoría", "H.Práctica", "Total H.", "Curso", "Docente"];
     const rows = filtered.map((r) => [
       r.carrera, r.carreraFull, r.ciclo, r.seccion, r.turno, r.local,
-      r.dia, r.hora, r.horaFin, r.tipo, r.horas, r.curso, r.docente,
+      r.dia, r.hora, r.horaFin, r.tipo, r.horasT, r.horasP, r.horas, r.curso, r.docente,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -271,6 +279,26 @@ export default function PlanificacionFICA() {
         )}
       </div>
 
+      {/* Totals bar */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-4 py-2 shadow-sm">
+          <span className="text-xs text-muted-foreground">Sesiones filtradas:</span>
+          <span className="text-sm font-bold text-foreground">{filtered.length}</span>
+        </div>
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 shadow-sm">
+          <span className="text-xs text-blue-600 font-medium">H. Teoría:</span>
+          <span className="text-sm font-bold text-blue-700">{totals.horasT}</span>
+        </div>
+        <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 shadow-sm">
+          <span className="text-xs text-purple-600 font-medium">H. Práctica:</span>
+          <span className="text-sm font-bold text-purple-700">{totals.horasP}</span>
+        </div>
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-4 py-2 shadow-sm">
+          <span className="text-xs text-primary font-medium">Total Horas:</span>
+          <span className="text-sm font-bold text-primary">{totals.horas}</span>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         {loading ? (
@@ -291,7 +319,9 @@ export default function PlanificacionFICA() {
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Día</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Hora</th>
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Tipo</th>
-                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">H.</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap bg-blue-700">H.T</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap bg-purple-700">H.P</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Total</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[200px]">Curso</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[180px]">Docente</th>
                   </tr>
@@ -299,7 +329,7 @@ export default function PlanificacionFICA() {
                 <tbody>
                   {paginated.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={13} className="text-center py-12 text-muted-foreground">
                         No se encontraron registros con los filtros seleccionados.
                       </td>
                     </tr>
@@ -342,13 +372,20 @@ export default function PlanificacionFICA() {
                         <td className="px-3 py-2 text-center">
                           {row.tipo && (
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              row.tipo === "T" ? "bg-blue-100 text-blue-700" :
+                              row.tipo === "T"  ? "bg-blue-100 text-blue-700" :
                               row.tipo === "TP" ? "bg-purple-100 text-purple-700" :
-                              "bg-green-100 text-green-700"
+                              row.tipo === "P"  ? "bg-green-100 text-green-700" :
+                              "bg-gray-100 text-gray-600"
                             }`}>{row.tipo}</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-center font-semibold text-primary">
+                        <td className="px-3 py-2 text-center font-semibold text-blue-600">
+                          {row.horasT > 0 ? row.horasT : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-center font-semibold text-purple-600">
+                          {row.horasP > 0 ? row.horasP : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-center font-bold text-primary">
                           {row.horas > 0 ? row.horas : "—"}
                         </td>
                         <td className="px-3 py-2 font-medium max-w-[240px]">
