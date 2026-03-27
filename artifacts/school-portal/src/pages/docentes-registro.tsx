@@ -47,11 +47,11 @@ export default function DocentesRegistro() {
   const [fFac, setFFac]         = useState<FacFilter>("FICA");
   const [fProg, setFProg]       = useState("all");
   const [fBusq, setFBusq]       = useState("");
-  const [fHoras, setFHoras]     = useState<"all" | "2025" | "2026">("all");
+  const [fHoras, setFHoras]     = useState<"all" | "2025" | "2026" | "menos12">("all");
   const [page, setPage]         = useState(1);
 
   useEffect(() => {
-    fetch("/docentes-registro-2026-1.json")
+    fetch(`${import.meta.env.BASE_URL}docentes-registro-2026-1.json`)
       .then((r) => r.json())
       .then((d) => { setAllData(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -75,17 +75,21 @@ export default function DocentesRegistro() {
   const filtered = useMemo(() => {
     let r = baseSet;
     if (fProg !== "all") r = r.filter((d) => d.programa25 === fProg);
-    if (fHoras === "2026") r = r.filter((d) => d.horas26 > 0);
-    if (fHoras === "2025") r = r.filter((d) => d.horas25 > 0);
+    if (fHoras === "2026")    r = r.filter((d) => d.horas26 > 0);
+    if (fHoras === "2025")    r = r.filter((d) => d.horas25 > 0);
+    if (fHoras === "menos12") r = r.filter((d) => Number(d.horas26) > 0 && Number(d.horas26) < 12);
     if (fBusq) {
       const q = fBusq.toLowerCase();
       r = r.filter(
         (d) =>
-          d.nombre.toLowerCase().includes(q) ||
-          d.dni.toString().includes(q)
+          (d.nombre || "").toLowerCase().includes(q) ||
+          (d.dni || "").toString().includes(q)
       );
     }
-    return [...r].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    return [...r].sort((a, b) => {
+      if (fHoras === "menos12") return Number(a.horas26) - Number(b.horas26);
+      return a.nombre.localeCompare(b.nombre, "es");
+    });
   }, [baseSet, fProg, fHoras, fBusq]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -97,7 +101,7 @@ export default function DocentesRegistro() {
   const exportExcel = () => {
     const periodo  = fHoras === "2025" ? "2025-2" : "2026-1";
     const show25   = fHoras === "2025" || fHoras === "all";
-    const show26   = fHoras === "2026" || fHoras === "all";
+    const show26   = fHoras === "2026" || fHoras === "all" || fHoras === "menos12";
 
     const cols = [
       { header: "#",     key: "n",     width: 5,  align: "center" as const },
@@ -147,7 +151,7 @@ export default function DocentesRegistro() {
   const exportCSV = () => {
     const periodo = fHoras === "2025" ? "2025-2" : "2026-1";
     const show25 = fHoras === "2025" || fHoras === "all";
-    const show26 = fHoras === "2026" || fHoras === "all";
+    const show26 = fHoras === "2026" || fHoras === "all" || fHoras === "menos12";
     const cols25 = show25 ? ",Programa 2025-2,Condición 2025-2,Dedicación 2025-2,Horas 2025-2" : "";
     const cols26 = show26 ? ",Programa 2026-1,Condición 2026-1,Dedicación 2026-1,Horas 2026-1" : "";
     const header = `#,DNI,Nombre${cols25}${cols26}`;
@@ -228,17 +232,21 @@ export default function DocentesRegistro() {
 
         {/* Horas filter */}
         <div className="flex rounded-lg border border-border/60 overflow-hidden bg-white">
-          {(["all", "2025", "2026"] as const).map((opt) => (
+          {(["all", "2025", "2026", "menos12"] as const).map((opt) => (
             <button
               key={opt}
               onClick={() => { setFHoras(opt); resetPage(); }}
               className={`px-3 h-9 text-sm font-medium transition-colors border-r last:border-r-0 border-border/40 ${
                 fHoras === opt
-                  ? "bg-primary text-white"
+                  ? opt === "menos12"
+                    ? "bg-red-600 text-white"
+                    : "bg-primary text-white"
+                  : opt === "menos12"
+                  ? "text-red-600 hover:bg-red-50"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               }`}
             >
-              {opt === "all" ? "Todas las horas" : `H. ${opt}`}
+              {opt === "all" ? "Todas" : opt === "menos12" ? "< 12 h" : `H. ${opt}`}
             </button>
           ))}
         </div>
@@ -303,8 +311,10 @@ export default function DocentesRegistro() {
               const rowN = (page - 1) * PAGE_SIZE + idx + 1;
               return (
                 <div
-                  key={d.dni}
-                  className="grid grid-cols-[44px_110px_1fr_200px_90px_80px_80px] items-center px-4 py-2.5 hover:bg-primary/[0.03] transition-colors"
+                  key={d.dni || d.nombre}
+                  className={`grid grid-cols-[44px_110px_1fr_200px_90px_80px_80px] items-center px-4 py-2.5 hover:bg-primary/[0.03] transition-colors ${
+                    Number(d.horas26) > 0 && Number(d.horas26) < 12 ? "bg-red-50/40" : ""
+                  }`}
                 >
                   <span className="text-xs text-muted-foreground font-mono tabular-nums">{rowN}</span>
                   <span className="text-sm font-mono text-foreground tabular-nums">{d.dni}</span>
@@ -329,8 +339,17 @@ export default function DocentesRegistro() {
                   <span className="text-sm text-center text-muted-foreground tabular-nums">
                     {d.horas25 > 0 ? d.horas25 : "—"}
                   </span>
-                  <span className={`text-sm text-center font-medium tabular-nums ${d.horas26 > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-sm text-center font-bold tabular-nums ${
+                    Number(d.horas26) >= 12
+                      ? "text-primary"
+                      : Number(d.horas26) > 0
+                      ? "text-red-600"
+                      : "text-muted-foreground"
+                  }`}>
                     {d.horas26 > 0 ? d.horas26 : "—"}
+                    {Number(d.horas26) > 0 && Number(d.horas26) < 12 && (
+                      <span className="ml-1 text-[9px] font-semibold bg-red-100 text-red-600 rounded px-0.5">!</span>
+                    )}
                   </span>
                 </div>
               );
