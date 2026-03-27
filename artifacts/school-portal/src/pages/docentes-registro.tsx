@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { exportExcelWithLogo } from "@/lib/excel-export";
 import {
   Search, Download, Users, Building2, Stethoscope, FileText, X,
 } from "lucide-react";
@@ -95,38 +95,52 @@ export default function DocentesRegistro() {
 
   /* Export Excel */
   const exportExcel = () => {
-    const periodo = fHoras === "2025" ? "2025-2" : fHoras === "2026" ? "2026-1" : "2026-1";
-    const data = filtered.map((d, i) => {
-      const base: Record<string, unknown> = {
-        "#":    i + 1,
-        "DNI":  d.dni ?? "SIN REGISTRO",
-        "Nombre": d.nombre,
-      };
-      if (fHoras === "2025" || fHoras === "all") {
-        base["Programa 2025-2"]   = d.programa25  || "—";
-        base["Condición 2025-2"]  = d.condicion25  || "—";
-        base["Dedicación 2025-2"] = d.dedicacion25 || "—";
-        base["Horas 2025-2"]      = d.horas25  || 0;
-        base["Local 2025-2"]      = d.local25   || "—";
-      }
-      if (fHoras === "2026" || fHoras === "all") {
-        base["Programa 2026-1"]   = d.programa26  || "—";
-        base["Condición 2026-1"]  = d.condicion26  || "—";
-        base["Dedicación 2026-1"] = d.dedicacion26 || "—";
-        base["Horas 2026-1"]      = d.horas26  || 0;
-        base["Local 2026-1"]      = d.local26   || "—";
-      }
-      base["Observaciones"] = d.observaciones || "";
-      return base;
-    });
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [
-      {wch:5},{wch:12},{wch:42},{wch:30},{wch:14},{wch:14},{wch:12},{wch:10},
-      {wch:30},{wch:14},{wch:14},{wch:12},{wch:10},{wch:40},
+    const periodo  = fHoras === "2025" ? "2025-2" : "2026-1";
+    const show25   = fHoras === "2025" || fHoras === "all";
+    const show26   = fHoras === "2026" || fHoras === "all";
+
+    const cols = [
+      { header: "#",     key: "n",     width: 5,  align: "center" as const },
+      { header: "DNI",   key: "dni",   width: 13, align: "center" as const },
+      { header: "Nombre",key: "nombre",width: 44 },
+      ...(show25 ? [
+        { header: "Programa 2025-2",   key: "prog25",  width: 32 },
+        { header: "Condición 2025-2",  key: "cond25",  width: 14 },
+        { header: "Dedicación 2025-2", key: "ded25",   width: 14 },
+        { header: "Horas 2025-2",      key: "h25",     width: 12, align: "center" as const },
+      ] : []),
+      ...(show26 ? [
+        { header: "Programa 2026-1",   key: "prog26",  width: 32 },
+        { header: "Condición 2026-1",  key: "cond26",  width: 14 },
+        { header: "Dedicación 2026-1", key: "ded26",   width: 14 },
+        { header: "Horas 2026-1",      key: "h26",     width: 12, align: "center" as const },
+      ] : []),
+      { header: "Observaciones", key: "obs", width: 40 },
     ];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Docentes ${fFac} ${periodo}`);
-    XLSX.writeFile(wb, `docentes_${fFac.toLowerCase()}_${periodo}.xlsx`);
+
+    const rows = filtered.map((d, i) => ({
+      n:      i + 1,
+      dni:    d.dni ?? "SIN REGISTRO",
+      nombre: d.nombre,
+      prog25: d.programa25  || "—",
+      cond25: d.condicion25  || "—",
+      ded25:  d.dedicacion25 || "—",
+      h25:    d.horas25  || 0,
+      prog26: d.programa26  || "—",
+      cond26: d.condicion26  || "—",
+      ded26:  d.dedicacion26 || "—",
+      h26:    d.horas26  || 0,
+      obs:    d.observaciones || "",
+    }));
+
+    exportExcelWithLogo({
+      sheetTitle:  `Docentes ${fFac} · ${periodo}`,
+      institution: "Universidad Autónoma de Ica",
+      subtitle:    `Registro oficial de docentes con carga académica · Semestre ${periodo}`,
+      fileName:    `docentes_${fFac.toLowerCase()}_${periodo}`,
+      columns:     cols,
+      rows,
+    });
   };
 
   /* Export CSV */

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import * as XLSX from "xlsx";
+import { exportExcelWithLogo } from "@/lib/excel-export";
 import {
   CheckCircle2, AlertTriangle, XCircle, Users, Search,
   Download, Info, Shield, ClipboardCheck, X,
@@ -81,18 +81,20 @@ export default function VerificacionFICA() {
     );
   }, [data, search]);
 
-  const exportExcel = (list: (DocPlan | DocReg | DocAmbos)[], filename: string) => {
-    const rows = list.map((d, i) => ({
-      "#": i + 1,
-      "DNI": d.dni,
-      "Nombre": d.nombre,
-      "Programa": d.programa,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 44 }, { wch: 36 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Docentes");
-    XLSX.writeFile(wb, filename);
+  const exportExcel = (list: (DocPlan | DocReg | DocAmbos)[], filename: string, title: string) => {
+    exportExcelWithLogo({
+      sheetTitle: title,
+      institution: "Universidad Autónoma de Ica",
+      subtitle: "Verificación FICA · Semestre 2026-1",
+      fileName: filename.replace(".xlsx", ""),
+      columns: [
+        { header: "#",       key: "n",       width: 5,  align: "center" },
+        { header: "DNI",     key: "dni",     width: 13, align: "center" },
+        { header: "Nombre",  key: "nombre",  width: 46 },
+        { header: "Programa",key: "programa",width: 38 },
+      ],
+      rows: list.map((d, i) => ({ n: i + 1, dni: d.dni ?? "—", nombre: d.nombre, programa: d.programa })),
+    });
   };
 
   if (loading) {
@@ -279,7 +281,7 @@ export default function VerificacionFICA() {
                   <Input placeholder="Buscar…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
                   {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3.5 h-3.5" /></button>}
                 </div>
-                <Button onClick={() => exportExcel(filteredFaltantes, "faltantes_fica_2026-1.xlsx")} className="gap-2 h-9 text-sm bg-red-600 hover:bg-red-700">
+                <Button onClick={() => exportExcel(filteredFaltantes, "faltantes_fica_2026-1.xlsx", "Docentes Faltantes FICA 2026-1")} className="gap-2 h-9 text-sm bg-red-600 hover:bg-red-700">
                   <Download className="w-4 h-4" /> Exportar
                 </Button>
               </div>
@@ -302,7 +304,7 @@ export default function VerificacionFICA() {
               <Input placeholder="Buscar…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
               {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3.5 h-3.5" /></button>}
             </div>
-            <Button onClick={() => exportExcel(filteredSinCurso, "sin_cursos_fica_2026-1.xlsx")} variant="outline" className="gap-2 h-9 text-sm">
+            <Button onClick={() => exportExcel(filteredSinCurso, "sin_cursos_fica_2026-1.xlsx", "Docentes Sin Cursos FICA 2026-1")} variant="outline" className="gap-2 h-9 text-sm">
               <Download className="w-4 h-4" /> Exportar
             </Button>
           </div>
@@ -319,7 +321,7 @@ export default function VerificacionFICA() {
               <Input placeholder="Buscar…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
               {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3.5 h-3.5" /></button>}
             </div>
-            <Button onClick={() => exportExcel(filteredCompletos, "verificados_fica_2026-1.xlsx")} className="gap-2 h-9 text-sm bg-green-600 hover:bg-green-700">
+            <Button onClick={() => exportExcel(filteredCompletos, "verificados_fica_2026-1.xlsx", "Docentes Verificados FICA 2026-1")} className="gap-2 h-9 text-sm bg-green-600 hover:bg-green-700">
               <Download className="w-4 h-4" /> Exportar
             </Button>
           </div>

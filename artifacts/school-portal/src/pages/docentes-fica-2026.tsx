@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { exportExcelWithLogo } from "@/lib/excel-export";
 import {
   Search, Download, Users, AlertTriangle, CheckCircle2, X, Building2, FileText,
 } from "lucide-react";
@@ -67,26 +67,34 @@ export default function DocentesFICA2026() {
 
   /* Export Excel */
   const exportExcel = () => {
-    const data = filtered.map((d, i) => ({
-      "#":          i + 1,
-      "DNI":        d.dni ?? "SIN REGISTRO",
-      "Nombre":     d.nombre,
-      "Programa":   d.programa || "—",
-      "Condición":  d.condicion || "—",
-      "Dedicación": d.dedicacion || "—",
-      "Horas 2025-2": d.horas25 || 0,
-      "Horas 2026-1": d.horas26 || 0,
-      "Local":      d.local || "—",
-      "Estado":     d.dni ? "En Registro" : "Sin Registro",
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [
-      { wch: 5 }, { wch: 12 }, { wch: 44 }, { wch: 32 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 14 },
-    ];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Docentes FICA 2026");
-    XLSX.writeFile(wb, "docentes_fica_2026.xlsx");
+    exportExcelWithLogo({
+      sheetTitle:  "Docentes FICA · Semestre 2026-1",
+      institution: "Universidad Autónoma de Ica",
+      subtitle:    "Lista oficial de docentes con carga académica en FICA · 2026-1",
+      fileName:    "docentes_fica_2026-1",
+      columns: [
+        { header: "#",           key: "n",       width: 5,  align: "center" },
+        { header: "DNI",         key: "dni",     width: 13, align: "center" },
+        { header: "Nombre",      key: "nombre",  width: 46 },
+        { header: "Programa",    key: "programa",width: 34 },
+        { header: "Condición",   key: "cond",    width: 12 },
+        { header: "Dedicación",  key: "ded",     width: 12 },
+        { header: "Horas 2025-2",key: "h25",     width: 12, align: "center" },
+        { header: "Horas 2026-1",key: "h26",     width: 12, align: "center" },
+        { header: "Estado",      key: "estado",  width: 14 },
+      ],
+      rows: filtered.map((d, i) => ({
+        n:        i + 1,
+        dni:      d.dni ?? "SIN REGISTRO",
+        nombre:   d.nombre,
+        programa: d.programa || "—",
+        cond:     d.condicion || "—",
+        ded:      d.dedicacion || "—",
+        h25:      d.horas25 || 0,
+        h26:      d.horas26 || 0,
+        estado:   d.dni ? "En Registro" : "Sin Registro",
+      })),
+    });
   };
 
   /* Export CSV */

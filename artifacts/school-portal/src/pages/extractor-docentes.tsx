@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
+import { exportExcelWithLogo } from "@/lib/excel-export";
 import { Upload, Download, Search, FileSpreadsheet, Users, X, ChevronDown, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,12 +123,17 @@ export default function ExtractorDocentes() {
   /* ── Export Excel ── */
   const exportExcel = () => {
     if (!result) return;
-    const data = filtered.map((name, i) => ({ "#": i + 1, "Docente": name }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 6 }, { wch: 50 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Docentes");
-    XLSX.writeFile(wb, `docentes_${result.sheetName}_${Date.now()}.xlsx`);
+    exportExcelWithLogo({
+      sheetTitle: `Docentes — ${result.sheetName}`,
+      institution: "Universidad Autónoma de Ica",
+      subtitle: `Extraído de: ${result.sheetName}`,
+      fileName: `docentes_${result.sheetName}`,
+      columns: [
+        { header: "#",      key: "n",       width: 5,  align: "center" },
+        { header: "Docente",key: "nombre",  width: 52 },
+      ],
+      rows: filtered.map((name, i) => ({ n: i + 1, nombre: name })),
+    });
   };
 
   /* ── Export CSV ── */
