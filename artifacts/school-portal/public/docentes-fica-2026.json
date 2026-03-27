@@ -5,9 +5,9 @@
     "nombre": "ABANTO MERINO LUIS ALFREDO",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
+    "horas26": 5,
     "local": ""
   },
   {
@@ -16,10 +16,10 @@
     "nombre": "ACERO CARDENAS ANA MARIA",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
-    "local": ""
+    "local": "FILIAL ICA"
   },
   {
     "n": 3,
@@ -40,7 +40,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 16,
+    "horas26": 14,
     "local": "FILIAL"
   },
   {
@@ -51,7 +51,7 @@
     "condicion": "",
     "dedicacion": "",
     "horas25": 0,
-    "horas26": 0,
+    "horas26": 8,
     "local": ""
   },
   {
@@ -62,7 +62,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
-    "horas26": 15,
+    "horas26": 13,
     "local": "FILIAL"
   },
   {
@@ -73,14 +73,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 30,
-    "horas26": 33,
+    "horas26": 27,
     "local": "FILIAL"
   },
   {
     "n": 8,
     "dni": 21783999,
     "nombre": "ALMEYDA CARBAJAL JOSE ARMANDO",
-    "programa": "INGENIERÍA INDUSTRIAL - EEGG",
+    "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 35,
@@ -95,7 +95,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 19,
+    "horas26": 14,
     "local": "SEDE"
   },
   {
@@ -104,7 +104,7 @@
     "nombre": "ALMEYDA MORENO JOSE JOSE",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
-    "dedicacion": "TP",
+    "dedicacion": "TC",
     "horas25": 15,
     "horas26": 37,
     "local": "SEDE"
@@ -113,11 +113,11 @@
     "n": 11,
     "dni": 43650447,
     "nombre": "AMORETTI ARTEAGA ALEJANDRA GUADALUPE",
-    "programa": "ADMINISTRACIÓN Y FINANZAS",
+    "programa": "ADMINISTRACIÓN  Y FINANZAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 28,
-    "horas26": 35,
+    "horas26": 33,
     "local": "SEDE"
   },
   {
@@ -135,11 +135,11 @@
     "n": 13,
     "dni": 71431209,
     "nombre": "ANDRADE GONZALES VICTOR MANUEL",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 10,
+    "horas26": 6,
     "local": "SEDE"
   },
   {
@@ -157,11 +157,11 @@
     "n": 15,
     "dni": 45879356,
     "nombre": "ANICAMA QUISIVERDE GERALDINE ISABEL",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 36,
-    "horas26": 39,
+    "horas26": 33,
     "local": "SEDE"
   },
   {
@@ -170,7 +170,7 @@
     "nombre": "APAZA CHINO GRIMALDO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
     "local": ""
@@ -179,11 +179,11 @@
     "n": 17,
     "dni": 21865174,
     "nombre": "ARIAS LOPEZ SILVIA LUISA",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 23,
-    "horas26": 32,
+    "horas26": 29,
     "local": "SEDE"
   },
   {
@@ -194,7 +194,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 40,
-    "horas26": 15,
+    "horas26": 12,
     "local": "FILIAL"
   },
   {
@@ -203,7 +203,7 @@
     "nombre": "BAHAMONDES GARCIA SINOE GEOFREY",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 15,
     "local": ""
@@ -216,14 +216,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 8,
+    "horas26": 6,
     "local": "FILIAL"
   },
   {
     "n": 21,
     "dni": 21884864,
     "nombre": "BARRERA SIGUAS EDGAR DANIEL",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -238,14 +238,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 16,
+    "horas26": 10,
     "local": "FILIAL"
   },
   {
     "n": 23,
     "dni": 7253926,
     "nombre": "BECERRA GUTIERREZ ETHEEL ROMILA",
-    "programa": "ARQUITECTURA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
@@ -258,10 +258,10 @@
     "nombre": "BEJARANO PEREZ JUDITH ROSSANA",
     "programa": "INGENIERÍA DICIL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 15,
-    "local": ""
+    "local": "PRINCIPAL"
   },
   {
     "n": 25,
@@ -280,7 +280,7 @@
     "nombre": "BENDEZU HERNANDEZ JAVIER ORLANDO",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "CHINCHA",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
     "local": ""
@@ -291,7 +291,7 @@
     "nombre": "BERRIOS VEGA CARMEN LUZ",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 12,
     "local": "HUAURA"
@@ -304,7 +304,7 @@
     "condicion": "",
     "dedicacion": "",
     "horas25": 0,
-    "horas26": 0,
+    "horas26": 14,
     "local": ""
   },
   {
@@ -315,7 +315,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 12,
+    "horas26": 7,
     "local": "FILIAL"
   },
   {
@@ -324,7 +324,7 @@
     "nombre": "BUITRON LLACSA JOSE MANUEL",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 9,
     "local": "PRINCIPAL"
@@ -346,16 +346,16 @@
     "nombre": "CABEZA MOLINA LUIS FELIPE",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 8,
-    "local": ""
+    "local": "FILIAL ICA"
   },
   {
     "n": 33,
     "dni": 21505996,
     "nombre": "CABRERA HUAMAN GISELLA ROSA",
-    "programa": "TECNOLOGÍA MÉDICA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 5,
@@ -370,7 +370,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 12,
+    "horas26": 10,
     "local": "FILIAL"
   },
   {
@@ -381,18 +381,18 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 35,
+    "horas26": 30,
     "local": "FILIAL"
   },
   {
     "n": 36,
     "dni": 44113156,
     "nombre": "CAHUANA CASIANO BRIGNER MARK",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 18,
+    "horas26": 8,
     "local": "SEDE"
   },
   {
@@ -401,7 +401,7 @@
     "nombre": "CALLAN BACILIO RICHARD",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
     "local": ""
@@ -425,7 +425,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
-    "horas26": 17,
+    "horas26": 13,
     "local": "SEDE"
   },
   {
@@ -436,29 +436,29 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
-    "horas26": 15,
+    "horas26": 11,
     "local": "FILIAL"
   },
   {
     "n": 41,
     "dni": 21406933,
     "nombre": "CASTAÑEDA RIVEROS JOSEFA ELIZABETH",
-    "programa": "PSICOLOGÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 16,
+    "horas26": 14,
     "local": "FILIAL"
   },
   {
     "n": 42,
     "dni": 42679183,
     "nombre": "CASTILLO ORMEÑO ENZO RENAN",
-    "programa": "",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
-    "dedicacion": "",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 18,
+    "horas26": 12,
     "local": "SEDE"
   },
   {
@@ -469,7 +469,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 8,
+    "horas26": 2,
     "local": "SEDE"
   },
   {
@@ -480,7 +480,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
-    "horas26": 16,
+    "horas26": 14,
     "local": "FILIAL"
   },
   {
@@ -500,20 +500,20 @@
     "nombre": "CASTILLON SIGUAS LUIS ALFREDO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 19,
+    "horas26": 5,
     "local": ""
   },
   {
     "n": 47,
     "dni": 43338252,
     "nombre": "CASTRO MEJIA PERCY JUNIOR",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 5,
-    "horas26": 8,
+    "horas26": 4,
     "local": "SEDE"
   },
   {
@@ -544,7 +544,7 @@
     "nombre": "CHANG HERNANDEZ GUILLERMO ANDRES",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 12,
     "local": ""
@@ -555,10 +555,10 @@
     "nombre": "CHAVEZ CARRAZCO CECILIA MARCELINA",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
-    "local": ""
+    "local": "PRINCIPAL"
   },
   {
     "n": 52,
@@ -566,7 +566,7 @@
     "nombre": "CHUNG RODRIGUEZ JOSE MARTIN",
     "programa": "DERECHO-EEGG",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 18,
     "local": "HUAURA"
@@ -575,7 +575,7 @@
     "n": 53,
     "dni": 45919468,
     "nombre": "CONDE CERVANTES GERARDO OMAR",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 25,
@@ -588,9 +588,9 @@
     "nombre": "CONDE REYES JORGE LUIS",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
+    "horas26": 4,
     "local": "HUAURA"
   },
   {
@@ -599,27 +599,27 @@
     "nombre": "CONDORCHOA CAMACHO CARLOS JOHN",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TC",
     "horas25": 0,
-    "horas26": 37,
-    "local": ""
+    "horas26": 17,
+    "local": "PRINCIPAL"
   },
   {
     "n": 56,
     "dni": 71844864,
     "nombre": "CORDOVA OSORIO ROLANDO ROTMAN FRIEDERICH",
-    "programa": "ENFERMERÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 13,
-    "horas26": 10,
+    "horas26": 8,
     "local": "FILIAL"
   },
   {
     "n": 57,
     "dni": 10359700,
     "nombre": "CORDOVA RAMIREZ DORIS IVONNE",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 34,
@@ -630,11 +630,11 @@
     "n": 58,
     "dni": 21863247,
     "nombre": "CRUZ CHUNGA CARLOS BIENVENIDO",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 38,
-    "horas26": 35,
+    "horas26": 31,
     "local": "SEDE"
   },
   {
@@ -678,7 +678,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
-    "horas26": 32,
+    "horas26": 30,
     "local": "HUAURA"
   },
   {
@@ -698,9 +698,9 @@
     "nombre": "DIAZ VELASQUEZ JULIO CESAR",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 12,
+    "horas26": 3,
     "local": ""
   },
   {
@@ -720,7 +720,7 @@
     "nombre": "DURÁN RIOS SANDRO ANIBAL",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 9,
     "local": "HUAURA"
@@ -731,7 +731,7 @@
     "nombre": "ESPINOZA LEON GUSTAVO FELIPE",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 9,
     "local": ""
@@ -742,10 +742,10 @@
     "nombre": "ESPINOZA MORE CARLA MILAGROS",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 6,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 69,
@@ -755,14 +755,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 18,
-    "horas26": 30,
+    "horas26": 23,
     "local": "SEDE"
   },
   {
     "n": 70,
     "dni": 21863704,
     "nombre": "ESTEBAN MUNAYCO CARLOS ALBERTO",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -775,10 +775,10 @@
     "nombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 12,
-    "local": ""
+    "horas26": 6,
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 72,
@@ -786,7 +786,7 @@
     "nombre": "FABIAN SOBERANIS MIGUEL ANGEL",
     "programa": "DERECHO-EEGG",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 20,
     "local": "HUAURA"
@@ -799,7 +799,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 11,
-    "horas26": 22,
+    "horas26": 16,
     "local": "FILIAL"
   },
   {
@@ -810,7 +810,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 34,
-    "horas26": 27,
+    "horas26": 21,
     "local": "SEDE"
   },
   {
@@ -821,7 +821,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
-    "horas26": 34,
+    "horas26": 26,
     "local": "SEDE"
   },
   {
@@ -832,14 +832,14 @@
     "condicion": "",
     "dedicacion": "PRINCIPAL",
     "horas25": 0,
-    "horas26": 17,
+    "horas26": 15,
     "local": ""
   },
   {
     "n": 77,
     "dni": 41730649,
     "nombre": "FLORES ARRIOLA ADRIANA LORENA",
-    "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 18,
@@ -874,10 +874,10 @@
     "nombre": "FRIAS LIAU HING MELVA",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
-    "local": ""
+    "local": "FILIAL ICA"
   },
   {
     "n": 81,
@@ -887,7 +887,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 14,
+    "horas26": 7,
     "local": "SEDE"
   },
   {
@@ -907,7 +907,7 @@
     "nombre": "GAMARRA NORIEGA WILLIAN VLADIMIR",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
-    "dedicacion": "TC",
+    "dedicacion": "TP",
     "horas25": 36,
     "horas26": 34,
     "local": "SEDE"
@@ -920,7 +920,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 16,
+    "horas26": 6,
     "local": "SEDE"
   },
   {
@@ -929,9 +929,9 @@
     "nombre": "GARAYAR TTITO ANA MELIZA",
     "programa": "INGENIERÍA DE SISTEMAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
+    "horas26": 7,
     "local": ""
   },
   {
@@ -940,9 +940,9 @@
     "nombre": "GARCIA AQUIJE PEDRO CARLOS",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
+    "horas26": 6,
     "local": ""
   },
   {
@@ -951,9 +951,9 @@
     "nombre": "GARCIA DONAYRE JOEIS MIGUEL",
     "programa": "DERECHO",
     "condicion": "DOCENTE",
-    "dedicacion": "TP",
+    "dedicacion": "TC",
     "horas25": 13,
-    "horas26": 34,
+    "horas26": 22,
     "local": "FILIAL"
   },
   {
@@ -986,7 +986,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
-    "horas26": 18,
+    "horas26": 16,
     "local": "FILIAL"
   },
   {
@@ -995,16 +995,16 @@
     "nombre": "GAVINO SANCHEZ JOHN STEVENS",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 6,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 92,
     "dni": 41258221,
     "nombre": "GIRALDO MENDOZA DANTE MARTIN",
-    "programa": "ENFERMERÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
@@ -1017,9 +1017,9 @@
     "nombre": "GOMERO MANCESIDOR JOHNNY MITCHELL",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 10,
+    "horas26": 8,
     "local": ""
   },
   {
@@ -1030,7 +1030,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 25,
-    "horas26": 28,
+    "horas26": 20,
     "local": "FILIAL"
   },
   {
@@ -1050,7 +1050,7 @@
     "nombre": "GUARDIA PANIURA CANDY HAYDEE",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 16,
     "local": ""
@@ -1061,10 +1061,10 @@
     "nombre": "GUERRERO CERVERA JULIA DEL PILAR",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 14,
-    "local": ""
+    "horas26": 10,
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 98,
@@ -1081,12 +1081,12 @@
     "n": 99,
     "dni": 42711623,
     "nombre": "GUERRERO ZELA GUSTAVO ADOLFO",
-    "programa": "ADMINISTRACIÓN Y FINANZAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 14,
     "horas26": 30,
-    "local": "SEDE"
+    "local": "FILIAL"
   },
   {
     "n": 100,
@@ -1094,10 +1094,10 @@
     "nombre": "GUTIERREZ JIMENEZ CINDY FIORELLA",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TC",
     "horas25": 0,
     "horas26": 9,
-    "local": ""
+    "local": "PRINCIPAL"
   },
   {
     "n": 101,
@@ -1107,14 +1107,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
-    "horas26": 14,
+    "horas26": 9,
     "local": "SEDE"
   },
   {
     "n": 102,
     "dni": 72687785,
     "nombre": "HERNANDEZ DIAZ STEFANI MADELHEYN MARGARITA",
-    "programa": "ENFERMERÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
@@ -1129,7 +1129,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 5,
-    "horas26": 20,
+    "horas26": 5,
     "local": "SEDE"
   },
   {
@@ -1138,9 +1138,9 @@
     "nombre": "HERNANDEZ PEVES JUAN GUSTAVO",
     "programa": "INGENIERÍA DE SISTEMAS",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
+    "horas26": 5,
     "local": ""
   },
   {
@@ -1158,22 +1158,22 @@
     "n": 106,
     "dni": 71883055,
     "nombre": "HUALLANCA CARBAJAL JOSE JONATHAN",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 10,
-    "horas26": 13,
+    "horas26": 9,
     "local": "SEDE"
   },
   {
     "n": 107,
     "dni": 21813726,
     "nombre": "HUALLANCA CONTRERAS MARIO CESAR",
-    "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG",
+    "programa": "ADMINISTRACIÓN  Y FINANZAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 28,
-    "horas26": 37,
+    "horas26": 30,
     "local": "SEDE"
   },
   {
@@ -1182,9 +1182,9 @@
     "nombre": "HUAMAN ESPINO ZORAIDA FELIPA",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 4,
+    "horas26": 2,
     "local": ""
   },
   {
@@ -1195,7 +1195,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 13,
+    "horas26": 10,
     "local": "SEDE"
   },
   {
@@ -1204,20 +1204,20 @@
     "nombre": "HUAMANI CANALES ANALI MARIELLA",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
-    "local": ""
+    "local": "FILIAL ICA"
   },
   {
     "n": 111,
     "dni": 41076019,
     "nombre": "HUAMANI SALAZAR CESAR JOEL",
-    "programa": "ARQUITECTURA - EEGG",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 40,
-    "horas26": 29,
+    "horas26": 21,
     "local": "SEDE"
   },
   {
@@ -1226,9 +1226,9 @@
     "nombre": "HUANCAHUIRE BRAVO CLAUDIO ISAIAS",
     "programa": "INGENIERÍA DE SISTEMAS",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 18,
+    "horas26": 7,
     "local": ""
   },
   {
@@ -1246,11 +1246,11 @@
     "n": 114,
     "dni": 21869681,
     "nombre": "HUASASQUICHE ABREGU MIGUEL ANGEL",
-    "programa": "INGENIERÍA DE SISTEMAS - EEGG",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
-    "horas26": 16,
+    "horas26": 12,
     "local": "SEDE"
   },
   {
@@ -1281,20 +1281,20 @@
     "nombre": "JAYO HIGA JOSE JUAN",
     "programa": "INGENIERÍA DE SISTEMAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
-    "local": ""
+    "horas26": 9,
+    "local": "PRINCIPAL"
   },
   {
     "n": 118,
     "dni": 6187939,
     "nombre": "JORDAN PALOMINO JERRI ARTURO",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 36,
-    "horas26": 32,
+    "horas26": 30,
     "local": "SEDE"
   },
   {
@@ -1312,22 +1312,22 @@
     "n": 120,
     "dni": 72973076,
     "nombre": "LANDEO LOPEZ CESAR CAMILO",
-    "programa": "INGENIERÍA INDUSTRIAL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
-    "horas26": 39,
+    "horas26": 37,
     "local": "SEDE"
   },
   {
     "n": 121,
     "dni": 72658536,
     "nombre": "LANDEO LOPEZ JEFFERSON OMAR",
-    "programa": "INGENIERÍA DE SISTEMAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 29,
+    "horas26": 23,
     "local": "SEDE"
   },
   {
@@ -1345,7 +1345,7 @@
     "n": 123,
     "dni": 70477271,
     "nombre": "LEVANO SARAVIA EMILY BRISEIDA",
-    "programa": "INGENIERÍA INDUSTRIAL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
@@ -1358,10 +1358,10 @@
     "nombre": "LINO FLORES LUIS ANTONIO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
-    "local": ""
+    "horas26": 6,
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 125,
@@ -1378,22 +1378,22 @@
     "n": 126,
     "dni": 46654470,
     "nombre": "LLANCARES SUXE MINERVA MELCHORITA",
-    "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG",
+    "programa": "-",
     "condicion": "DOCENTE",
-    "dedicacion": "TP",
+    "dedicacion": "-",
     "horas25": 15,
     "horas26": 20,
-    "local": "SEDE"
+    "local": "-"
   },
   {
     "n": 127,
     "dni": 42707186,
     "nombre": "LOO PARIAN LUIS ALBERTO",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 16,
+    "horas26": 8,
     "local": "SEDE"
   },
   {
@@ -1411,18 +1411,18 @@
     "n": 129,
     "dni": 45294530,
     "nombre": "LUNA VICTORIA GOMEZ JUAN ANGHIELLO",
-    "programa": "INGENIERÍA INDUSTRIAL - EEGG",
+    "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 29,
-    "horas26": 37,
+    "horas26": 34,
     "local": "SEDE"
   },
   {
     "n": 130,
     "dni": 43454918,
     "nombre": "LUYO LOLI TAYMA NAIROBIS",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 39,
@@ -1437,7 +1437,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 9,
-    "horas26": 13,
+    "horas26": 9,
     "local": "FILIAL"
   },
   {
@@ -1457,7 +1457,7 @@
     "nombre": "MANRIQUE CERVANTES JOSE ANTONIO",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 4,
     "local": ""
@@ -1466,9 +1466,9 @@
     "n": 134,
     "dni": 46741053,
     "nombre": "MARCELO GUTIERREZ RUTH KATHERINE",
-    "programa": "INGENIERÍA INDUSTRIAL - EEGG",
+    "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
-    "dedicacion": "TP",
+    "dedicacion": "TC",
     "horas25": 16,
     "horas26": 25,
     "local": "SEDE"
@@ -1481,7 +1481,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 13,
-    "horas26": 12,
+    "horas26": 10,
     "local": "SEDE"
   },
   {
@@ -1490,7 +1490,7 @@
     "nombre": "MARTINEZ QUISÑAY JULIO RODOLFO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
     "local": ""
@@ -1503,7 +1503,7 @@
     "condicion": "",
     "dedicacion": "",
     "horas25": 0,
-    "horas26": 0,
+    "horas26": 4,
     "local": ""
   },
   {
@@ -1512,9 +1512,9 @@
     "nombre": "MARTINEZ ZULOAGA NORA TERESA",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 5,
+    "horas26": 3,
     "local": ""
   },
   {
@@ -1523,7 +1523,7 @@
     "nombre": "MAS VILLANUEVA KENY ARNOLD",
     "programa": "CONTABILIDAD",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
     "local": ""
@@ -1532,7 +1532,7 @@
     "n": 140,
     "dni": 21546491,
     "nombre": "MATTA FERREYRA FRANCIS GISELA",
-    "programa": "ENFERMERÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
@@ -1547,7 +1547,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 17,
+    "horas26": 15,
     "local": "FILIAL"
   },
   {
@@ -1558,14 +1558,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 18,
+    "horas26": 6,
     "local": "SEDE"
   },
   {
     "n": 143,
     "dni": 44656290,
     "nombre": "MENDO MONTALVO VICTOR ENRIQUE",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 13,
@@ -1578,20 +1578,20 @@
     "nombre": "MENDOZA CASTILLO JUAN JOSE",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 145,
     "dni": 71052752,
     "nombre": "MENESES VASQUEZ KARINA OLENKA",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 4,
-    "horas26": 9,
+    "horas26": 3,
     "local": "FILIAL"
   },
   {
@@ -1600,7 +1600,7 @@
     "nombre": "MESIAS MEJIA EDGAR YVAN",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 20,
     "local": ""
@@ -1622,9 +1622,9 @@
     "nombre": "MIRANDA BAZALAR ROBERTO WILLIAM",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 4,
+    "horas26": 2,
     "local": "HUAURA"
   },
   {
@@ -1644,16 +1644,27 @@
     "nombre": "MORALES CHAVEZ GISSEL JOCELINE",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 5,
+    "horas26": 3,
     "local": ""
   },
   {
     "n": 151,
+    "dni": 70066929,
+    "nombre": "MORÁN CAMACHO SIRENA STEFANI",
+    "programa": "ARQUITECTURA - EEGG",
+    "condicion": "DOCENTE",
+    "dedicacion": "TP",
+    "horas25": 14,
+    "horas26": 10,
+    "local": "SEDE"
+  },
+  {
+    "n": 152,
     "dni": 18005964,
     "nombre": "MORENO HEREDIA ARMANDO JOSE",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
@@ -1661,10 +1672,10 @@
     "local": "SEDE"
   },
   {
-    "n": 152,
+    "n": 153,
     "dni": 70084444,
     "nombre": "MORON AGUILAR KEVIN CHRISTIAN",
-    "programa": "MEDICINA HUMANA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
@@ -1672,32 +1683,21 @@
     "local": "FILIAL"
   },
   {
-    "n": 153,
-    "dni": 70066929,
-    "nombre": "MORÁN CAMACHO SIRENA STEFANI",
-    "programa": "ARQUITECTURA - EEGG",
-    "condicion": "DOCENTE",
-    "dedicacion": "TP",
-    "horas25": 14,
-    "horas26": 14,
-    "local": "SEDE"
-  },
-  {
     "n": 154,
     "dni": 21857087,
     "nombre": "MUNAYCO VIVANCO JUAN CALIXTO",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 33,
-    "horas26": 32,
+    "horas26": 26,
     "local": "SEDE"
   },
   {
     "n": 155,
     "dni": 40176163,
     "nombre": "MUÑANTE CAHUA NIDIA PATRICIA",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -1710,27 +1710,27 @@
     "nombre": "MUÑANTE SIHUES CESAR ARTURO",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
-    "local": ""
+    "local": "PRINCIPAL"
   },
   {
     "n": 157,
     "dni": 43128103,
     "nombre": "MUÑOZ ALVA FIORELLA DEL PILAR",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 4,
-    "horas26": 8,
+    "horas26": 6,
     "local": "SEDE"
   },
   {
     "n": 158,
     "dni": 42129291,
     "nombre": "MUÑOZ FELIX ALAN PIER",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -1745,14 +1745,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 28,
-    "horas26": 32,
+    "horas26": 30,
     "local": "SEDE"
   },
   {
     "n": 160,
     "dni": 21422843,
     "nombre": "NAVARRETE VELARDE VICKY MARLENE",
-    "programa": "ADMINISTRACIÓN Y FINANZAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 9,
@@ -1776,7 +1776,7 @@
     "nombre": "ORDINOLA BRENIS JUAN MANUEL",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 16,
     "local": ""
@@ -1796,7 +1796,7 @@
     "n": 164,
     "dni": 21850336,
     "nombre": "ORTIZ ALMEYDA JOSE LUIS",
-    "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
@@ -1807,7 +1807,7 @@
     "n": 165,
     "dni": 21575158,
     "nombre": "ORTIZ ANDRES JULIO ALEX",
-    "programa": "ENFERMERÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 5,
@@ -1831,10 +1831,10 @@
     "nombre": "OSCCO INJANTE JOSE LUIS",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 9,
-    "local": ""
+    "horas26": 7,
+    "local": "FILIAL ICA"
   },
   {
     "n": 168,
@@ -1877,7 +1877,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
-    "horas26": 22,
+    "horas26": 18,
     "local": "SEDE"
   },
   {
@@ -1888,7 +1888,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
-    "horas26": 5,
+    "horas26": 3,
     "local": "FILIAL"
   },
   {
@@ -1908,13 +1908,35 @@
     "nombre": "PASACHE LAGOS SERGIO LUIS",
     "programa": "INGENIERÍA CIVIL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 4,
-    "local": ""
+    "horas26": 2,
+    "local": "FILIAL ICA"
   },
   {
     "n": 175,
+    "dni": 21838457,
+    "nombre": "PEÑA ALARCON LUIS ALEJANDRO",
+    "programa": "INGENIERIA DE SISTEMAS",
+    "condicion": "DOCENTE",
+    "dedicacion": "TP",
+    "horas25": 16,
+    "horas26": 15,
+    "local": "SEDE"
+  },
+  {
+    "n": 176,
+    "dni": 21881487,
+    "nombre": "PEÑA RONCEROS JOSE IVAN",
+    "programa": "DERECHO",
+    "condicion": "DOCENTE",
+    "dedicacion": "TP",
+    "horas25": 8,
+    "horas26": 17,
+    "local": "SEDE"
+  },
+  {
+    "n": 177,
     "dni": 43322342,
     "nombre": "PEREZ CABREJOS RUTH GISSELA",
     "programa": "INGENIERÍA INDUSTRIAL",
@@ -1925,10 +1947,10 @@
     "local": "SEDE"
   },
   {
-    "n": 176,
+    "n": 178,
     "dni": 42212783,
     "nombre": "PEREZ RETUERTO RONY GEANCARLO",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -1936,37 +1958,15 @@
     "local": "HUAURA"
   },
   {
-    "n": 177,
+    "n": 179,
     "dni": 18071852,
     "nombre": "PESANTES SALAVARRIA MARCO ALFONSO",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 40,
-    "local": ""
-  },
-  {
-    "n": 178,
-    "dni": 21838457,
-    "nombre": "PEÑA ALARCON LUIS ALEJANDRO",
-    "programa": "INGENIERÍA DE SISTEMAS",
-    "condicion": "DOCENTE",
-    "dedicacion": "TP",
-    "horas25": 16,
-    "horas26": 17,
-    "local": "SEDE"
-  },
-  {
-    "n": 179,
-    "dni": 21881487,
-    "nombre": "PEÑA RONCEROS JOSE IVAN",
-    "programa": "DERECHO",
-    "condicion": "DOCENTE",
-    "dedicacion": "TP",
-    "horas25": 8,
-    "horas26": 17,
-    "local": "SEDE"
+    "local": "PRINCIPAL"
   },
   {
     "n": 180,
@@ -1987,7 +1987,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 12,
-    "horas26": 17,
+    "horas26": 13,
     "local": "SEDE"
   },
   {
@@ -1996,7 +1996,7 @@
     "nombre": "PISCOCHE CHINCHAY RICHERSON HAROLD",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "DOCENTE",
-    "dedicacion": "TC",
+    "dedicacion": "TP",
     "horas25": 40,
     "horas26": 14,
     "local": "SEDE"
@@ -2007,20 +2007,20 @@
     "nombre": "PIZARRO OSORIO BETSABE LILIA",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TC",
     "horas25": 0,
-    "horas26": 32,
-    "local": ""
+    "horas26": 28,
+    "local": "PRINCIPAL"
   },
   {
     "n": 184,
     "dni": 41391761,
     "nombre": "POZO GUTIERREZ ANGEL ALBERTO",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 31,
-    "horas26": 33,
+    "horas26": 23,
     "local": "SEDE"
   },
   {
@@ -2031,14 +2031,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
-    "horas26": 38,
+    "horas26": 26,
     "local": "SEDE"
   },
   {
     "n": 186,
     "dni": 2651788,
     "nombre": "PUPPI UGAZ LUIS MIGUEL",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 12,
@@ -2049,11 +2049,11 @@
     "n": 187,
     "dni": 21871273,
     "nombre": "PURIZACA GUERRERO JULIO EDUARDO",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 15,
+    "horas26": 11,
     "local": "SEDE"
   },
   {
@@ -2062,10 +2062,10 @@
     "nombre": "QUINTEROS NICHO LUIS FERNANDO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 4,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 189,
@@ -2073,7 +2073,7 @@
     "nombre": "QUIROGA PAIVA DAVID EDUARDO",
     "programa": "CONTABILIDAD",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 3,
     "local": ""
@@ -2086,18 +2086,18 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 5,
-    "horas26": 15,
+    "horas26": 13,
     "local": "SEDE"
   },
   {
     "n": 191,
     "dni": 21884462,
     "nombre": "QUISPE ALMEIDA JOSE DAMIAN",
-    "programa": "TECNOLOGÍA MÉDICA - EEGG",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
-    "horas26": 16,
+    "horas26": 10,
     "local": "SEDE"
   },
   {
@@ -2119,18 +2119,18 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 17,
+    "horas26": 15,
     "local": "SEDE"
   },
   {
     "n": 194,
     "dni": 70688751,
     "nombre": "RAMIREZ YAÑEZ MAURO ALBERTO",
-    "programa": "PSICOLOGÍA - EEGG",
+    "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
-    "horas26": 30,
+    "horas26": 24,
     "local": "FILIAL"
   },
   {
@@ -2150,7 +2150,7 @@
     "nombre": "REA MORENO FLOR MAGALY",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 12,
     "local": "HUAURA"
@@ -2172,7 +2172,7 @@
     "nombre": "RECUAY SALAZAR CARLOS ALBERTO",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 4,
     "local": ""
@@ -2181,7 +2181,7 @@
     "n": 199,
     "dni": 8684196,
     "nombre": "REQUENA GARCIA MARIA DEL ROSARIO",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -2192,7 +2192,7 @@
     "n": 200,
     "dni": 22313729,
     "nombre": "REYES CAMASCA ROSARIO CRISTINA",
-    "programa": "INGENIERÍA DE SISTEMAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 16,
@@ -2207,18 +2207,18 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
-    "horas26": 18,
+    "horas26": 15,
     "local": "SEDE"
   },
   {
     "n": 202,
     "dni": 41208519,
     "nombre": "REYES ROMAN CARLOS ARTURO",
-    "programa": "ADMINISTRACIÓN DE EMPRESAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 15,
+    "horas26": 13,
     "local": "HUAURA"
   },
   {
@@ -2249,16 +2249,16 @@
     "nombre": "RODRIGUEZ RAMIREZ MARIA ISABEL",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 4,
-    "local": ""
+    "horas26": 2,
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 206,
     "dni": 40021221,
     "nombre": "ROJAS GUTIERREZ WILLIAM JESUS",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
@@ -2271,10 +2271,10 @@
     "nombre": "ROJAS GUZMAN TITO",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 9,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 208,
@@ -2284,7 +2284,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 16,
+    "horas26": 14,
     "local": "FILIAL"
   },
   {
@@ -2293,7 +2293,7 @@
     "nombre": "ROMERO CARAZAS RAFAEL",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 5,
     "local": ""
@@ -2306,7 +2306,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 30,
+    "horas26": 20,
     "local": "SEDE"
   },
   {
@@ -2315,9 +2315,9 @@
     "nombre": "SACHUN BECERRA PERCY ALEXANDER",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 20,
+    "horas26": 18,
     "local": ""
   },
   {
@@ -2337,10 +2337,10 @@
     "nombre": "SACRAMENTO LAZARO ROSA ALBINA",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 20,
-    "local": ""
+    "horas26": 18,
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 214,
@@ -2348,9 +2348,9 @@
     "nombre": "SALAZAR GAMBOA OSCAR FRITZ ALEXANDER",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 15,
+    "horas26": 13,
     "local": ""
   },
   {
@@ -2359,9 +2359,9 @@
     "nombre": "SALCEDO RODAS PERCY ISMAEL",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 18,
+    "horas26": 14,
     "local": ""
   },
   {
@@ -2370,7 +2370,7 @@
     "nombre": "SALINAS PEREZ HECTOR CLEMENTE",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
     "local": ""
@@ -2381,10 +2381,10 @@
     "nombre": "SAMANAMUD VALENTIN MIGUEL ANGEL MOISES",
     "programa": "ADMINISTRACIÓN DE EMPRESAS",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 4,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 218,
@@ -2392,10 +2392,10 @@
     "nombre": "SANCHEZ NAVARRETE CARLOS RICARDO",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
-    "local": ""
+    "horas26": 7,
+    "local": "FILIAL ICA"
   },
   {
     "n": 219,
@@ -2423,7 +2423,7 @@
     "n": 221,
     "dni": 2183433,
     "nombre": "SANJUAN GARCIA VERONICA",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
@@ -2449,7 +2449,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 12,
-    "horas26": 20,
+    "horas26": 14,
     "local": "SEDE"
   },
   {
@@ -2460,7 +2460,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 17,
-    "horas26": 16,
+    "horas26": 10,
     "local": "SEDE"
   },
   {
@@ -2478,7 +2478,7 @@
     "n": 226,
     "dni": 44070775,
     "nombre": "SIGUAS FLORES CARLOS JAVIER",
-    "programa": "PSICOLOGÍA - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
@@ -2489,9 +2489,9 @@
     "n": 227,
     "dni": 21498728,
     "nombre": "SIGUAS HUARHUA GUILLERMO GREGORIO",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
-    "dedicacion": "TC",
+    "dedicacion": "TP",
     "horas25": 31,
     "horas26": 13,
     "local": "FILIAL"
@@ -2504,7 +2504,7 @@
     "condicion": "",
     "dedicacion": "",
     "horas25": 0,
-    "horas26": 0,
+    "horas26": 5,
     "local": ""
   },
   {
@@ -2526,7 +2526,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 4,
-    "horas26": 13,
+    "horas26": 10,
     "local": "FILIAL"
   },
   {
@@ -2535,7 +2535,7 @@
     "nombre": "SOTOMAYOR ALBITES GEORGE ANTONHY",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 8,
     "local": ""
@@ -2546,20 +2546,20 @@
     "nombre": "SUAREZ ESCRIBA MARIELLA ROSARIO",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
+    "horas26": 9,
     "local": ""
   },
   {
     "n": 233,
     "dni": 4743751,
     "nombre": "TACO COAYLA RENZO ALBERTO",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 13,
-    "horas26": 18,
+    "horas26": 13,
     "local": "SEDE"
   },
   {
@@ -2570,16 +2570,16 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 15,
-    "horas26": 15,
+    "horas26": 12,
     "local": "SEDE"
   },
   {
     "n": 235,
     "dni": 43660977,
     "nombre": "TARAZONA VEGA ESHEK",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
-    "dedicacion": "TP",
+    "dedicacion": "TC",
     "horas25": 15,
     "horas26": 10,
     "local": "HUAURA"
@@ -2588,18 +2588,18 @@
     "n": 236,
     "dni": 74176001,
     "nombre": "TASAYCO MARTINEZ RENZO LEONARDO",
-    "programa": "ADMINISTRACIÓN Y FINANZAS",
+    "programa": "ADMINISTRACIÓN  Y FINANZAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 39,
-    "horas26": 29,
+    "horas26": 25,
     "local": "SEDE"
   },
   {
     "n": 237,
     "dni": 80063288,
     "nombre": "TASAYCO RODRIGUEZ JOSE LUIS",
-    "programa": "INGENIERÍA DE SISTEMAS - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 37,
@@ -2610,11 +2610,11 @@
     "n": 238,
     "dni": 15431618,
     "nombre": "TAYA YACTAYO PEDRO ALEX",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 14,
-    "horas26": 12,
+    "horas26": 5,
     "local": "SEDE"
   },
   {
@@ -2625,7 +2625,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 16,
+    "horas26": 14,
     "local": "FILIAL"
   },
   {
@@ -2634,7 +2634,7 @@
     "nombre": "TEMOCHE ALMORA LUIS GERMAN",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 10,
     "local": ""
@@ -2643,11 +2643,11 @@
     "n": 241,
     "dni": 20111776,
     "nombre": "TORALVA GONZALES PAUL EDWARDO",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 11,
-    "horas26": 10,
+    "horas26": 6,
     "local": "SEDE"
   },
   {
@@ -2667,10 +2667,10 @@
     "nombre": "TRUJILLO APONTE WAGNER ABRAHAM",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 9,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 244,
@@ -2678,7 +2678,7 @@
     "nombre": "ULLOQUE SAMATELO CARLOS AUGUSTO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 8,
     "local": ""
@@ -2689,20 +2689,20 @@
     "nombre": "VALDIVIA SALAZAR CARLOS ALBERTO",
     "programa": "INGENIERÍA DE SISTEMAS",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 11,
+    "horas26": 7,
     "local": ""
   },
   {
     "n": 246,
     "dni": 21878050,
     "nombre": "VALLE FUENTES JOSE ANDRES",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 31,
-    "horas26": 32,
+    "horas26": 24,
     "local": "SEDE"
   },
   {
@@ -2713,14 +2713,14 @@
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 36,
-    "horas26": 40,
+    "horas26": 37,
     "local": "SEDE"
   },
   {
     "n": 248,
     "dni": 40401768,
     "nombre": "VASQUEZ GALVEZ DAYANA CRISTY",
-    "programa": "INGENIERÍA DE SISTEMAS",
+    "programa": "INGENIERIA DE SISTEMAS",
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 10,
@@ -2766,7 +2766,7 @@
     "nombre": "VEGA ROSALES JORGE MARTIN",
     "programa": "INGENIERÍA INDUSTRIAL",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 14,
     "local": ""
@@ -2777,16 +2777,16 @@
     "nombre": "VELASQUEZ CHUNGA JOSE LUIS",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
+    "horas26": 4,
     "local": ""
   },
   {
     "n": 254,
     "dni": 21431497,
     "nombre": "VELAZCO LOPEZ ANGELA BETSY",
-    "programa": "INGENIERÍA CIVIL - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 27,
@@ -2801,7 +2801,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 16,
-    "horas26": 15,
+    "horas26": 8,
     "local": "FILIAL"
   },
   {
@@ -2810,10 +2810,10 @@
     "nombre": "VILLANUEVA CAMAC GUILLERMO ARTURO",
     "programa": "ESTUDIOS GENERALES",
     "condicion": "",
-    "dedicacion": "PRESENCIAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 20,
-    "local": ""
+    "local": "FILIAL HUAURA"
   },
   {
     "n": 257,
@@ -2823,7 +2823,7 @@
     "condicion": "DOCENTE",
     "dedicacion": "TP",
     "horas25": 8,
-    "horas26": 8,
+    "horas26": 6,
     "local": "FILIAL"
   },
   {
@@ -2832,9 +2832,9 @@
     "nombre": "WINCHO CHILQUILLO VICTOR MANUEL",
     "programa": "ARQUITECTURA",
     "condicion": "",
-    "dedicacion": "PRINCIPAL",
+    "dedicacion": "TC",
     "horas25": 0,
-    "horas26": 35,
+    "horas26": 19,
     "local": ""
   },
   {
@@ -2852,11 +2852,11 @@
     "n": 260,
     "dni": 21864691,
     "nombre": "YATACO VALDEZ PALMER EDWIN",
-    "programa": "DERECHO - EEGG",
+    "programa": "EEGG",
     "condicion": "DOCENTE",
     "dedicacion": "TC",
     "horas25": 38,
-    "horas26": 30,
+    "horas26": 28,
     "local": "SEDE"
   },
   {
@@ -2865,7 +2865,7 @@
     "nombre": "ZAFRA SALAS MARCO ANDRE",
     "programa": "DERECHO",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
     "horas26": 17,
     "local": ""
@@ -2876,9 +2876,9 @@
     "nombre": "ZUMAETA BERAMENDI JACQUELINE DIANA",
     "programa": "ADMINISTRACIÓN Y FINANZAS",
     "condicion": "",
-    "dedicacion": "VIRTUAL",
+    "dedicacion": "TP",
     "horas25": 0,
-    "horas26": 8,
+    "horas26": 4,
     "local": ""
   }
 ]

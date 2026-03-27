@@ -14,31 +14,40 @@ import { Badge } from "@/components/ui/badge";
 type FICARow = {
   carrera: string;
   carreraFull: string;
-  ciclo: number | null;
+  cod: string;
+  ciclo: string;
   seccion: string;
   turno: string;
+  local: string;
+  modalidad: string;
   dia: string;
   hora: string;
+  horaFin: string;
   curso: string;
-  docente: string | null;
+  docente: string;
+  horas: number;
 };
 
 const CARRERA_NAMES: Record<string, string> = {
-  IS: "Ing. de Sistemas",
-  IN: "Ing. Industrial",
-  IC: "Ing. Civil",
-  DE: "Derecho",
-  AR: "Arquitectura",
-  AE: "Adm. de Empresa",
+  "ADM. EMPRESAS":  "Administración de Empresas",
+  "ADM. Y FINANZAS":"Administración y Finanzas",
+  "ARQUITECTURA":   "Arquitectura",
+  "CONTABILIDAD":   "Contabilidad",
+  "DERECHO":        "Derecho",
+  "ING. CIVIL":     "Ingeniería Civil",
+  "ING. INDUSTRIAL":"Ingeniería Industrial",
+  "ING. SISTEMAS":  "Ingeniería de Sistemas",
 };
 
 const CARRERA_COLORS: Record<string, string> = {
-  IS: "#2f5aa6",
-  IN: "#1a6b3a",
-  IC: "#7a3a00",
-  DE: "#6b1a1a",
-  AR: "#4a1a7a",
-  AE: "#1a5a6b",
+  "ADM. EMPRESAS":  "#1a5a6b",
+  "ADM. Y FINANZAS":"#15607a",
+  "ARQUITECTURA":   "#4a1a7a",
+  "CONTABILIDAD":   "#6b4a00",
+  "DERECHO":        "#6b1a1a",
+  "ING. CIVIL":     "#7a3a00",
+  "ING. INDUSTRIAL":"#1a6b3a",
+  "ING. SISTEMAS":  "#2f5aa6",
 };
 
 const TURNO_COLORS: Record<string, string> = {
@@ -69,11 +78,13 @@ export default function PlanificacionFICA() {
     fetch(`${import.meta.env.BASE_URL}planificacion-fica-2026-1.json`)
       .then((r) => r.json())
       .then((d: FICARow[]) => {
-        // Sort: carrera → ciclo → seccion → dia → hora
         d.sort((a, b) => {
-          if (a.carrera !== b.carrera) return a.carrera.localeCompare(b.carrera);
-          if ((a.ciclo ?? 0) !== (b.ciclo ?? 0)) return (a.ciclo ?? 0) - (b.ciclo ?? 0);
-          if (a.seccion !== b.seccion) return a.seccion.localeCompare(b.seccion);
+          const c = a.carrera.localeCompare(b.carrera, "es");
+          if (c !== 0) return c;
+          const ci = Number(a.ciclo) - Number(b.ciclo);
+          if (ci !== 0) return ci;
+          const s = a.seccion.localeCompare(b.seccion, "es");
+          if (s !== 0) return s;
           const dA = DIA_ORDER.indexOf(a.dia);
           const dB = DIA_ORDER.indexOf(b.dia);
           if (dA !== dB) return dA - dB;
@@ -85,7 +96,7 @@ export default function PlanificacionFICA() {
   }, []);
 
   const carreras = useMemo(() => [...new Set(data.map((r) => r.carrera))].sort(), [data]);
-  const ciclos = useMemo(() => [...new Set(data.map((r) => r.ciclo).filter(Boolean))].sort((a, b) => (a as number) - (b as number)) as number[], [data]);
+  const ciclos = useMemo(() => [...new Set(data.map((r) => r.ciclo).filter(Boolean))].sort((a, b) => Number(a) - Number(b)), [data]);
   const secciones = useMemo(() => [...new Set(data.map((r) => r.seccion))].sort(), [data]);
   const turnos = useMemo(() => [...new Set(data.map((r) => r.turno))].sort(), [data]);
 
@@ -129,17 +140,10 @@ export default function PlanificacionFICA() {
   };
 
   const exportCSV = () => {
-    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Día", "Hora", "Curso", "Docente"];
+    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Local", "Día", "Hora Inicio", "Hora Fin", "Curso", "Docente", "Horas"];
     const rows = filtered.map((r) => [
-      r.carrera,
-      r.carreraFull,
-      r.ciclo ?? "",
-      r.seccion,
-      r.turno,
-      r.dia,
-      r.hora,
-      r.curso,
-      r.docente ?? "",
+      r.carrera, r.carreraFull, r.ciclo, r.seccion, r.turno, r.local,
+      r.dia, r.hora, r.horaFin, r.curso, r.docente, r.horas,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -281,10 +285,11 @@ export default function PlanificacionFICA() {
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">#</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Carrera</th>
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Ciclo</th>
-                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Sección</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Sec.</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Turno</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Día</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Hora</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">H.</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[200px]">Curso</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[180px]">Docente</th>
                   </tr>
@@ -292,7 +297,7 @@ export default function PlanificacionFICA() {
                 <tbody>
                   {paginated.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
                         No se encontraron registros con los filtros seleccionados.
                       </td>
                     </tr>
@@ -329,7 +334,12 @@ export default function PlanificacionFICA() {
                           </Badge>
                         </td>
                         <td className="px-3 py-2 font-medium whitespace-nowrap">{row.dia}</td>
-                        <td className="px-3 py-2 font-mono text-muted-foreground whitespace-nowrap">{row.hora}</td>
+                        <td className="px-3 py-2 font-mono text-muted-foreground whitespace-nowrap">
+                          {row.hora}{row.horaFin ? ` – ${row.horaFin}` : ""}
+                        </td>
+                        <td className="px-3 py-2 text-center font-semibold text-primary">
+                          {row.horas > 0 ? row.horas : "—"}
+                        </td>
                         <td className="px-3 py-2 font-medium max-w-[240px]">
                           <span className="line-clamp-2">{row.curso}</span>
                         </td>
