@@ -20,6 +20,7 @@ type FICARow = {
   turno: string;
   local: string;
   modalidad: string;
+  tipo: string;
   dia: string;
   hora: string;
   horaFin: string;
@@ -140,10 +141,10 @@ export default function PlanificacionFICA() {
   };
 
   const exportCSV = () => {
-    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Local", "Día", "Hora Inicio", "Hora Fin", "Curso", "Docente", "Horas"];
+    const headers = ["Carrera", "Carrera Completa", "Ciclo", "Sección", "Turno", "Local", "Día", "Hora Inicio", "Hora Fin", "Tipo", "Horas", "Curso", "Docente"];
     const rows = filtered.map((r) => [
       r.carrera, r.carreraFull, r.ciclo, r.seccion, r.turno, r.local,
-      r.dia, r.hora, r.horaFin, r.curso, r.docente, r.horas,
+      r.dia, r.hora, r.horaFin, r.tipo, r.horas, r.curso, r.docente,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -289,6 +290,7 @@ export default function PlanificacionFICA() {
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Turno</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Día</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Hora</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Tipo</th>
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">H.</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[200px]">Curso</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[180px]">Docente</th>
@@ -297,7 +299,7 @@ export default function PlanificacionFICA() {
                 <tbody>
                   {paginated.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
                         No se encontraron registros con los filtros seleccionados.
                       </td>
                     </tr>
@@ -336,6 +338,15 @@ export default function PlanificacionFICA() {
                         <td className="px-3 py-2 font-medium whitespace-nowrap">{row.dia}</td>
                         <td className="px-3 py-2 font-mono text-muted-foreground whitespace-nowrap">
                           {row.hora}{row.horaFin ? ` – ${row.horaFin}` : ""}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {row.tipo && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              row.tipo === "T" ? "bg-blue-100 text-blue-700" :
+                              row.tipo === "TP" ? "bg-purple-100 text-purple-700" :
+                              "bg-green-100 text-green-700"
+                            }`}>{row.tipo}</span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-center font-semibold text-primary">
                           {row.horas > 0 ? row.horas : "—"}
