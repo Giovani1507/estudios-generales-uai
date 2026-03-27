@@ -47,6 +47,7 @@ export default function DocentesRegistro() {
   const [fFac, setFFac]         = useState<FacFilter>("FICA");
   const [fProg, setFProg]       = useState("all");
   const [fBusq, setFBusq]       = useState("");
+  const [fHoras, setFHoras]     = useState<"all" | "2025" | "2026">("all");
   const [page, setPage]         = useState(1);
 
   useEffect(() => {
@@ -74,6 +75,8 @@ export default function DocentesRegistro() {
   const filtered = useMemo(() => {
     let r = baseSet;
     if (fProg !== "all") r = r.filter((d) => d.programa25 === fProg);
+    if (fHoras === "2026") r = r.filter((d) => d.horas26 > 0);
+    if (fHoras === "2025") r = r.filter((d) => d.horas25 > 0);
     if (fBusq) {
       const q = fBusq.toLowerCase();
       r = r.filter(
@@ -83,7 +86,7 @@ export default function DocentesRegistro() {
       );
     }
     return r;
-  }, [baseSet, fProg, fBusq]);
+  }, [baseSet, fProg, fHoras, fBusq]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -191,6 +194,23 @@ export default function DocentesRegistro() {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
+
+        {/* Horas filter */}
+        <div className="flex rounded-lg border border-border/60 overflow-hidden bg-white">
+          {(["all", "2025", "2026"] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => { setFHoras(opt); resetPage(); }}
+              className={`px-3 h-9 text-sm font-medium transition-colors border-r last:border-r-0 border-border/40 ${
+                fHoras === opt
+                  ? "bg-primary text-white"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+            >
+              {opt === "all" ? "Todas las horas" : `H. ${opt}`}
+            </button>
+          ))}
+        </div>
 
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
