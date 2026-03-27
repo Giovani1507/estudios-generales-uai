@@ -85,7 +85,7 @@ export default function DocentesRegistro() {
           d.dni.toString().includes(q)
       );
     }
-    return r;
+    return [...r].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [baseSet, fProg, fHoras, fBusq]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
