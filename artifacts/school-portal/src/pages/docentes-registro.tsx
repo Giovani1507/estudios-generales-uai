@@ -95,40 +95,57 @@ export default function DocentesRegistro() {
 
   /* Export Excel */
   const exportExcel = () => {
-    const data = filtered.map((d, i) => ({
-      "#":           i + 1,
-      "DNI":         d.dni,
-      "Nombre":      d.nombre,
-      "Programa 2025-2": d.programa25,
-      "Condición":   d.condicion25,
-      "Dedicación":  d.dedicacion25,
-      "Horas 2025-2": d.horas25,
-      "Programa 2026-1": d.programa26 || "—",
-      "Dedicación 2026-1": d.dedicacion26 || "—",
-      "Horas 2026-1": d.horas26 || 0,
-      "Local":       d.local25,
-      "Observaciones": d.observaciones,
-    }));
+    const periodo = fHoras === "2025" ? "2025-2" : fHoras === "2026" ? "2026-1" : "2026-1";
+    const data = filtered.map((d, i) => {
+      const base: Record<string, unknown> = {
+        "#":    i + 1,
+        "DNI":  d.dni ?? "SIN REGISTRO",
+        "Nombre": d.nombre,
+      };
+      if (fHoras === "2025" || fHoras === "all") {
+        base["Programa 2025-2"]   = d.programa25  || "—";
+        base["Condición 2025-2"]  = d.condicion25  || "—";
+        base["Dedicación 2025-2"] = d.dedicacion25 || "—";
+        base["Horas 2025-2"]      = d.horas25  || 0;
+        base["Local 2025-2"]      = d.local25   || "—";
+      }
+      if (fHoras === "2026" || fHoras === "all") {
+        base["Programa 2026-1"]   = d.programa26  || "—";
+        base["Condición 2026-1"]  = d.condicion26  || "—";
+        base["Dedicación 2026-1"] = d.dedicacion26 || "—";
+        base["Horas 2026-1"]      = d.horas26  || 0;
+        base["Local 2026-1"]      = d.local26   || "—";
+      }
+      base["Observaciones"] = d.observaciones || "";
+      return base;
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     ws["!cols"] = [
-      {wch:5},{wch:12},{wch:42},{wch:30},{wch:12},
-      {wch:12},{wch:12},{wch:30},{wch:14},{wch:14},{wch:10},{wch:40},
+      {wch:5},{wch:12},{wch:42},{wch:30},{wch:14},{wch:14},{wch:12},{wch:10},
+      {wch:30},{wch:14},{wch:14},{wch:12},{wch:10},{wch:40},
     ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Docentes ${fFac}`);
-    XLSX.writeFile(wb, `docentes_${fFac.toLowerCase()}_2026-1.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, `Docentes ${fFac} ${periodo}`);
+    XLSX.writeFile(wb, `docentes_${fFac.toLowerCase()}_${periodo}.xlsx`);
   };
 
   /* Export CSV */
   const exportCSV = () => {
-    const header = "#,DNI,Nombre,Programa 2025-2,Condición,Dedicación,Horas 2025-2,Horas 2026-1";
-    const rows = filtered.map((d, i) =>
-      `${i+1},${d.dni},"${d.nombre}","${d.programa25}","${d.condicion25}","${d.dedicacion25}",${d.horas25},${d.horas26}`
-    );
+    const periodo = fHoras === "2025" ? "2025-2" : "2026-1";
+    const show25 = fHoras === "2025" || fHoras === "all";
+    const show26 = fHoras === "2026" || fHoras === "all";
+    const cols25 = show25 ? ",Programa 2025-2,Condición 2025-2,Dedicación 2025-2,Horas 2025-2" : "";
+    const cols26 = show26 ? ",Programa 2026-1,Condición 2026-1,Dedicación 2026-1,Horas 2026-1" : "";
+    const header = `#,DNI,Nombre${cols25}${cols26}`;
+    const rows = filtered.map((d, i) => {
+      const v25 = show25 ? `,"${d.programa25||""}","${d.condicion25||""}","${d.dedicacion25||""}",${d.horas25||0}` : "";
+      const v26 = show26 ? `,"${d.programa26||""}","${d.condicion26||""}","${d.dedicacion26||""}",${d.horas26||0}` : "";
+      return `${i+1},${d.dni ?? ""},"${d.nombre}"${v25}${v26}`;
+    });
     const blob = new Blob([[header,...rows].join("\n")], {type:"text/csv;charset=utf-8;"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `docentes_${fFac.toLowerCase()}_2026-1.csv`;
+    a.download = `docentes_${fFac.toLowerCase()}_${periodo}.csv`;
     a.click();
   };
 
