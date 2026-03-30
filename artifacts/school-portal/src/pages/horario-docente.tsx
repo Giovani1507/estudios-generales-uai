@@ -220,8 +220,8 @@ export default function HorarioDocente() {
         .trim();
     }
 
-    // Determina carreras del docente para "Programa de estudio"
-    const carrerasLabel = [...new Set(courses.map(r => r.carreraFull))].join(", ");
+    // Programa de estudio — siempre fijo para ciclos 1 y 2
+    const carrerasLabel = "ESTUDIOS GENERALES - FICA";
 
     // ── Construir la hoja ───────────────────────────────────────────
     const ws = wb.addWorksheet("Table 1", {
@@ -241,21 +241,28 @@ export default function HorarioDocente() {
       { width: 2.16        }, // J  spacer
     ];
 
-    // ── Fila 1: espacio para logo ───────────────────────────────────
-    const r1 = ws.getRow(1); r1.height = 24.95;
+    // ── Fila 1: Logo a la IZQUIERDA + título "HORARIO DOCENTE" ──────
+    // A1:B1 = logo (imagen flotante), C1:I1 merged = título
+    ws.mergeCells("A1:B1"); // reservar celdas izquierdas para logo
+    ws.mergeCells("C1:I1"); // título a la derecha del logo
+    const r1 = ws.getRow(1); r1.height = 38;
+
+    // Celdas A-B: fondo navy (bajo el logo)
+    const c1left = r1.getCell(1);
+    c1left.fill  = sf(NAVY);
+
+    // Celda C: título
+    const c1title = r1.getCell(3);
+    c1title.value = "HORARIO DOCENTE";
+    c1title.font  = { bold: true, size: 14, color: { argb: WHITE } };
+    c1title.fill  = sf(NAVY);
+    c1title.alignment = CTR;
+
+    // Logo superpuesto en la esquina izquierda (cols A-B)
     if (logo64) {
       const imgId = wb.addImage({ base64: logo64, extension: "png" });
-      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 85, height: 50 } });
+      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 60, height: 38 } });
     }
-
-    // ── Fila 2: "HORARIO DOCENTE" (fondo navy, texto blanco) ────────
-    ws.mergeCells("A2:I2");
-    const r2 = ws.getRow(2); r2.height = 21;
-    const c2 = r2.getCell(1);
-    c2.value = "HORARIO DOCENTE";
-    c2.font  = { bold: true, size: 14, color: { argb: WHITE } };
-    c2.fill  = sf(NAVY);
-    c2.alignment = CTR;
 
     // ── Fila 3: Docente (izq) | Semestre + Nombre (der) ────────────
     ws.mergeCells("A3:C3");
@@ -346,8 +353,8 @@ export default function HorarioDocente() {
       }
       const bgColor = courseColors.get(key)!;
 
-      // Texto de la celda del curso
-      const cellText = ` ${row.cod}_${row.ciclo}-${row.seccion}\n${localLabel(row.local)}\n${row.modalidad}\n \n${row.curso}`;
+      // Texto de la celda del curso (sin espacio inicial — se centra)
+      const cellText = `${row.cod}_${row.ciclo}-${row.seccion}\n${localLabel(row.local)}\n${row.modalidad}\n \n${row.curso}`;
 
       // Mergear el bloque de filas en la columna del día
       const col1 = dayInfo.col;
@@ -367,7 +374,7 @@ export default function HorarioDocente() {
       cell.value     = cellText;
       cell.font      = { size: 8, color: { argb: "FF000000" }, bold: false };
       cell.fill      = sf(bgColor);
-      cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       cell.border    = MED;
     });
 
@@ -400,7 +407,7 @@ export default function HorarioDocente() {
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const a    = document.createElement("a");
     a.href     = URL.createObjectURL(blob);
-    a.download = `Horario_${selected.replace(/\s+/g, "_")}_2026-1.xlsx`;
+    a.download = `${selected.replace(/\s+/g, "_")}_2026-1.xlsx`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
