@@ -105,17 +105,53 @@ export default function HorarioDocente() {
     carreras: [...new Set(courses.map(r => r.cod))],
   }), [courses]);
 
-  /* Excel export */
+  /* Excel export — matches provided model exactly */
   const exportExcel = async () => {
     if (!selected || courses.length === 0) return;
+
     const logo64 = await fetchLogoBase64();
     const wb = new ExcelJS.Workbook();
-    wb.creator = "UAI Portal"; wb.created = new Date();
+    wb.creator = "UAI Portal Académico"; wb.created = new Date();
 
-    const UAI_BLUE = "FF2F5AA6";
-    const UAI_LIGHT = "FFD6E4F7";
-    const ODD = "FFFAFBFF";
+    // ── colour palette ──────────────────────────────────────────────
+    const C_BLUE_TITLE  = "FF2F5AA6"; // UAI primary — university name text
+    const C_DARK_NAVY   = "FF1E3A6E"; // rows 3 & 4 background
+    const C_BLUE_HDR    = "FF2F5AA6"; // row 5 (column headers) background
+    const C_WHITE       = "FFFFFFFF";
+    const C_GRAY_TEXT   = "FF555555";
+    const C_ROW_ODD     = "FFF4F7FC"; // light blue-white for alternating rows
+    const C_TOTAL_BG    = "FFD6E4F7"; // total row background
+    const C_BLUE_TEXT   = "FF1E3A6E"; // numbers in total row & H.Total column
 
+    // ── helpers ─────────────────────────────────────────────────────
+    type Fill = ExcelJS.Fill;
+    const solidFill = (argb: string): Fill =>
+      ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+    const ctr  = { horizontal: "center" as const, vertical: "middle" as const };
+    const mid  = { horizontal: "left"   as const, vertical: "middle" as const };
+
+    // ── columns (16 cols: A-P) ──────────────────────────────────────
+    const COLS = [
+      { width: 5  }, // A  #
+      { width: 9  }, // B  Cód.
+      { width: 7  }, // C  Ciclo
+      { width: 6  }, // D  Sec
+      { width: 10 }, // E  Turno
+      { width: 9  }, // F  Sede
+      { width: 13 }, // G  Local
+      { width: 13 }, // H  Modalidad
+      { width: 11 }, // I  Día
+      { width: 15 }, // J  Hora
+      { width: 7  }, // K  Tipo
+      { width: 6  }, // L  H.T
+      { width: 6  }, // M  H.P
+      { width: 8  }, // N  H.Total
+      { width: 34 }, // O  Curso
+      { width: 22 }, // P  Carrera
+    ];
+    const LAST_COL = "P"; // column 16
+
+    // ── build a sheet for each group ─────────────────────────────────
     for (const grupo of ["TODOS", "SEDE", "FILIAL"]) {
       const rows = grupo === "TODOS" ? courses
         : courses.filter(r => localLabel(r.local) === grupo);
@@ -124,141 +160,168 @@ export default function HorarioDocente() {
       const ws = wb.addWorksheet(
         grupo === "TODOS" ? "Horario Completo"
         : grupo === "SEDE" ? "Sede (Principal)"
-        : "Filial"
+        : "Filial",
+        { pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" } }
       );
 
-      // Column widths
-      ws.columns = [
-        { width: 5 },  // #
-        { width: 12 }, // Cód
-        { width: 8 },  // Ciclo
-        { width: 7 },  // Sec
-        { width: 10 }, // Turno
-        { width: 10 }, // Sede/Filial
-        { width: 14 }, // Local
-        { width: 14 }, // Modalidad
-        { width: 10 }, // Día
-        { width: 13 }, // Hora
-        { width: 7 },  // Tipo
-        { width: 7 },  // H.T
-        { width: 7 },  // H.P
-        { width: 7 },  // Total
-        { width: 36 }, // Curso
-        { width: 24 }, // Carrera
-      ];
+      ws.columns = COLS;
 
-      // Logo
-      let logoRow = 1;
+      // ── Logo (overlaid, top-left) ───────────────────────────────
       if (logo64) {
         const imgId = wb.addImage({ base64: logo64, extension: "png" });
-        ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 80, height: 50 } });
-        logoRow = 4;
+        ws.addImage(imgId, {
+          tl: { col: 0, row: 0 },
+          ext: { width: 90, height: 55 },
+        });
       }
 
-      // Header rows
-      const hdrFill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: UAI_BLUE } };
-      const hdrFont = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
-      const centerAlign = { horizontal: "center" as const, vertical: "middle" as const };
-      const wrapAlign  = { wrapText: true, vertical: "middle" as const };
+      // ── Row 1 — University name ─────────────────────────────────
+      ws.mergeCells(`A1:${LAST_COL}1`);
+      const rr1 = ws.getRow(1); rr1.height = 26;
+      const c1 = rr1.getCell(1);
+      c1.value = "UNIVERSIDAD AUTÓNOMA DE ICA";
+      c1.font  = { bold: true, size: 14, color: { argb: C_BLUE_TITLE } };
+      c1.alignment = ctr;
+      c1.fill = solidFill("FFFFFFFF");
 
-      // Row 1: University name
-      ws.mergeCells(`A1:P1`);
-      const r1 = ws.getRow(1);
-      r1.height = 20;
-      r1.getCell(1).value = "UNIVERSIDAD AUTÓNOMA DE ICA";
-      r1.getCell(1).font = { bold: true, size: 13, color: { argb: UAI_BLUE } };
-      r1.getCell(1).alignment = { horizontal: "center" };
+      // ── Row 2 — Faculty & period ────────────────────────────────
+      ws.mergeCells(`A2:${LAST_COL}2`);
+      const rr2 = ws.getRow(2); rr2.height = 17;
+      const c2 = rr2.getCell(1);
+      c2.value = "FACULTAD DE INGENIERÍA, CIENCIAS Y ADMINISTRACIÓN (FICA) · 2026-1";
+      c2.font  = { size: 10, color: { argb: C_GRAY_TEXT } };
+      c2.alignment = ctr;
+      c2.fill = solidFill("FFFFFFFF");
 
-      // Row 2: Faculty
-      ws.mergeCells(`A2:P2`);
-      const r2 = ws.getRow(2);
-      r2.getCell(1).value = "FACULTAD DE INGENIERÍA, CIENCIAS Y ADMINISTRACIÓN (FICA) · 2026-1";
-      r2.getCell(1).font = { size: 10, color: { argb: "FF555555" } };
-      r2.getCell(1).alignment = { horizontal: "center" };
+      // ── Row 3 — Teacher name ────────────────────────────────────
+      ws.mergeCells(`A3:${LAST_COL}3`);
+      const rr3 = ws.getRow(3); rr3.height = 22;
+      const c3 = rr3.getCell(1);
+      c3.value = `DOCENTE: ${selected}`;
+      c3.font  = { bold: true, size: 12, color: { argb: C_WHITE } };
+      c3.fill  = solidFill(C_DARK_NAVY);
+      c3.alignment = ctr;
 
-      // Row 3: Teacher name
-      ws.mergeCells(`A3:P3`);
-      const r3 = ws.getRow(3);
-      r3.height = 22;
-      r3.getCell(1).value = `DOCENTE: ${selected}`;
-      r3.getCell(1).font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
-      r3.getCell(1).fill = hdrFill;
-      r3.getCell(1).alignment = centerAlign;
+      // ── Row 4 — Subtitle ────────────────────────────────────────
+      ws.mergeCells(`A4:${LAST_COL}4`);
+      const rr4 = ws.getRow(4); rr4.height = 17;
+      const c4 = rr4.getCell(1);
+      c4.value =
+        grupo === "TODOS" ? "Horario Completo · Sede + Filial"
+        : grupo === "SEDE" ? "Sede Principal"
+        : "Filial";
+      c4.font  = { size: 10, color: { argb: C_WHITE } };
+      c4.fill  = solidFill(C_DARK_NAVY);
+      c4.alignment = ctr;
 
-      // Row 4: Subtitle (sede/filial label)
-      ws.mergeCells(`A4:P4`);
-      const r4 = ws.getRow(4);
-      r4.getCell(1).value = grupo === "TODOS" ? `Horario Completo · Sede + Filial`
-        : grupo === "SEDE" ? "SEDE PRINCIPAL"
-        : "FILIAL";
-      r4.getCell(1).font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
-      r4.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1a4080" } };
-      r4.getCell(1).alignment = centerAlign;
-
-      // Row 5: Column headers
-      const headers = ["#","Cód.","Ciclo","Sec","Turno","Sede","Local","Modalidad","Día","Hora","Tipo","H.T","H.P","H.Total","Curso","Carrera"];
-      const r5 = ws.getRow(5);
-      r5.height = 28;
-      headers.forEach((h, i) => {
-        const cell = r5.getCell(i + 1);
+      // ── Row 5 — Column headers ───────────────────────────────────
+      const HEADERS = ["#","Cód.","Ciclo","Sec","Turno","Sede","Local","Modalidad","Día","Hora","Tipo","H.T","H.P","H.Total","Curso","Carrera"];
+      const rr5 = ws.getRow(5); rr5.height = 26;
+      HEADERS.forEach((h, i) => {
+        const cell = rr5.getCell(i + 1);
         cell.value = h;
-        cell.fill = hdrFill;
-        cell.font = hdrFont;
-        cell.alignment = centerAlign;
-        cell.border = { bottom: { style: "medium", color: { argb: "FFFFFFFF" } } };
+        cell.fill  = solidFill(C_BLUE_HDR);
+        cell.font  = { bold: true, size: 10, color: { argb: C_WHITE } };
+        cell.alignment = ctr;
+        cell.border = {
+          top:    { style: "thin", color: { argb: "FFAAAAAA" } },
+          bottom: { style: "thin", color: { argb: "FFAAAAAA" } },
+          left:   { style: "thin", color: { argb: "FFAAAAAA" } },
+          right:  { style: "thin", color: { argb: "FFAAAAAA" } },
+        };
       });
 
-      // Data rows
+      // ── Data rows ────────────────────────────────────────────────
+      const THIN_BORDER: Partial<ExcelJS.Borders> = {
+        top:    { style: "thin", color: { argb: "FFDDDDDD" } },
+        bottom: { style: "thin", color: { argb: "FFDDDDDD" } },
+        left:   { style: "thin", color: { argb: "FFDDDDDD" } },
+        right:  { style: "thin", color: { argb: "FFDDDDDD" } },
+      };
+
       rows.forEach((row, idx) => {
         const wr = ws.getRow(6 + idx);
-        wr.height = 18;
-        const isOdd = idx % 2 === 0;
-        const rowFill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: isOdd ? ODD : "FFFFFFFF" } };
-        const vals = [
-          idx + 1, row.cod, row.ciclo, row.seccion, row.turno,
-          localLabel(row.local), row.local, row.modalidad,
-          row.dia, row.hora + (row.horaFin ? ` - ${row.horaFin}` : ""),
-          row.tipo, row.horasT || 0, row.horasP || 0, row.horas,
-          row.curso, row.carreraFull,
+        wr.height = 17;
+        const bgColor = idx % 2 === 0 ? "FFFFFFFF" : C_ROW_ODD;
+        const fill = solidFill(bgColor);
+
+        const vals: (string | number)[] = [
+          idx + 1,
+          row.cod,
+          row.ciclo,
+          row.seccion,
+          row.turno,
+          localLabel(row.local),
+          row.local,
+          row.modalidad,
+          row.dia,
+          row.hora + (row.horaFin ? ` - ${row.horaFin}` : ""),
+          row.tipo ?? "",
+          row.horasT ?? 0,
+          row.horasP ?? 0,
+          row.horas,
+          row.curso,
+          row.carreraFull,
         ];
+
         vals.forEach((v, i) => {
           const cell = wr.getCell(i + 1);
-          cell.value = v;
-          cell.fill = rowFill;
-          cell.alignment = i >= 10 && i <= 13 ? centerAlign : wrapAlign;
-          cell.font = { size: 9.5 };
-          if (i === 13) { // H.Total
-            cell.font = { size: 9.5, bold: true, color: { argb: UAI_BLUE } };
+          cell.value  = v;
+          cell.fill   = fill;
+          cell.border = THIN_BORDER;
+
+          const isCenterCol = i === 0 || (i >= 2 && i <= 10) || i === 11 || i === 12 || i === 13;
+          cell.alignment = isCenterCol ? ctr : mid;
+
+          if (i === 13) { // H.Total — bold blue
+            cell.font = { bold: true, size: 10, color: { argb: C_BLUE_TEXT } };
+          } else {
+            cell.font = { size: 9.5 };
           }
         });
       });
 
-      // Totals row
-      const totRow = ws.getRow(6 + rows.length);
-      totRow.height = 22;
-      const tFill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: UAI_LIGHT } };
-      ws.mergeCells(`A${6 + rows.length}:K${6 + rows.length}`);
-      totRow.getCell(1).value = `TOTAL  (${rows.length} sesiones)`;
-      totRow.getCell(1).font = { bold: true, size: 10, color: { argb: UAI_BLUE } };
-      totRow.getCell(1).fill = tFill;
-      totRow.getCell(1).alignment = centerAlign;
-      [11, 12, 13].forEach(c => {
-        const cell = totRow.getCell(c + 1);
-        cell.value = c === 11 ? rows.reduce((s,r)=>s+r.horasT,0)
-                   : c === 12 ? rows.reduce((s,r)=>s+r.horasP,0)
-                   : rows.reduce((s,r)=>s+r.horas,0);
-        cell.fill = tFill;
-        cell.font = { bold: true, size: 10, color: { argb: UAI_BLUE } };
-        cell.alignment = centerAlign;
+      // ── Totals row ───────────────────────────────────────────────
+      const totRowNum = 6 + rows.length;
+      const totRow = ws.getRow(totRowNum);
+      totRow.height = 20;
+      const tFill = solidFill(C_TOTAL_BG);
+
+      ws.mergeCells(`A${totRowNum}:K${totRowNum}`);
+      const tc = totRow.getCell(1);
+      tc.value = `TOTAL  (${rows.length} sesiones)`;
+      tc.fill  = tFill;
+      tc.font  = { bold: true, size: 10, color: { argb: C_BLUE_TEXT } };
+      tc.alignment = ctr;
+      tc.border = THIN_BORDER;
+
+      const totalHT = rows.reduce((s, r) => s + (r.horasT ?? 0), 0);
+      const totalHP = rows.reduce((s, r) => s + (r.horasP ?? 0), 0);
+      const totalH  = rows.reduce((s, r) => s + r.horas,         0);
+
+      ([ [12, totalHT], [13, totalHP], [14, totalH] ] as [number, number][]).forEach(([col, val]) => {
+        const cell = totRow.getCell(col);
+        cell.value = val;
+        cell.fill  = tFill;
+        cell.font  = { bold: true, size: 11, color: { argb: C_BLUE_TEXT } };
+        cell.alignment = ctr;
+        cell.border = THIN_BORDER;
+      });
+
+      // blank cells K15-K16 (O and P in total row) — just style them
+      [15, 16].forEach(col => {
+        const cell = totRow.getCell(col);
+        cell.fill   = tFill;
+        cell.border = THIN_BORDER;
       });
     }
 
-    // Save
-    const buf = await wb.xlsx.writeBuffer();
+    // ── save & download ─────────────────────────────────────────────
+    const buf  = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `Horario_${selected.replace(/\s+/g,"_")}_2026-1.xlsx`;
+    const a    = document.createElement("a");
+    a.href     = URL.createObjectURL(blob);
+    a.download = `Horario_${selected.replace(/\s+/g, "_")}_2026-1.xlsx`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
