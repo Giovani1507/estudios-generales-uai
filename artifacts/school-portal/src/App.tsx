@@ -30,6 +30,7 @@ import DocentesRegistro from "@/pages/docentes-registro";
 import VerificacionFICA from "@/pages/verificacion-fica";
 import DocentesFICA2026 from "@/pages/docentes-fica-2026";
 import ComparacionFICA from "@/pages/comparacion-fica";
+import HorarioDocente from "@/pages/horario-docente";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,10 @@ function AppRouter() {
       <Route
         path="/docentes/comparacion-fica"
         component={() => <ProtectedRoute component={ComparacionFICA} />}
+      />
+      <Route
+        path="/docentes/horario-docente"
+        component={() => <ProtectedRoute component={HorarioDocente} />}
       />
 
       {/* 404 */}
