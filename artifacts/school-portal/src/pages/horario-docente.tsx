@@ -245,7 +245,7 @@ export default function HorarioDocente() {
     // A1:B1 = logo (imagen flotante), C1:I1 merged = título
     ws.mergeCells("A1:B1"); // reservar celdas izquierdas para logo
     ws.mergeCells("C1:I1"); // título a la derecha del logo
-    const r1 = ws.getRow(1); r1.height = 38;
+    const r1 = ws.getRow(1); r1.height = 60; // más alto para el logo
 
     // Celdas A-B: fondo navy (bajo el logo)
     const c1left = r1.getCell(1);
@@ -258,10 +258,19 @@ export default function HorarioDocente() {
     c1title.fill  = sf(NAVY);
     c1title.alignment = CTR;
 
-    // Logo superpuesto en la esquina izquierda (cols A-B)
+    // Logo centrado dentro de las columnas A-B con proporciones correctas
+    // Logo real: 165×182 px (ratio 0.907 — más alto que ancho)
+    // Imagen destino: 46×50 px (mantiene ratio 0.907)
+    // Área A+B: ~145px ancho, 60pt alto ≈ 80px
+    // Centrado horizontal: colOff ≈ (145-46)/2 * 9525 EMU ≈ 471188 EMU
+    // Centrado vertical:   rowOff ≈ (80-50)/2  * 9525 EMU ≈ 142875 EMU
     if (logo64) {
       const imgId = wb.addImage({ base64: logo64, extension: "png" });
-      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 60, height: 38 } });
+      ws.addImage(imgId, {
+        tl: { col: 0, row: 0, colOff: 471188, rowOff: 142875 },
+        ext: { width: 46, height: 50 },
+        editAs: "absolute",
+      } as any);
     }
 
     // ── Fila 3: Docente (izq) | Semestre + Nombre (der) ────────────
