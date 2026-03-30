@@ -326,11 +326,10 @@ export default function HorarioDocente() {
       ca.alignment = CTR;
       ca.border    = THIN;
 
-      // Pre-merge C:D (Martes) en cada fila de datos
-      try { ws.mergeCells(`C${rowNum}:D${rowNum}`); } catch (_) { /* ya merged */ }
-
       // Colores de fondo alternados para celdas vacías
-      [2, 3, 5, 6, 7, 8, 9].forEach(col => {
+      // NOTA: NO pre-mergeamos C:D aquí — los cursos de Martes necesitan
+      // poder mergear C6:D10 (multi-fila) sin que haya merges previos bloqueando.
+      [2, 3, 4, 5, 6, 7, 8, 9].forEach(col => {
         const cell = row.getCell(col);
         cell.fill   = sf(idx % 2 === 0 ? "FFFAFBFF" : WHITE);
         cell.border = THIN;
