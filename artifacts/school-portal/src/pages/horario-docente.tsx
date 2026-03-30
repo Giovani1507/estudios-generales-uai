@@ -337,7 +337,7 @@ export default function HorarioDocente() {
     });
 
     // ── Colocar cursos en la grilla ──────────────────────────────────
-    // Colores de relleno para cursos (uno por carrera/sección)
+    // Colores de relleno para cursos (uno por franja dia+hora)
     const COURSE_FILLS = [
       "FFD6E4F7", "FFDFF0D8", "FFFCE4D6", "FFE8D6F7",
       "FFDFF7FC", "FFFFE0B2", "FFFFE6F0", "FFFFE9B3",
@@ -345,26 +345,46 @@ export default function HorarioDocente() {
     let fillIdx = 0;
     const courseColors = new Map<string, string>();
 
+    // Agrupar cursos que comparten dia + hora + horaFin (secciones simultáneas HP/HV)
+    type CourseGroup = { rows: FICARow[]; day: string; dayInfo: { col: number; col2?: number }; startRow: number; endRow: number };
+    const grouped = new Map<string, CourseGroup>();
+
     courses.forEach(row => {
       const dayNorm = normDay(row.dia);
       const dayInfo = DAY_COL[dayNorm];
-      if (!dayInfo) return; // día no reconocido
+      if (!dayInfo) return;
 
       const startRow = findStartRow(row.hora);
       const endRow   = findEndRow(row.horaFin ?? "", startRow, row.horas);
 
-      // Asignar color único por curso
-      const key = `${row.cod}-${row.ciclo}-${row.seccion}-${row.curso}`;
-      if (!courseColors.has(key)) {
-        courseColors.set(key, COURSE_FILLS[fillIdx % COURSE_FILLS.length]);
+      // Clave de agrupación: mismo día + misma franja
+      const groupKey = `${dayNorm}|${row.hora}|${row.horaFin}`;
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, { rows: [], day: dayNorm, dayInfo, startRow, endRow });
+      }
+      grouped.get(groupKey)!.rows.push(row);
+    });
+
+    grouped.forEach((group) => {
+      const { rows: gRows, dayInfo, startRow, endRow } = group;
+
+      // Representante principal (primera fila del grupo)
+      const rep = gRows[0];
+
+      // Asignar color por franja
+      const colorKey = `${group.day}|${rep.hora}|${rep.horaFin}`;
+      if (!courseColors.has(colorKey)) {
+        courseColors.set(colorKey, COURSE_FILLS[fillIdx % COURSE_FILLS.length]);
         fillIdx++;
       }
-      const bgColor = courseColors.get(key)!;
+      const bgColor = courseColors.get(colorKey)!;
 
-      // Texto de la celda del curso (sin espacio inicial — se centra)
-      const cellText = `${row.cod}_${row.ciclo}-${row.seccion}\n${localLabel(row.local)}\n${row.modalidad}\n \n${row.curso}`;
+      // Combinar secciones si hay varias (ej: "AHP/AHV")
+      const secciones = [...new Set(gRows.map(r => r.seccion))].join("/");
+      const codLine   = `${rep.cod}_${rep.ciclo}-${secciones}`;
+      const cellText  = `${codLine}\n${localLabel(rep.local)}\n${rep.modalidad}\n \n${rep.curso}`;
 
-      // Mergear el bloque de filas en la columna del día
+      // Mergear bloque en la columna del día
       const col1 = dayInfo.col;
       const col2 = dayInfo.col2 ?? col1;
 
