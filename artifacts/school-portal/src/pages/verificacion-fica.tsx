@@ -29,17 +29,28 @@ interface DocAmbos {
 }
 
 interface VerifData {
-  generado: string;
-  resumen: {
-    totalEnPlanificacion: number;
-    totalEnRegistro: number;
-    enAmbos: number;
-    enPlanNoRegistro: number;
-    enRegistroSinPlan: number;
+  totalEnPlan?: number;
+  totalEnRegistro?: number;
+  totalMatch?: number;
+  match?: number;
+  // Puede venir como número (resumen) o como array (lista)
+  enPlanNoRegistro?: DocPlan[] | number;
+  enRegistroNoPlan?: DocReg[] | number;
+  enAmbos?: DocAmbos[] | number;
+  // Alias antiguo por compatibilidad
+  enRegistroSinPlan?: DocReg[] | number;
+  resumen?: {
+    totalEnPlanificacion?: number;
+    totalEnRegistro?: number;
+    enAmbos?: number;
+    enPlanNoRegistro?: number;
+    enRegistroSinPlan?: number;
   };
-  enPlanNoRegistro: DocPlan[];
-  enRegistroSinPlan: DocReg[];
-  enAmbos: DocAmbos[];
+}
+
+function asArray<T>(v: T[] | number | undefined): T[] {
+  if (Array.isArray(v)) return v;
+  return [];
 }
 
 type Tab = "resumen" | "faltantes" | "sinCurso" | "completos";
@@ -60,7 +71,7 @@ export default function VerificacionFICA() {
   const filteredFaltantes = useMemo(() => {
     if (!data) return [];
     const q = search.toLowerCase();
-    return data.enPlanNoRegistro.filter(
+    return asArray<DocPlan>(data.enPlanNoRegistro).filter(
       (d) => d.nombre.toLowerCase().includes(q) || d.dni.toString().includes(q)
     );
   }, [data, search]);
@@ -68,7 +79,8 @@ export default function VerificacionFICA() {
   const filteredSinCurso = useMemo(() => {
     if (!data) return [];
     const q = search.toLowerCase();
-    return data.enRegistroSinPlan.filter(
+    const list = asArray<DocReg>(data.enRegistroNoPlan ?? data.enRegistroSinPlan);
+    return list.filter(
       (d) => d.nombre.toLowerCase().includes(q) || d.dni.toString().includes(q)
     );
   }, [data, search]);
@@ -76,7 +88,7 @@ export default function VerificacionFICA() {
   const filteredCompletos = useMemo(() => {
     if (!data) return [];
     const q = search.toLowerCase();
-    return data.enAmbos.filter(
+    return asArray<DocAmbos>(data.enAmbos).filter(
       (d) => d.nombre.toLowerCase().includes(q) || d.dni.toString().includes(q)
     );
   }, [data, search]);
@@ -116,14 +128,23 @@ export default function VerificacionFICA() {
     );
   }
 
-  const { resumen } = data;
-  const allOk = resumen.enPlanNoRegistro === 0;
+  // Normaliza el JSON antiguo (resumen anidado) y el nuevo (campos en raíz)
+  const resumen = data.resumen ?? {
+    totalEnPlanificacion: data.totalEnPlan ?? 0,
+    totalEnRegistro:      data.totalEnRegistro ?? 0,
+    enAmbos:              typeof data.enAmbos === "number" ? data.enAmbos : (data.totalMatch ?? 0),
+    enPlanNoRegistro:     typeof data.enPlanNoRegistro === "number" ? data.enPlanNoRegistro : 0,
+    enRegistroSinPlan:    typeof data.enRegistroNoPlan === "number" ? data.enRegistroNoPlan
+                          : typeof data.enRegistroSinPlan === "number" ? data.enRegistroSinPlan : 0,
+  };
+
+  const allOk = (resumen.enPlanNoRegistro ?? 0) === 0;
 
   const TABS: { id: Tab; label: string; count: number }[] = [
-    { id: "resumen",    label: "Resumen",          count: -1 },
-    { id: "faltantes",  label: "Faltantes en Registro", count: resumen.enPlanNoRegistro },
-    { id: "sinCurso",   label: "Sin Cursos Asignados",   count: resumen.enRegistroSinPlan },
-    { id: "completos",  label: "Verificados",       count: resumen.enAmbos },
+    { id: "resumen",    label: "Resumen",                  count: -1 },
+    { id: "faltantes",  label: "Faltantes en Registro",    count: resumen.enPlanNoRegistro ?? 0 },
+    { id: "sinCurso",   label: "Sin Cursos Asignados",      count: resumen.enRegistroSinPlan ?? 0 },
+    { id: "completos",  label: "Verificados",               count: resumen.enAmbos ?? 0 },
   ];
 
   return (

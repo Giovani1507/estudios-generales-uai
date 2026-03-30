@@ -105,218 +105,293 @@ export default function HorarioDocente() {
     carreras: [...new Set(courses.map(r => r.cod))],
   }), [courses]);
 
-  /* Excel export — matches provided model exactly */
+  /* ── Excel export — GRILLA SEMANAL (formato plantilla) ── */
   const exportExcel = async () => {
     if (!selected || courses.length === 0) return;
 
     const logo64 = await fetchLogoBase64();
     const wb = new ExcelJS.Workbook();
-    wb.creator = "UAI Portal Académico"; wb.created = new Date();
+    wb.creator = "UAI Portal Académico";
+    wb.created = new Date();
 
-    // ── colour palette ──────────────────────────────────────────────
-    const C_BLUE_TITLE  = "FF2F5AA6"; // UAI primary — university name text
-    const C_DARK_NAVY   = "FF1E3A6E"; // rows 3 & 4 background
-    const C_BLUE_HDR    = "FF2F5AA6"; // row 5 (column headers) background
-    const C_WHITE       = "FFFFFFFF";
-    const C_GRAY_TEXT   = "FF555555";
-    const C_ROW_ODD     = "FFF4F7FC"; // light blue-white for alternating rows
-    const C_TOTAL_BG    = "FFD6E4F7"; // total row background
-    const C_BLUE_TEXT   = "FF1E3A6E"; // numbers in total row & H.Total column
+    // ── Colores de la plantilla ─────────────────────────────────────
+    const NAVY   = "FF001F5F"; // fondo encabezado (plantilla exacta)
+    const LIGHT  = "FFD9E0F1"; // celda total horas
+    const WHITE  = "FFFFFFFF";
+    const GRAY   = "FF444444";
+    const NAVY_T = "FF001F5F"; // texto en celda LIGHT
 
-    // ── helpers ─────────────────────────────────────────────────────
     type Fill = ExcelJS.Fill;
-    const solidFill = (argb: string): Fill =>
-      ({ type: "pattern", pattern: "solid", fgColor: { argb } });
-    const ctr  = { horizontal: "center" as const, vertical: "middle" as const };
-    const mid  = { horizontal: "left"   as const, vertical: "middle" as const };
+    const sf  = (argb: string): Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+    const CTR = { horizontal: "center" as const, vertical: "middle" as const, wrapText: true };
+    const BOT = { horizontal: "left"   as const, vertical: "bottom" as const };
 
-    // ── columns (16 cols: A-P) ──────────────────────────────────────
-    const COLS = [
-      { width: 5  }, // A  #
-      { width: 9  }, // B  Cód.
-      { width: 7  }, // C  Ciclo
-      { width: 6  }, // D  Sec
-      { width: 10 }, // E  Turno
-      { width: 9  }, // F  Sede
-      { width: 13 }, // G  Local
-      { width: 13 }, // H  Modalidad
-      { width: 11 }, // I  Día
-      { width: 15 }, // J  Hora
-      { width: 7  }, // K  Tipo
-      { width: 6  }, // L  H.T
-      { width: 6  }, // M  H.P
-      { width: 8  }, // N  H.Total
-      { width: 34 }, // O  Curso
-      { width: 22 }, // P  Carrera
+    const THIN: Partial<ExcelJS.Borders> = {
+      top:    { style: "thin", color: { argb: "FFCCCCCC" } },
+      bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+      left:   { style: "thin", color: { argb: "FFCCCCCC" } },
+      right:  { style: "thin", color: { argb: "FFCCCCCC" } },
+    };
+    const MED: Partial<ExcelJS.Borders> = {
+      top:    { style: "medium", color: { argb: NAVY } },
+      bottom: { style: "medium", color: { argb: NAVY } },
+      left:   { style: "medium", color: { argb: NAVY } },
+      right:  { style: "medium", color: { argb: NAVY } },
+    };
+
+    // ── Franjas horarias (mismas que la plantilla) ──────────────────
+    const SLOTS = [
+      { start: "07:40", end: "08:30" },
+      { start: "08:30", end: "09:20" },
+      { start: "09:20", end: "10:10" },
+      { start: "10:10", end: "11:00" },
+      { start: "11:00", end: "11:50" },
+      { start: "11:50", end: "12:40" },
+      { start: "12:40", end: "13:30" },
+      { start: "13:30", end: "14:20" },
+      { start: "14:20", end: "15:10" },
+      { start: "15:10", end: "16:00" },
+      { start: "16:00", end: "16:50" },
+      { start: "16:50", end: "17:40" },
+      { start: "17:40", end: "18:30" },
+      { start: "18:30", end: "19:20" },
+      { start: "19:20", end: "20:10" },
+      { start: "20:10", end: "21:00" },
+      { start: "21:00", end: "21:50" },
+      { start: "21:50", end: "22:40" },
+      { start: "22:40", end: "23:30" },
     ];
-    const LAST_COL = "P"; // column 16
+    const FIRST_DATA_ROW = 6; // fila Excel donde empieza la primera franja
 
-    // ── build a sheet for each group ─────────────────────────────────
-    for (const grupo of ["TODOS", "SEDE", "FILIAL"]) {
-      const rows = grupo === "TODOS" ? courses
-        : courses.filter(r => localLabel(r.local) === grupo);
-      if (rows.length === 0) continue;
+    // Normaliza la hora (elimina espacios)
+    const norm = (h: string) => (h ?? "").trim().replace(/\s/g, "");
 
-      const ws = wb.addWorksheet(
-        grupo === "TODOS" ? "Horario Completo"
-        : grupo === "SEDE" ? "Sede (Principal)"
-        : "Filial",
-        { pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" } }
-      );
-
-      ws.columns = COLS;
-
-      // ── Logo (overlaid, top-left) ───────────────────────────────
-      if (logo64) {
-        const imgId = wb.addImage({ base64: logo64, extension: "png" });
-        ws.addImage(imgId, {
-          tl: { col: 0, row: 0 },
-          ext: { width: 90, height: 55 },
-        });
-      }
-
-      // ── Row 1 — University name ─────────────────────────────────
-      ws.mergeCells(`A1:${LAST_COL}1`);
-      const rr1 = ws.getRow(1); rr1.height = 26;
-      const c1 = rr1.getCell(1);
-      c1.value = "UNIVERSIDAD AUTÓNOMA DE ICA";
-      c1.font  = { bold: true, size: 14, color: { argb: C_BLUE_TITLE } };
-      c1.alignment = ctr;
-      c1.fill = solidFill("FFFFFFFF");
-
-      // ── Row 2 — Faculty & period ────────────────────────────────
-      ws.mergeCells(`A2:${LAST_COL}2`);
-      const rr2 = ws.getRow(2); rr2.height = 17;
-      const c2 = rr2.getCell(1);
-      c2.value = "FACULTAD DE INGENIERÍA, CIENCIAS Y ADMINISTRACIÓN (FICA) · 2026-1";
-      c2.font  = { size: 10, color: { argb: C_GRAY_TEXT } };
-      c2.alignment = ctr;
-      c2.fill = solidFill("FFFFFFFF");
-
-      // ── Row 3 — Teacher name ────────────────────────────────────
-      ws.mergeCells(`A3:${LAST_COL}3`);
-      const rr3 = ws.getRow(3); rr3.height = 22;
-      const c3 = rr3.getCell(1);
-      c3.value = `DOCENTE: ${selected}`;
-      c3.font  = { bold: true, size: 12, color: { argb: C_WHITE } };
-      c3.fill  = solidFill(C_DARK_NAVY);
-      c3.alignment = ctr;
-
-      // ── Row 4 — Subtitle ────────────────────────────────────────
-      ws.mergeCells(`A4:${LAST_COL}4`);
-      const rr4 = ws.getRow(4); rr4.height = 17;
-      const c4 = rr4.getCell(1);
-      c4.value =
-        grupo === "TODOS" ? "Horario Completo · Sede + Filial"
-        : grupo === "SEDE" ? "Sede Principal"
-        : "Filial";
-      c4.font  = { size: 10, color: { argb: C_WHITE } };
-      c4.fill  = solidFill(C_DARK_NAVY);
-      c4.alignment = ctr;
-
-      // ── Row 5 — Column headers ───────────────────────────────────
-      const HEADERS = ["#","Cód.","Ciclo","Sec","Turno","Sede","Local","Modalidad","Día","Hora","Tipo","H.T","H.P","H.Total","Curso","Carrera"];
-      const rr5 = ws.getRow(5); rr5.height = 26;
-      HEADERS.forEach((h, i) => {
-        const cell = rr5.getCell(i + 1);
-        cell.value = h;
-        cell.fill  = solidFill(C_BLUE_HDR);
-        cell.font  = { bold: true, size: 10, color: { argb: C_WHITE } };
-        cell.alignment = ctr;
-        cell.border = {
-          top:    { style: "thin", color: { argb: "FFAAAAAA" } },
-          bottom: { style: "thin", color: { argb: "FFAAAAAA" } },
-          left:   { style: "thin", color: { argb: "FFAAAAAA" } },
-          right:  { style: "thin", color: { argb: "FFAAAAAA" } },
-        };
-      });
-
-      // ── Data rows ────────────────────────────────────────────────
-      const THIN_BORDER: Partial<ExcelJS.Borders> = {
-        top:    { style: "thin", color: { argb: "FFDDDDDD" } },
-        bottom: { style: "thin", color: { argb: "FFDDDDDD" } },
-        left:   { style: "thin", color: { argb: "FFDDDDDD" } },
-        right:  { style: "thin", color: { argb: "FFDDDDDD" } },
-      };
-
-      rows.forEach((row, idx) => {
-        const wr = ws.getRow(6 + idx);
-        wr.height = 17;
-        const bgColor = idx % 2 === 0 ? "FFFFFFFF" : C_ROW_ODD;
-        const fill = solidFill(bgColor);
-
-        const vals: (string | number)[] = [
-          idx + 1,
-          row.cod,
-          row.ciclo,
-          row.seccion,
-          row.turno,
-          localLabel(row.local),
-          row.local,
-          row.modalidad,
-          row.dia,
-          row.hora + (row.horaFin ? ` - ${row.horaFin}` : ""),
-          row.tipo ?? "",
-          row.horasT ?? 0,
-          row.horasP ?? 0,
-          row.horas,
-          row.curso,
-          row.carreraFull,
-        ];
-
-        vals.forEach((v, i) => {
-          const cell = wr.getCell(i + 1);
-          cell.value  = v;
-          cell.fill   = fill;
-          cell.border = THIN_BORDER;
-
-          const isCenterCol = i === 0 || (i >= 2 && i <= 10) || i === 11 || i === 12 || i === 13;
-          cell.alignment = isCenterCol ? ctr : mid;
-
-          if (i === 13) { // H.Total — bold blue
-            cell.font = { bold: true, size: 10, color: { argb: C_BLUE_TEXT } };
-          } else {
-            cell.font = { size: 9.5 };
-          }
-        });
-      });
-
-      // ── Totals row ───────────────────────────────────────────────
-      const totRowNum = 6 + rows.length;
-      const totRow = ws.getRow(totRowNum);
-      totRow.height = 20;
-      const tFill = solidFill(C_TOTAL_BG);
-
-      ws.mergeCells(`A${totRowNum}:K${totRowNum}`);
-      const tc = totRow.getCell(1);
-      tc.value = `TOTAL  (${rows.length} sesiones)`;
-      tc.fill  = tFill;
-      tc.font  = { bold: true, size: 10, color: { argb: C_BLUE_TEXT } };
-      tc.alignment = ctr;
-      tc.border = THIN_BORDER;
-
-      const totalHT = rows.reduce((s, r) => s + (r.horasT ?? 0), 0);
-      const totalHP = rows.reduce((s, r) => s + (r.horasP ?? 0), 0);
-      const totalH  = rows.reduce((s, r) => s + r.horas,         0);
-
-      ([ [12, totalHT], [13, totalHP], [14, totalH] ] as [number, number][]).forEach(([col, val]) => {
-        const cell = totRow.getCell(col);
-        cell.value = val;
-        cell.fill  = tFill;
-        cell.font  = { bold: true, size: 11, color: { argb: C_BLUE_TEXT } };
-        cell.alignment = ctr;
-        cell.border = THIN_BORDER;
-      });
-
-      // blank cells K15-K16 (O and P in total row) — just style them
-      [15, 16].forEach(col => {
-        const cell = totRow.getCell(col);
-        cell.fill   = tFill;
-        cell.border = THIN_BORDER;
-      });
+    function findStartRow(hora: string): number {
+      const h = norm(hora);
+      const i = SLOTS.findIndex(s => s.start === h);
+      if (i >= 0) return FIRST_DATA_ROW + i;
+      // fallback: primer slot >= hora
+      const fi = SLOTS.findIndex(s => s.start >= h);
+      return FIRST_DATA_ROW + (fi >= 0 ? fi : 0);
     }
 
-    // ── save & download ─────────────────────────────────────────────
+    function findEndRow(horaFin: string, startRow: number, horas: number): number {
+      const h = norm(horaFin);
+      const i = SLOTS.findIndex(s => s.end === h);
+      if (i >= 0) return FIRST_DATA_ROW + i;
+      // fallback: estimar por horas (4H ≈ 5 slots de 50min; ajustamos a slots enteros)
+      const slots = Math.round(horas * 60 / 50);
+      return startRow + Math.max(slots, 1) - 1;
+    }
+
+    // ── Columnas (A-J exactas de la plantilla) ──────────────────────
+    // A=Hora, B=Lunes, C=Martes(left), D=Martes(right), E=Miercoles,
+    // F=Jueves, G=Viernes, H=Sabado, I=Domingo, J=spacer
+    const DAY_COL: Record<string, { col: number; col2?: number }> = {
+      LUNES:     { col: 2           },
+      MARTES:    { col: 3, col2: 4  }, // C:D merged
+      MIERCOLES: { col: 5           },
+      JUEVES:    { col: 6           },
+      VIERNES:   { col: 7           },
+      SABADO:    { col: 8           },
+      DOMINGO:   { col: 9           },
+    };
+
+    // Convierte número de columna (1-based) + fila a referencia Excel (ej: 2,20 → "B20")
+    function excelAddr(col: number, row: number): string {
+      let letter = "";
+      let c = col;
+      while (c > 0) {
+        const rem = (c - 1) % 26;
+        letter = String.fromCharCode(65 + rem) + letter;
+        c = Math.floor((c - 1) / 26);
+      }
+      return `${letter}${row}`;
+    }
+
+    // nombre normalizado del día (del JSON puede ser MIÉRCOLES con tilde, etc.)
+    function normDay(d: string): string {
+      return d.toUpperCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    // Determina carreras del docente para "Programa de estudio"
+    const carrerasLabel = [...new Set(courses.map(r => r.carreraFull))].join(", ");
+
+    // ── Construir la hoja ───────────────────────────────────────────
+    const ws = wb.addWorksheet("Table 1", {
+      pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
+    });
+
+    ws.columns = [
+      { width: 8           }, // A  Hora
+      { width: 12.66       }, // B  Lunes
+      { width: 3           }, // C  Martes (left)
+      { width: 11.5        }, // D  Martes (right)
+      { width: 15.16       }, // E  Miércoles
+      { width: 17.33       }, // F  Jueves
+      { width: 12.66       }, // G  Viernes
+      { width: 12.66       }, // H  Sábado
+      { width: 14          }, // I  Domingo
+      { width: 2.16        }, // J  spacer
+    ];
+
+    // ── Fila 1: espacio para logo ───────────────────────────────────
+    const r1 = ws.getRow(1); r1.height = 24.95;
+    if (logo64) {
+      const imgId = wb.addImage({ base64: logo64, extension: "png" });
+      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 85, height: 50 } });
+    }
+
+    // ── Fila 2: "HORARIO DOCENTE" (fondo navy, texto blanco) ────────
+    ws.mergeCells("A2:I2");
+    const r2 = ws.getRow(2); r2.height = 21;
+    const c2 = r2.getCell(1);
+    c2.value = "HORARIO DOCENTE";
+    c2.font  = { bold: true, size: 14, color: { argb: WHITE } };
+    c2.fill  = sf(NAVY);
+    c2.alignment = CTR;
+
+    // ── Fila 3: Docente (izq) | Semestre + Nombre (der) ────────────
+    ws.mergeCells("A3:C3");
+    ws.mergeCells("D3:J3");
+    const r3 = ws.getRow(3); r3.height = 41.25;
+    const c3a = r3.getCell(1);
+    c3a.value     = "Docente:";
+    c3a.font      = { bold: true, size: 9, color: { argb: GRAY } };
+    c3a.alignment = BOT;
+
+    const c3b = r3.getCell(4);
+    c3b.value     = `SEMESTRE ACADÉMICO 2026-1\n${selected}`;
+    c3b.font      = { bold: false, size: 11, color: { argb: "FF000000" } };
+    c3b.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+
+    // ── Fila 4: Programa de estudio ─────────────────────────────────
+    ws.mergeCells("A4:J4");
+    const r4 = ws.getRow(4); r4.height = 14;
+    const c4 = r4.getCell(1);
+    c4.value     = `Programa de estudio:            ${carrerasLabel}`;
+    c4.font      = { size: 10, color: { argb: "FF000000" } };
+    c4.alignment = { horizontal: "left", vertical: "middle" };
+
+    // ── Fila 5: Encabezados de días ──────────────────────────────────
+    ws.mergeCells("C5:D5"); // Martes ocupa C:D
+    const r5 = ws.getRow(5); r5.height = 13.5;
+    const dayHeaders = [
+      [1, "Hora"], [2, "Lunes"], [3, "Martes"],
+      [5, "Miércoles"], [6, "Jueves"], [7, "Viernes"],
+      [8, "Sábado"], [9, "Domingo"],
+    ] as [number, string][];
+    dayHeaders.forEach(([col, label]) => {
+      const cell = r5.getCell(col);
+      cell.value = label;
+      cell.fill  = sf(NAVY);
+      cell.font  = { bold: true, size: 9, color: { argb: WHITE } };
+      cell.alignment = CTR;
+      cell.border = THIN;
+    });
+
+    // ── Filas 6-24: franjas horarias (columna A) ────────────────────
+    const LAST_SLOT_ROW = FIRST_DATA_ROW + SLOTS.length - 1; // 24
+    SLOTS.forEach((slot, idx) => {
+      const rowNum = FIRST_DATA_ROW + idx;
+      const row = ws.getRow(rowNum);
+      row.height = 31.5;
+
+      // Col A: horario
+      const ca = row.getCell(1);
+      ca.value     = `${slot.start}\n${slot.end}`;
+      ca.font      = { size: 8, color: { argb: GRAY } };
+      ca.alignment = CTR;
+      ca.border    = THIN;
+
+      // Pre-merge C:D (Martes) en cada fila de datos
+      try { ws.mergeCells(`C${rowNum}:D${rowNum}`); } catch (_) { /* ya merged */ }
+
+      // Colores de fondo alternados para celdas vacías
+      [2, 3, 5, 6, 7, 8, 9].forEach(col => {
+        const cell = row.getCell(col);
+        cell.fill   = sf(idx % 2 === 0 ? "FFFAFBFF" : WHITE);
+        cell.border = THIN;
+      });
+    });
+
+    // ── Colocar cursos en la grilla ──────────────────────────────────
+    // Colores de relleno para cursos (uno por carrera/sección)
+    const COURSE_FILLS = [
+      "FFD6E4F7", "FFDFF0D8", "FFFCE4D6", "FFE8D6F7",
+      "FFDFF7FC", "FFFFE0B2", "FFFFE6F0", "FFFFE9B3",
+    ];
+    let fillIdx = 0;
+    const courseColors = new Map<string, string>();
+
+    courses.forEach(row => {
+      const dayNorm = normDay(row.dia);
+      const dayInfo = DAY_COL[dayNorm];
+      if (!dayInfo) return; // día no reconocido
+
+      const startRow = findStartRow(row.hora);
+      const endRow   = findEndRow(row.horaFin ?? "", startRow, row.horas);
+
+      // Asignar color único por curso
+      const key = `${row.cod}-${row.ciclo}-${row.seccion}-${row.curso}`;
+      if (!courseColors.has(key)) {
+        courseColors.set(key, COURSE_FILLS[fillIdx % COURSE_FILLS.length]);
+        fillIdx++;
+      }
+      const bgColor = courseColors.get(key)!;
+
+      // Texto de la celda del curso
+      const cellText = ` ${row.cod}_${row.ciclo}-${row.seccion}\n${localLabel(row.local)}\n${row.modalidad}\n \n${row.curso}`;
+
+      // Mergear el bloque de filas en la columna del día
+      const col1 = dayInfo.col;
+      const col2 = dayInfo.col2 ?? col1;
+
+      const topAddr    = excelAddr(col1, startRow);
+      const bottomAddr = excelAddr(col2, endRow);
+      const mergeRef   = `${topAddr}:${bottomAddr}`;
+
+      try {
+        if (startRow !== endRow || col1 !== col2) {
+          ws.mergeCells(mergeRef);
+        }
+      } catch (_) { /* ya merged o solapado */ }
+
+      const cell = ws.getRow(startRow).getCell(col1);
+      cell.value     = cellText;
+      cell.font      = { size: 8, color: { argb: "FF000000" }, bold: false };
+      cell.fill      = sf(bgColor);
+      cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      cell.border    = MED;
+    });
+
+    // ── Fila 25: total ───────────────────────────────────────────────
+    const TOT_ROW = LAST_SLOT_ROW + 1; // 25
+    ws.mergeCells(`A${TOT_ROW}:G${TOT_ROW}`);
+    const rTot = ws.getRow(TOT_ROW); rTot.height = 22.5;
+
+    const ctLeft = rTot.getCell(1);
+    ctLeft.value = "";
+    ctLeft.fill  = sf(NAVY);
+
+    const ctLabel = rTot.getCell(8); // H
+    ctLabel.value     = "TOTAL DE\nHORAS:";
+    ctLabel.fill      = sf(NAVY);
+    ctLabel.font      = { size: 10, color: { argb: WHITE } };
+    ctLabel.alignment = CTR;
+    ctLabel.border    = THIN;
+
+    const totalH = courses.reduce((s, r) => s + r.horas, 0);
+    const ctVal  = rTot.getCell(9); // I
+    ctVal.value     = totalH;
+    ctVal.fill      = sf(LIGHT);
+    ctVal.font      = { bold: true, size: 15, color: { argb: NAVY_T } };
+    ctVal.alignment = CTR;
+    ctVal.border    = THIN;
+
+    // ── Guardar y descargar ──────────────────────────────────────────
     const buf  = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const a    = document.createElement("a");
