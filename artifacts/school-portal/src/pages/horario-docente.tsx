@@ -63,10 +63,11 @@ export default function HorarioDocente() {
       .then((d: FICARow[]) => { setData(d); setLoading(false); });
   }, []);
 
-  /* All unique teachers sorted */
+  /* All unique teachers sorted — horas solo de ciclo 1 y 2 */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number }>();
     data.forEach(r => {
+      if (r.ciclo !== "1" && r.ciclo !== "2" && r.ciclo !== 1 && r.ciclo !== 2) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0 });
       const v = map.get(k)!;
@@ -83,11 +84,14 @@ export default function HorarioDocente() {
     return q ? teachers.filter(t => t.nombre.toLowerCase().includes(q)) : teachers;
   }, [teachers, search]);
 
-  /* Courses for selected teacher */
+  /* Courses for selected teacher — solo ciclo 1 y 2 */
   const courses = useMemo(() => {
     if (!selected) return [];
     return data
-      .filter(r => r.docente.toUpperCase().trim() === selected)
+      .filter(r =>
+        r.docente.toUpperCase().trim() === selected &&
+        (r.ciclo === "1" || r.ciclo === "2" || r.ciclo === 1 || r.ciclo === 2)
+      )
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
@@ -420,9 +424,12 @@ export default function HorarioDocente() {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-primary" />
             Horario por Docente — FICA
+            <Badge className="text-[10px] px-2 py-0.5 bg-blue-600 text-white font-semibold">
+              Ciclo 1 y 2
+            </Badge>
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Planificación 2026-1 · {teachers.length} docentes · {data.length} sesiones totales
+            Planificación 2026-1 · {teachers.length} docentes con cursos de ciclo 1-2
           </p>
         </div>
         {selected && (
