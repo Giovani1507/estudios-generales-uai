@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Search, Users, Download, Loader2 } from "lucide-react";
+import { BookOpen, Search, Users, Download, Loader2, MapPin } from "lucide-react";
 
 interface FCSRow {
+  local: string;
   carrera: string;
   carreraFull: string;
   ciclo: string;
@@ -33,16 +34,30 @@ interface FCSRow {
   horasAcad: number;
 }
 
-const CARRERAS: Record<string, string> = {
+const CARRERAS_SEDE: Record<string, string> = {
   EN: "Enfermería",
   OB: "Obstetricia",
   PS: "Psicología",
+};
+
+const CARRERAS_SUNAMPE: Record<string, string> = {
+  MH: "Medicina Humana",
+  OB: "Obstetricia",
+  PS: "Psicología",
+  T1: "Tec. Méd. - Lab. Clínico",
+  T3: "Tec. Méd. - Terapia Física",
+  T4: "Tec. Méd. - Terapia del Lenguaje",
 };
 
 const CARRERAS_FULL: Record<string, string> = {
   EN: "ENFERMERÍA",
   OB: "OBSTETRICIA",
   PS: "PSICOLOGÍA",
+  MH: "MEDICINA HUMANA",
+  T1: "TEC. MÉD. - LAB. CLÍNICO",
+  T3: "TEC. MÉD. - TERAPIA FÍSICA",
+  T4: "TEC. MÉD. - TERAPIA DEL LENGUAJE",
+  T2: "TEC. MÉD. - OPTOMETRÍA",
 };
 
 const DIA_ORDER: Record<string, number> = {
@@ -72,7 +87,6 @@ const SLOTS = [
   { start: "22:40", end: "23:30" },
 ];
 
-// Extract base section letter: A1→A, B2→B, C→C
 function baseSeccion(s: string): string {
   return s.replace(/\d+$/, "");
 }
@@ -83,18 +97,18 @@ function normDia(d: string): string {
 
 function slotIdx(hora: string): number {
   const h = hora.trim();
-  const i = SLOTS.findIndex((s) => s.start === h);
-  if (i >= 0) return i;
-  const fi = SLOTS.findIndex((s) => s.start >= h);
-  return fi >= 0 ? fi : 0;
+  const exact = SLOTS.findIndex((s) => s.start === h);
+  if (exact >= 0) return exact;
+  const after = SLOTS.findIndex((s) => s.start >= h);
+  return after >= 0 ? after : 0;
 }
 
 function slotEndIdx(horaFin: string): number {
   const h = horaFin.trim();
-  const i = SLOTS.findIndex((s) => s.end === h);
-  if (i >= 0) return i;
-  const fi = SLOTS.findIndex((s) => s.end >= h);
-  return fi >= 0 ? fi : SLOTS.length - 1;
+  const exact = SLOTS.findIndex((s) => s.end === h);
+  if (exact >= 0) return exact;
+  const after = SLOTS.findIndex((s) => s.end >= h);
+  return after >= 0 ? after : SLOTS.length - 1;
 }
 
 const DAY_COLS: Record<string, number> = {
@@ -102,7 +116,7 @@ const DAY_COLS: Record<string, number> = {
 };
 
 function turnoLabel(hora: string): string {
-  if (!hora) return "—";
+  if (!hora) return "MAÑANA";
   const h = parseInt(hora.split(":")[0]);
   if (h < 13) return "MAÑANA";
   if (h < 18) return "TARDE";
@@ -142,6 +156,7 @@ async function fetchLogoBase64(baseUrl: string): Promise<string | null> {
 export default function HorarioCarrera() {
   const [data, setData] = useState<FCSRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [local, setLocal] = useState("SEDE");
   const [carrera, setCarrera] = useState("EN");
   const [ciclo, setCiclo] = useState("1");
   const [search, setSearch] = useState("");
@@ -154,11 +169,38 @@ export default function HorarioCarrera() {
       .catch(() => setLoading(false));
   }, []);
 
+  // When local changes, reset carrera and ciclo to a valid default
+  useEffect(() => {
+    if (local === "SEDE") setCarrera("EN");
+    else setCarrera("MH");
+    setCiclo("1");
+  }, [local]);
+
+  const carrerasForLocal = local === "SEDE" ? CARRERAS_SEDE : CARRERAS_SUNAMPE;
+
+  // Available ciclos for selected local+carrera
+  const availCiclos = useMemo(() => {
+    const set = new Set(
+      data
+        .filter((r) => r.local === local && r.carrera === carrera)
+        .map((r) => r.ciclo)
+    );
+    return Array.from(set).sort((a, b) => Number(a) - Number(b));
+  }, [data, local, carrera]);
+
+  // Auto-select ciclo if current is not available
+  useEffect(() => {
+    if (availCiclos.length > 0 && !availCiclos.includes(ciclo)) {
+      setCiclo(availCiclos[0]);
+    }
+  }, [availCiclos, ciclo]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return data
       .filter(
         (r) =>
+          r.local === local &&
           r.carrera === carrera &&
           r.ciclo === ciclo &&
           (!q ||
@@ -171,7 +213,7 @@ export default function HorarioCarrera() {
         if (ca !== 0) return ca;
         return a.seccion.localeCompare(b.seccion, "es");
       });
-  }, [data, carrera, ciclo, search]);
+  }, [data, local, carrera, ciclo, search]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { codigo: string; curso: string; rows: FCSRow[] }>();
@@ -180,26 +222,22 @@ export default function HorarioCarrera() {
       if (!map.has(key)) map.set(key, { codigo: r.codigo, curso: r.curso, rows: [] });
       map.get(key)!.rows.push(r);
     });
-    return Array.from(map.values()).sort((a, b) =>
-      a.curso.localeCompare(b.curso, "es")
-    );
+    return Array.from(map.values()).sort((a, b) => a.curso.localeCompare(b.curso, "es"));
   }, [filtered]);
 
   const totalDocentes = useMemo(
-    () => new Set(filtered.map((r) => r.docente)).size,
+    () => new Set(filtered.map((r) => r.docente).filter(Boolean)).size,
     [filtered]
   );
 
-  // ── Excel export ──────────────────────────────────────────────────
+  // ── Excel Export ───────────────────────────────────────────────────────
   const exportExcel = async () => {
     if (exporting) return;
     setExporting(true);
     try {
-      const carreraRows = data.filter(
-        (r) => r.carrera === carrera && r.ciclo === ciclo
-      );
+      const carreraRows = data.filter((r) => r.local === local && r.carrera === carrera && r.ciclo === ciclo);
 
-      // Group by base section (A, B, C...)
+      // Group by base section
       const secMap = new Map<string, FCSRow[]>();
       carreraRows.forEach((r) => {
         const base = baseSeccion(r.seccion);
@@ -208,7 +246,6 @@ export default function HorarioCarrera() {
       });
 
       const logo64 = await fetchLogoBase64(import.meta.env.BASE_URL);
-
       const wb = new ExcelJS.Workbook();
       wb.creator = "UAI Portal Académico";
       wb.created = new Date();
@@ -221,13 +258,13 @@ export default function HorarioCarrera() {
 
       type Fill = ExcelJS.Fill;
       const sf = (argb: string): Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
-      const CTR = { horizontal: "center" as const, vertical: "middle" as const, wrapText: true };
-      const LEFT_MID = { horizontal: "left" as const, vertical: "middle" as const, wrapText: true };
+      const CTR     = { horizontal: "center"  as const, vertical: "middle" as const, wrapText: true };
+      const LEFT_MID= { horizontal: "left"    as const, vertical: "middle" as const, wrapText: true };
       const THIN: Partial<ExcelJS.Borders> = {
-        top:    { style: "thin", color: { argb: DGRAY } },
-        bottom: { style: "thin", color: { argb: DGRAY } },
-        left:   { style: "thin", color: { argb: DGRAY } },
-        right:  { style: "thin", color: { argb: DGRAY } },
+        top:    { style: "thin",   color: { argb: DGRAY } },
+        bottom: { style: "thin",   color: { argb: DGRAY } },
+        left:   { style: "thin",   color: { argb: DGRAY } },
+        right:  { style: "thin",   color: { argb: DGRAY } },
       };
       const MED: Partial<ExcelJS.Borders> = {
         top:    { style: "medium", color: { argb: NAVY } },
@@ -236,40 +273,38 @@ export default function HorarioCarrera() {
         right:  { style: "medium", color: { argb: NAVY } },
       };
 
-      // Sort sections alphabetically
-      const sections = Array.from(secMap.keys()).sort();
+      const localLabel = local === "SEDE" ? "SEDE" : "SUNAMPE";
+      const sections   = Array.from(secMap.keys()).sort();
 
       for (const baseSec of sections) {
         const secRows = secMap.get(baseSec)!;
+        const withDia = secRows.filter((r) => r.hora);
+        const sorted  = [...withDia].sort((a, b) => a.hora.localeCompare(b.hora));
+        const turno   = sorted.length > 0 ? turnoLabel(sorted[0].hora) : "MAÑANA";
 
-        // Determine turno from earliest course in section
-        const sorted = [...secRows].sort((a, b) => a.hora.localeCompare(b.hora));
-        const turno = sorted.length > 0 ? turnoLabel(sorted[0].hora) : "MAÑANA";
-
-        const sheetName = `${carrera} - ${ciclo}${baseSec} SEDE`;
+        const sheetName = `${carrera} - ${ciclo}${baseSec} ${localLabel}`;
         const ws = wb.addWorksheet(sheetName, {
           pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
         });
 
-        // Column widths: A=Hora, B=Lunes, C=Martes, D=Miercoles, E=Jueves, F=Viernes, G=Sábado, H=Domingo
         ws.columns = [
-          { width: 10  }, // A Hora
-          { width: 22  }, // B Lunes
-          { width: 22  }, // C Martes
-          { width: 22  }, // D Miércoles
-          { width: 22  }, // E Jueves
-          { width: 22  }, // F Viernes
-          { width: 22  }, // G Sábado
-          { width: 16  }, // H Domingo (only if needed)
+          { width: 11 }, // A Hora
+          { width: 22 }, // B Lunes
+          { width: 22 }, // C Martes
+          { width: 22 }, // D Miércoles
+          { width: 22 }, // E Jueves
+          { width: 22 }, // F Viernes
+          { width: 22 }, // G Sábado
+          { width: 18 }, // H Domingo
         ];
 
-        // ── Row 1: Logo + Title ──────────────────────────────────
+        // Row 1: Logo + Title
         ws.getRow(1).height = 50;
         ws.mergeCells("A1:B1");
         ws.mergeCells("C1:H1");
 
-        const c1left = ws.getCell("A1");
-        c1left.fill  = sf(NAVY);
+        const c1left  = ws.getCell("A1");
+        c1left.fill   = sf(NAVY);
         c1left.alignment = CTR;
 
         const c1title = ws.getCell("C1");
@@ -281,115 +316,77 @@ export default function HorarioCarrera() {
 
         if (logo64) {
           const imgId = wb.addImage({ base64: logo64, extension: "png" });
-          ws.addImage(imgId, {
-            tl: { col: 0, row: 0 },
-            ext: { width: 46, height: 50 },
-            editAs: "absolute",
-          });
+          ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 46, height: 50 }, editAs: "absolute" });
         }
 
-        // ── Rows 2-4: Empty ──────────────────────────────────────
+        // Rows 2-4: empty
         [2, 3, 4].forEach((r) => { ws.getRow(r).height = 5; });
 
-        // ── Row 5: FACULTAD ──────────────────────────────────────
-        ws.getRow(5).height = 18;
-        ws.mergeCells("C5:H5");
-        const r5a = ws.getCell("A5");
-        r5a.value = "FACULTAD"; r5a.font = { bold: true, size: 10 };
-        r5a.fill = sf(LGRAY); r5a.border = THIN; r5a.alignment = LEFT_MID;
-        const r5c = ws.getCell("C5");
-        r5c.value = "CIENCIAS DE LA SALUD";
-        r5c.font = { bold: true, size: 10 }; r5c.fill = sf(LGRAY);
-        r5c.border = THIN; r5c.alignment = LEFT_MID;
+        const setInfoRow = (row: number, label: string, value: string) => {
+          ws.getRow(row).height = 18;
+          ws.mergeCells(`C${row}:H${row}`);
+          const la = ws.getCell(`A${row}`);
+          la.value = label; la.font = { bold: true, size: 10 };
+          la.fill = sf(LGRAY); la.border = THIN; la.alignment = LEFT_MID;
+          const lc = ws.getCell(`C${row}`);
+          lc.value = value; lc.font = { bold: true, size: 10 };
+          lc.fill = sf(LGRAY); lc.border = THIN; lc.alignment = LEFT_MID;
+        };
 
-        // ── Row 6: CARRERA PROFESIONAL ───────────────────────────
-        ws.getRow(6).height = 18;
-        ws.mergeCells("C6:H6");
-        const r6a = ws.getCell("A6");
-        r6a.value = "CARRERA PROFESIONAL"; r6a.font = { bold: true, size: 10 };
-        r6a.fill = sf(LGRAY); r6a.border = THIN; r6a.alignment = LEFT_MID;
-        const r6c = ws.getCell("C6");
-        r6c.value = CARRERAS_FULL[carrera] || carrera;
-        r6c.font = { bold: true, size: 10 }; r6c.fill = sf(LGRAY);
-        r6c.border = THIN; r6c.alignment = LEFT_MID;
+        setInfoRow(5, "FACULTAD", "CIENCIAS DE LA SALUD");
+        setInfoRow(6, "CARRERA PROFESIONAL", CARRERAS_FULL[carrera] || carrera);
+        setInfoRow(7, "CICLO ACADÉMICO - SECCIÓN", `${ciclo}${baseSec}`);
+        setInfoRow(8, "TURNO - LOCAL", `${turno} - ${localLabel}`);
 
-        // ── Row 7: CICLO - SECCIÓN ───────────────────────────────
-        ws.getRow(7).height = 18;
-        ws.mergeCells("C7:H7");
-        const r7a = ws.getCell("A7");
-        r7a.value = "CICLO ACADÉMICO - SECCIÓN"; r7a.font = { bold: true, size: 10 };
-        r7a.fill = sf(LGRAY); r7a.border = THIN; r7a.alignment = LEFT_MID;
-        const r7c = ws.getCell("C7");
-        r7c.value = `${ciclo}${baseSec}`;
-        r7c.font = { bold: true, size: 10 }; r7c.fill = sf(LGRAY);
-        r7c.border = THIN; r7c.alignment = LEFT_MID;
-
-        // ── Row 8: TURNO - LOCAL ─────────────────────────────────
-        ws.getRow(8).height = 18;
-        ws.mergeCells("C8:H8");
-        const r8a = ws.getCell("A8");
-        r8a.value = "TURNO - LOCAL"; r8a.font = { bold: true, size: 10 };
-        r8a.fill = sf(LGRAY); r8a.border = THIN; r8a.alignment = LEFT_MID;
-        const r8c = ws.getCell("C8");
-        r8c.value = `${turno} - SEDE`;
-        r8c.font = { bold: true, size: 10 }; r8c.fill = sf(LGRAY);
-        r8c.border = THIN; r8c.alignment = LEFT_MID;
-
-        // ── Row 9: Empty ─────────────────────────────────────────
         ws.getRow(9).height = 5;
 
-        // ── Row 10: Day headers ──────────────────────────────────
+        // Row 10: day headers
         ws.getRow(10).height = 20;
-        const HEADERS = ["Hora", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-        HEADERS.forEach((h, i) => {
+        ["Hora", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].forEach((h, i) => {
           const cell = ws.getRow(10).getCell(i + 1);
           cell.value = h;
-          cell.font = { bold: true, size: 10, color: { argb: WHITE } };
-          cell.fill = sf(NAVY);
+          cell.font  = { bold: true, size: 10, color: { argb: WHITE } };
+          cell.fill  = sf(NAVY);
           cell.alignment = CTR;
           cell.border = MED;
         });
 
-        // ── Build grid: slotIdx → dayCol → cell content ──────────
-        // Each cell: { text, startSlot, endSlot, col }
+        // Build grid
         type CellInfo = { text: string; startSlot: number; endSlot: number };
-        const grid: Map<string, CellInfo> = new Map();
+        const grid = new Map<string, CellInfo>();
 
         secRows.forEach((r) => {
+          if (!r.hora || !r.dia) return;
           const dayNorm = normDia(r.dia);
-          const dayCol = DAY_COLS[dayNorm];
+          const dayCol  = DAY_COLS[dayNorm];
           if (!dayCol) return;
 
           const startSlot = slotIdx(r.hora);
           const endSlot   = slotEndIdx(r.horaFin);
-
-          const key = `${startSlot}_${dayCol}`;
-          const cellText = [
+          const key       = `${startSlot}_${dayCol}`;
+          const cellText  = [
             r.curso.toUpperCase(),
-            r.docente,
-            r.modalidad.toUpperCase().replace(/PRESENCIAL/i, "PRESENCIAL").trim(),
+            r.docente || "Sin asignar",
+            r.modalidad.toUpperCase().trim(),
           ].join("\n");
 
-          // If multiple courses share the same slot+day (different sub-sections), stack them
           if (grid.has(key)) {
-            const existing = grid.get(key)!;
-            existing.text += "\n\n" + cellText;
-            // Take the wider span
-            existing.endSlot = Math.max(existing.endSlot, endSlot);
+            const ex = grid.get(key)!;
+            ex.text    += "\n\n" + cellText;
+            ex.endSlot  = Math.max(ex.endSlot, endSlot);
           } else {
             grid.set(key, { text: cellText, startSlot, endSlot });
           }
         });
 
-        // ── Write slot rows (rows 11-29) ─────────────────────────
+        // Write slot rows 11-29
         const FIRST_ROW = 11;
-        const occupied = new Set<string>(); // "rowNum_colNum" that are already merged/written
+        const occupied  = new Set<string>();
 
         SLOTS.forEach((slot, si) => {
           const rowNum = FIRST_ROW + si;
           ws.getRow(rowNum).height = 40;
 
-          // Col A: time range
           const timeCell = ws.getRow(rowNum).getCell(1);
           timeCell.value = `${slot.start}\n${slot.end}`;
           timeCell.font  = { size: 9, bold: true };
@@ -397,34 +394,22 @@ export default function HorarioCarrera() {
           timeCell.fill  = sf(LGRAY);
           timeCell.border = THIN;
 
-          // Cols B-H: check grid for courses starting at this slot
           for (let col = 2; col <= 8; col++) {
-            const colKey = `${si}_${col}`;
-            const info = grid.get(colKey);
+            const info = grid.get(`${si}_${col}`);
 
             if (info) {
-              const endSlot = info.endSlot;
-              const spanRows = endSlot - si + 1;
-              const endRow = rowNum + spanRows - 1;
-
-              // Merge rows if span > 1
+              const spanRows = info.endSlot - si + 1;
+              const endRow   = rowNum + spanRows - 1;
               if (spanRows > 1) {
-                try {
-                  ws.mergeCells(rowNum, col, endRow, col);
-                } catch { /* already merged */ }
+                try { ws.mergeCells(rowNum, col, endRow, col); } catch { /**/ }
               }
-
               const cell = ws.getRow(rowNum).getCell(col);
               cell.value = info.text;
               cell.font  = { size: 9, color: { argb: DGRAY } };
               cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
               cell.fill  = sf(YELLOW);
               cell.border = THIN;
-
-              // Mark merged rows as occupied so we don't overwrite
-              for (let r = si + 1; r <= endSlot; r++) {
-                occupied.add(`${r}_${col}`);
-              }
+              for (let r2 = si + 1; r2 <= info.endSlot; r2++) occupied.add(`${r2}_${col}`);
             } else if (!occupied.has(`${si}_${col}`)) {
               const cell = ws.getRow(rowNum).getCell(col);
               cell.fill  = sf(WHITE);
@@ -432,17 +417,16 @@ export default function HorarioCarrera() {
             }
           }
         });
-      } // end sections loop
+      }
 
-      // ── Save ────────────────────────────────────────────────────
-      const buf = await wb.xlsx.writeBuffer();
+      const buf  = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
       const url = URL.createObjectURL(blob);
       const a   = document.createElement("a");
       a.href     = url;
-      a.download = `Horario_${carrera}_Ciclo${ciclo}_2026-1.xlsx`;
+      a.download = `Horario_${carrera}_Ciclo${ciclo}_${local}_2026-1.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -468,38 +452,56 @@ export default function HorarioCarrera() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Horarios por Carrera — FCS</h1>
           <p className="text-sm text-muted-foreground">
-            Planificación 2026-1 · Sede Principal · Ciclos 1 y 2
+            Planificación 2026-1 · Ciclos 1 al 10
           </p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex-1 min-w-[160px] max-w-[220px]">
-          <Select value={carrera} onValueChange={setCarrera}>
-            <SelectTrigger>
+
+        {/* LOCAL */}
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-4 h-4 text-muted-foreground" />
+          <Select value={local} onValueChange={setLocal}>
+            <SelectTrigger className="w-[130px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(CARRERAS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
+              <SelectItem value="SEDE">SEDE</SelectItem>
+              <SelectItem value="SUNAMPE">SUNAMPE</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="w-[120px]">
-          <Select value={ciclo} onValueChange={setCiclo}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Ciclo 1</SelectItem>
-              <SelectItem value="2">Ciclo 2</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* CARRERA */}
+        <Select value={carrera} onValueChange={(v) => { setCarrera(v); setCiclo("1"); }}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(carrerasForLocal).map(([k, v]) => (
+              <SelectItem key={k} value={k}>
+                <span className="font-mono text-xs font-bold text-primary mr-2">{k}</span>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
+        {/* CICLO */}
+        <Select value={ciclo} onValueChange={setCiclo}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availCiclos.map((c) => (
+              <SelectItem key={c} value={c}>Ciclo {c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Search */}
         <div className="relative flex-1 max-w-[280px]">
           <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
           <Input
@@ -510,10 +512,11 @@ export default function HorarioCarrera() {
           />
         </div>
 
+        {/* Download */}
         <Button
           onClick={exportExcel}
           disabled={exporting || filtered.length === 0}
-          className="ml-auto gap-2"
+          className="gap-2"
         >
           {exporting ? (
             <><Loader2 className="w-4 h-4 animate-spin" />Generando...</>
@@ -535,6 +538,7 @@ export default function HorarioCarrera() {
         </div>
       </div>
 
+      {/* No data */}
       {grouped.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
