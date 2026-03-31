@@ -498,13 +498,10 @@ export default function HorarioDocente() {
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-primary" />
-            Horario por Docente — FICA
-            <Badge className="text-[10px] px-2 py-0.5 bg-blue-600 text-white font-semibold">
-              Ciclo 1 y 2
-            </Badge>
+            Horario por Docente
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Planificación 2026-1 · {teachers.length} docentes con cursos de ciclo 1-2
+            Planificación 2026-1 · {teachers.length} docentes · FICA y FCS
           </p>
         </div>
         {selected && (
