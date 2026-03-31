@@ -133,6 +133,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [planOpen, setPlanOpen] = useState(
     location.startsWith("/planificacion")
   );
+  const [horCarreraOpen, setHorCarreraOpen] = useState(
+    location.startsWith("/horarios/carrera")
+  );
 
   const filteredMenu = useMemo(() => {
     if (!user?.role) return [];
@@ -362,18 +365,34 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                     <span className="flex-1">Enviar Correo</span>
                                     <ChevronRight className="w-3 h-3 text-white/40" />
                                   </Link>
-                                  <Link
-                                    href="/horarios/carrera"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/horarios/carrera"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <BookOpen className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Horarios por Carrera</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
+                                  <div className="border-t border-white/10">
+                                    <button
+                                      onClick={() => setHorCarreraOpen((o) => !o)}
+                                      className="w-full flex items-center gap-3 pl-10 pr-4 h-10 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                    >
+                                      <BookOpen className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1 text-left">Horarios por Carrera</span>
+                                      <ChevronDown
+                                        className={`w-3 h-3 text-white/40 transition-transform duration-200 ${horCarreraOpen ? "rotate-180" : ""}`}
+                                      />
+                                    </button>
+                                    {horCarreraOpen && (
+                                      <div className="bg-black/15">
+                                        <Link
+                                          href="/horarios/carrera"
+                                          className={`flex items-center gap-3 pl-14 pr-4 h-9 text-xs transition-colors border-t border-white/10 ${
+                                            location === "/horarios/carrera"
+                                              ? "bg-white/20 text-white font-semibold"
+                                              : "text-white/70 hover:bg-white/10 hover:text-white"
+                                          }`}
+                                        >
+                                          <Stethoscope className="w-3 h-3 shrink-0 text-white/60" />
+                                          <span className="flex-1">FCS</span>
+                                          <ChevronRight className="w-2.5 h-2.5 text-white/30" />
+                                        </Link>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>
