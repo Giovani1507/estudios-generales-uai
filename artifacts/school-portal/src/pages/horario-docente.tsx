@@ -11,6 +11,17 @@ type FICARow = {
   hora: string; horaFin: string; curso: string; docente: string;
   horasT: number; horasP: number; horas: number;
 };
+type FCSRaw = {
+  local: string; carrera: string; carreraFull: string; ciclo: string; seccion: string;
+  codigo: string; curso: string; modalidadCurso: string; horasT: number; horasP: number;
+  horas: number; docente: string; modalidad: string; tipo: string;
+  dia: string; hora: string; horaFin: string; horasAcad: number;
+};
+function turnoFromHora(hora: string): string {
+  if (!hora) return "DIURNO";
+  const h = parseInt(hora.split(":")[0]);
+  return h < 18 ? "DIURNO" : "NOCTURNO";
+}
 
 const TIPO_COLOR: Record<string, string> = {
   T:  "bg-blue-100 text-blue-700",
@@ -28,14 +39,19 @@ const DIA_ORDER: Record<string, number> = {
 };
 
 function localLabel(local: string) {
-  return (local || "").toUpperCase().includes("PRINCIPAL") ? "SEDE" : "FILIAL";
+  const u = (local || "").toUpperCase().trim();
+  if (u === "SEDE" || u === "PRINCIPAL") return "SEDE";
+  if (u === "SUNAMPE") return "SUNAMPE";
+  return u || "FILIAL";
 }
 
 function localBadge(local: string) {
   const l = localLabel(local);
-  return l === "SEDE"
-    ? <Badge className="text-[10px] px-1.5 py-0 bg-blue-600 text-white">{l}</Badge>
-    : <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white">{l} · {local}</Badge>;
+  if (l === "SEDE")
+    return <Badge className="text-[10px] px-1.5 py-0 bg-blue-600 text-white">SEDE</Badge>;
+  if (l === "SUNAMPE")
+    return <Badge className="text-[10px] px-1.5 py-0 bg-teal-600 text-white">SUNAMPE</Badge>;
+  return <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white">FILIAL · {local}</Badge>;
 }
 
 async function fetchLogoBase64(): Promise<string | null> {
@@ -58,20 +74,47 @@ export default function HorarioDocente() {
   const [dropOpen, setDropOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}planificacion-fica-2026-1.json`)
-      .then(r => r.json())
-      .then((d: FICARow[]) => { setData(d); setLoading(false); });
+    const base = import.meta.env.BASE_URL;
+    Promise.all([
+      fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.json()),
+      fetch(`${base}planificacion-fcs-2026-1.json`).then(r => r.json()),
+    ]).then(([ficaData, fcsData]: [FICARow[], FCSRaw[]]) => {
+      // Normalize FCS rows to the same shape as FICA rows
+      const fcsNorm: FICARow[] = fcsData.map(r => ({
+        cod:        r.carrera,
+        carrera:    r.carreraFull || r.carrera,
+        carreraFull: r.carreraFull || r.carrera,
+        ciclo:      String(r.ciclo),
+        seccion:    r.seccion,
+        turno:      turnoFromHora(r.hora),
+        local:      r.local,        // "SEDE" or "SUNAMPE" — handled by localLabel
+        modalidad:  r.modalidad,
+        tipo:       r.tipo,
+        dia:        r.dia,
+        hora:       r.hora,
+        horaFin:    r.horaFin,
+        curso:      r.curso,
+        docente:    r.docente,
+        horasT:     r.horasT,
+        horasP:     r.horasP,
+        horas:      r.horas || r.horasAcad,
+      }));
+      setData([...ficaData, ...fcsNorm]);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  /* All unique teachers sorted — horas solo de ciclo 1 y 2 */
+  /* All unique teachers sorted — todos los ciclos */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number }>();
     data.forEach(r => {
-      if (r.ciclo !== "1" && r.ciclo !== "2" && r.ciclo !== 1 && r.ciclo !== 2) return;
+      if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0 });
       const v = map.get(k)!;
-      v.horasT += r.horasT; v.horasP += r.horasP; v.horas += r.horas;
+      v.horasT += Number(r.horasT) || 0;
+      v.horasP += Number(r.horasP) || 0;
+      v.horas  += Number(r.horas)  || 0;
     });
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
@@ -84,14 +127,11 @@ export default function HorarioDocente() {
     return q ? teachers.filter(t => t.nombre.toLowerCase().includes(q)) : teachers;
   }, [teachers, search]);
 
-  /* Courses for selected teacher — solo ciclo 1 y 2 */
+  /* Courses for selected teacher — todos los ciclos */
   const courses = useMemo(() => {
     if (!selected) return [];
     return data
-      .filter(r =>
-        r.docente.toUpperCase().trim() === selected &&
-        (r.ciclo === "1" || r.ciclo === "2" || r.ciclo === 1 || r.ciclo === 2)
-      )
+      .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
