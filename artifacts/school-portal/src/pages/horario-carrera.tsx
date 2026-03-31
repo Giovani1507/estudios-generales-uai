@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as ExcelJS from "exceljs";
 import {
   Select,
@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  BookOpen, Search, Users, Download, Loader2, MapPin, Layers,
+  BookOpen, Search, Users, Download, Loader2, MapPin, Layers, ChevronDown, Check,
 } from "lucide-react";
 
 interface FCSRow {
@@ -65,24 +66,15 @@ const DIA_ORDER: Record<string, number> = {
 };
 
 const SLOTS = [
-  { start: "07:40", end: "08:30" },
-  { start: "08:30", end: "09:20" },
-  { start: "09:20", end: "10:10" },
-  { start: "10:10", end: "11:00" },
-  { start: "11:00", end: "11:50" },
-  { start: "11:50", end: "12:40" },
-  { start: "12:40", end: "13:30" },
-  { start: "13:30", end: "14:20" },
-  { start: "14:20", end: "15:10" },
-  { start: "15:10", end: "16:00" },
-  { start: "16:00", end: "16:50" },
-  { start: "16:50", end: "17:40" },
-  { start: "17:40", end: "18:30" },
-  { start: "18:30", end: "19:20" },
-  { start: "19:20", end: "20:10" },
-  { start: "20:10", end: "21:00" },
-  { start: "21:00", end: "21:50" },
-  { start: "21:50", end: "22:40" },
+  { start: "07:40", end: "08:30" }, { start: "08:30", end: "09:20" },
+  { start: "09:20", end: "10:10" }, { start: "10:10", end: "11:00" },
+  { start: "11:00", end: "11:50" }, { start: "11:50", end: "12:40" },
+  { start: "12:40", end: "13:30" }, { start: "13:30", end: "14:20" },
+  { start: "14:20", end: "15:10" }, { start: "15:10", end: "16:00" },
+  { start: "16:00", end: "16:50" }, { start: "16:50", end: "17:40" },
+  { start: "17:40", end: "18:30" }, { start: "18:30", end: "19:20" },
+  { start: "19:20", end: "20:10" }, { start: "20:10", end: "21:00" },
+  { start: "21:00", end: "21:50" }, { start: "21:50", end: "22:40" },
   { start: "22:40", end: "23:30" },
 ];
 
@@ -143,7 +135,98 @@ async function fetchLogoBase64(baseUrl: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// ── Build one sheet for a (carrera, ciclo, baseSec) combo ──────────────────
+// ── Ciclo multi-select dropdown ────────────────────────────────────────────
+function CicloMultiSelect({
+  availCiclos,
+  selectedCiclos,
+  onChange,
+}: {
+  availCiclos: string[];
+  selectedCiclos: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const allSelected = selectedCiclos.length === 0 || selectedCiclos.length === availCiclos.length;
+
+  const label = allSelected
+    ? "Todos los ciclos"
+    : selectedCiclos.length === 1
+    ? `Ciclo ${selectedCiclos[0]}`
+    : `Ciclos ${selectedCiclos.map(Number).sort((a, b) => a - b).join(", ")}`;
+
+  const toggle = (c: string) => {
+    if (selectedCiclos.includes(c)) {
+      const next = selectedCiclos.filter(x => x !== c);
+      onChange(next.length === availCiclos.length || next.length === 0 ? [] : next);
+    } else {
+      const next = [...selectedCiclos, c];
+      onChange(next.length === availCiclos.length ? [] : next);
+    }
+  };
+
+  const toggleAll = () => onChange([]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[170px] justify-between hover:bg-accent transition-colors"
+      >
+        <span className={allSelected ? "text-muted-foreground" : "text-foreground font-medium"}>
+          {label}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-10 left-0 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[170px]">
+          {/* All */}
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+          >
+            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${allSelected ? "bg-primary border-primary" : "border-input"}`}>
+              {allSelected && <Check className="w-3 h-3 text-white" />}
+            </div>
+            <Layers className="w-3.5 h-3.5 text-primary" />
+            <span className="font-medium">Todos los ciclos</span>
+          </button>
+          <div className="border-t border-border my-1" />
+          {availCiclos.map(c => {
+            const checked = allSelected ? true : selectedCiclos.includes(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => toggle(c)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+              >
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${checked ? "bg-primary border-primary" : "border-input"}`}>
+                  {checked && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <span>Ciclo {c}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Build one Excel sheet ──────────────────────────────────────────────────
 function buildSheet(
   wb: ExcelJS.Workbook,
   logo64: string | null,
@@ -171,9 +254,7 @@ function buildSheet(
     left: { style: "medium", color: { argb: NAVY } }, right: { style: "medium", color: { argb: NAVY } },
   };
 
-  // Sanitise sheet name (max 31 chars, no special chars)
   const sheetName = `${carreraCode} - ${cicloNum}${baseSec} ${localLabel}`.substring(0, 31);
-
   const ws = wb.addWorksheet(sheetName, {
     pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
   });
@@ -182,10 +263,8 @@ function buildSheet(
     { width: 22 }, { width: 22 }, { width: 22 }, { width: 18 },
   ];
 
-  // Row 1
   ws.getRow(1).height = 50;
-  ws.mergeCells("A1:B1");
-  ws.mergeCells("C1:H1");
+  ws.mergeCells("A1:B1"); ws.mergeCells("C1:H1");
   const c1l = ws.getCell("A1");
   c1l.fill = sf(NAVY); c1l.alignment = CTR;
   const c1t = ws.getCell("C1");
@@ -196,7 +275,6 @@ function buildSheet(
     const imgId = wb.addImage({ base64: logo64, extension: "png" });
     ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 46, height: 50 }, editAs: "absolute" });
   }
-
   [2, 3, 4].forEach(r => { ws.getRow(r).height = 5; });
 
   const infoRow = (row: number, label: string, value: string) => {
@@ -210,7 +288,6 @@ function buildSheet(
     lc.fill = sf(LGRAY); lc.border = THIN; lc.alignment = LEFT_MID;
   };
 
-  // Turno
   const withDia = secRows.filter(r => r.hora);
   const turno = withDia.length > 0
     ? turnoLabel([...withDia].sort((a, b) => a.hora.localeCompare(b.hora))[0].hora)
@@ -222,7 +299,6 @@ function buildSheet(
   infoRow(8, "TURNO - LOCAL", `${turno} - ${localLabel}`);
   ws.getRow(9).height = 5;
 
-  // Row 10 headers
   ws.getRow(10).height = 20;
   ["Hora", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].forEach((h, i) => {
     const cell = ws.getRow(10).getCell(i + 1);
@@ -231,7 +307,6 @@ function buildSheet(
     cell.fill = sf(NAVY); cell.alignment = CTR; cell.border = MED;
   });
 
-  // Build grid
   type CellInfo = { text: string; startSlot: number; endSlot: number };
   const grid = new Map<string, CellInfo>();
   secRows.forEach(r => {
@@ -279,12 +354,13 @@ function buildSheet(
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function HorarioCarrera() {
-  const [data, setData]       = useState<FCSRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [local, setLocal]     = useState("SEDE");
-  const [carrera, setCarrera] = useState("EN");
-  const [ciclo, setCiclo]     = useState("TODOS");
-  const [search, setSearch]   = useState("");
+  const [data, setData]           = useState<FCSRow[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [local, setLocal]         = useState("SEDE");
+  const [carrera, setCarrera]     = useState("TODOS");
+  // selectedCiclos: empty array = todos
+  const [selectedCiclos, setSelectedCiclos] = useState<string[]>([]);
+  const [search, setSearch]       = useState("");
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -296,18 +372,9 @@ export default function HorarioCarrera() {
 
   const carrerasForLocal = local === "SEDE" ? CARRERAS_SEDE : CARRERAS_SUNAMPE;
 
-  // Reset when local changes
-  useEffect(() => {
-    setCarrera("TODOS");
-    setCiclo("TODOS");
-  }, [local]);
+  useEffect(() => { setCarrera("TODOS"); setSelectedCiclos([]); }, [local]);
+  useEffect(() => { setSelectedCiclos([]); }, [carrera]);
 
-  // Reset ciclo when carrera changes (keep TODOS as default)
-  useEffect(() => {
-    setCiclo("TODOS");
-  }, [carrera]);
-
-  // All available ciclos for current local+carrera selection
   const availCiclos = useMemo(() => {
     const set = new Set(
       data
@@ -317,14 +384,16 @@ export default function HorarioCarrera() {
     return Array.from(set).sort((a, b) => Number(a) - Number(b));
   }, [data, local, carrera]);
 
-  // Filtered rows for display
+  // Effective ciclo list: empty = all available
+  const activeCiclos = selectedCiclos.length > 0 ? selectedCiclos : availCiclos;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return data
       .filter(r =>
         r.local === local &&
         (carrera === "TODOS" || r.carrera === carrera) &&
-        (ciclo   === "TODOS" || r.ciclo   === ciclo) &&
+        activeCiclos.includes(r.ciclo) &&
         (!q || r.curso.toLowerCase().includes(q) ||
                r.docente.toLowerCase().includes(q) ||
                r.seccion.toLowerCase().includes(q))
@@ -336,14 +405,13 @@ export default function HorarioCarrera() {
         if (nc !== 0) return nc;
         return a.curso.localeCompare(b.curso, "es");
       });
-  }, [data, local, carrera, ciclo, search]);
+  }, [data, local, carrera, activeCiclos, search]);
 
-  // Group by carrera+ciclo+curso for display
   const grouped = useMemo(() => {
-    const map = new Map<string, { codigo: string; curso: string; carrera: string; carreraFull: string; ciclo: string; rows: FCSRow[] }>();
+    const map = new Map<string, { codigo: string; curso: string; carrera: string; ciclo: string; rows: FCSRow[] }>();
     filtered.forEach(r => {
       const key = r.carrera + "|" + r.ciclo + "|" + r.codigo + "|" + r.curso;
-      if (!map.has(key)) map.set(key, { codigo: r.codigo, curso: r.curso, carrera: r.carrera, carreraFull: r.carreraFull, ciclo: r.ciclo, rows: [] });
+      if (!map.has(key)) map.set(key, { codigo: r.codigo, curso: r.curso, carrera: r.carrera, ciclo: r.ciclo, rows: [] });
       map.get(key)!.rows.push(r);
     });
     return Array.from(map.values());
@@ -354,23 +422,22 @@ export default function HorarioCarrera() {
     [filtered]
   );
 
-  // Count total sheets that will be generated
   const sheetCount = useMemo(() => {
     const combos = new Set<string>();
     data
       .filter(r =>
         r.local === local &&
         (carrera === "TODOS" || r.carrera === carrera) &&
-        (ciclo   === "TODOS" || r.ciclo   === ciclo)
+        activeCiclos.includes(r.ciclo)
       )
       .forEach(r => {
         const base = baseSeccion(r.seccion);
         combos.add(`${r.carrera}|${r.ciclo}|${base}`);
       });
     return combos.size;
-  }, [data, local, carrera, ciclo]);
+  }, [data, local, carrera, activeCiclos]);
 
-  // ── Excel Export ────────────────────────────────────────────────────────
+  // ── Excel Export ──────────────────────────────────────────────────────────
   const exportExcel = async () => {
     if (exporting) return;
     setExporting(true);
@@ -378,21 +445,16 @@ export default function HorarioCarrera() {
       const srcRows = data.filter(r =>
         r.local === local &&
         (carrera === "TODOS" || r.carrera === carrera) &&
-        (ciclo   === "TODOS" || r.ciclo   === ciclo)
+        activeCiclos.includes(r.ciclo)
       );
 
-      // Build unique (carrera, ciclo, baseSec) combos — ordered
       const orderedKeys: Array<[string, string, string]> = [];
       const seen = new Set<string>();
       srcRows.forEach(r => {
         const base = baseSeccion(r.seccion);
         const k = `${r.carrera}|${r.ciclo}|${base}`;
-        if (!seen.has(k)) {
-          seen.add(k);
-          orderedKeys.push([r.carrera, r.ciclo, base]);
-        }
+        if (!seen.has(k)) { seen.add(k); orderedKeys.push([r.carrera, r.ciclo, base]); }
       });
-      // Sort: carrera → ciclo (num) → section
       orderedKeys.sort((a, b) => {
         const cc = a[0].localeCompare(b[0]);
         if (cc !== 0) return cc;
@@ -418,7 +480,9 @@ export default function HorarioCarrera() {
       const a    = document.createElement("a");
       a.href = url;
       const carreraLabel = carrera === "TODOS" ? "Todas" : carrera;
-      const cicloLabel   = ciclo   === "TODOS" ? "TodosCiclos" : `Ciclo${ciclo}`;
+      const cicloLabel   = selectedCiclos.length === 0
+        ? "TodosCiclos"
+        : `Ciclos${selectedCiclos.map(Number).sort((x,y)=>x-y).join("_")}`;
       a.download = `Horario_FCS_${carreraLabel}_${cicloLabel}_${localLabel}_2026-1.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
@@ -436,7 +500,7 @@ export default function HorarioCarrera() {
   }
 
   const showCarreraCol = carrera === "TODOS";
-  const showCicloCol   = ciclo   === "TODOS";
+  const showCicloCol   = activeCiclos.length > 1;
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-5">
@@ -451,7 +515,7 @@ export default function HorarioCarrera() {
         </div>
       </div>
 
-      {/* Filters row */}
+      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         {/* LOCAL */}
         <div className="flex items-center gap-1.5">
@@ -483,24 +547,15 @@ export default function HorarioCarrera() {
           </SelectContent>
         </Select>
 
-        {/* CICLO */}
-        <Select value={ciclo} onValueChange={setCiclo}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="TODOS">
-              <span className="flex items-center gap-2">
-                <Layers className="w-3.5 h-3.5 text-primary" />
-                Todos los ciclos
-              </span>
-            </SelectItem>
-            {availCiclos.map(c => (
-              <SelectItem key={c} value={c}>Ciclo {c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* CICLO — multi-select */}
+        <CicloMultiSelect
+          availCiclos={availCiclos}
+          selectedCiclos={selectedCiclos}
+          onChange={setSelectedCiclos}
+        />
 
         {/* Search */}
-        <div className="relative flex-1 max-w-[240px]">
+        <div className="relative flex-1 max-w-[220px]">
           <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
           <Input
             className="pl-8"
@@ -535,23 +590,24 @@ export default function HorarioCarrera() {
         </div>
       </div>
 
-      {/* Info banner when TODOS selected */}
-      {(carrera === "TODOS" || ciclo === "TODOS") && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/5 border border-primary/20 text-sm text-primary">
-          <Layers className="w-4 h-4 shrink-0" />
-          <span>
-            El Excel incluirá{" "}
-            <strong>{sheetCount} hojas</strong>{" "}
-            — una por sección de cada{" "}
-            {carrera === "TODOS" && ciclo === "TODOS"
-              ? "carrera y ciclo"
-              : carrera === "TODOS"
-              ? `carrera en el ciclo ${ciclo}`
-              : `ciclo de ${carrerasForLocal[carrera] ?? carrera}`}
-            .
-          </span>
-        </div>
-      )}
+      {/* Summary banner */}
+      <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/5 border border-primary/20 text-sm text-primary">
+        <Layers className="w-4 h-4 shrink-0" />
+        <span>
+          Mostrando{" "}
+          <strong>
+            {carrera === "TODOS" ? "todas las carreras" : CARRERAS_FULL[carrera] ?? carrera}
+          </strong>
+          {" · "}
+          <strong>
+            {selectedCiclos.length === 0
+              ? "todos los ciclos"
+              : `ciclo${selectedCiclos.length > 1 ? "s" : ""} ${selectedCiclos.map(Number).sort((a,b)=>a-b).join(" y ")}`}
+          </strong>
+          {" · "}
+          El Excel generará <strong>{sheetCount} hojas</strong>.
+        </span>
+      </div>
 
       {/* Table */}
       {grouped.length === 0 ? (
@@ -561,7 +617,7 @@ export default function HorarioCarrera() {
         </div>
       ) : (
         <div className="space-y-4">
-          {grouped.map(({ codigo, curso, carrera: carr, carreraFull, ciclo: cic, rows }) => (
+          {grouped.map(({ codigo, curso, carrera: carr, ciclo: cic, rows }) => (
             <Card key={carr + cic + codigo + curso} className="overflow-hidden">
               <CardHeader className="py-3 px-4 bg-muted/40 border-b">
                 <div className="flex items-start justify-between gap-3">
@@ -572,14 +628,10 @@ export default function HorarioCarrera() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-muted-foreground">{codigo}</span>
                       {showCarreraCol && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
-                          {carr}
-                        </Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">{carr}</Badge>
                       )}
                       {showCicloCol && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          Ciclo {cic}
-                        </Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">Ciclo {cic}</Badge>
                       )}
                     </div>
                   </div>
