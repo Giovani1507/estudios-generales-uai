@@ -160,6 +160,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "Horario por Aula",
       Icon: School,
     },
+    {
+      href: "/planificacion/crear",
+      label: "Crear Planificación",
+      Icon: ClipboardList,
+    },
   ];
 
   return (
