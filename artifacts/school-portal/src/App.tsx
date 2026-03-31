@@ -22,7 +22,6 @@ import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
 import HorarioDocente from "@/pages/horario-docente";
-import EnviarCorreo from "@/pages/enviar-correo";
 import HorarioCarrera from "@/pages/horario-carrera";
 
 const queryClient = new QueryClient();
@@ -97,10 +96,6 @@ function AppRouter() {
       <Route
         path="/docentes/horario-docente"
         component={() => <ProtectedRoute component={HorarioDocente} />}
-      />
-      <Route
-        path="/docentes/enviar-correo"
-        component={() => <ProtectedRoute component={EnviarCorreo} />}
       />
       <Route
         path="/horarios/carrera"

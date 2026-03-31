@@ -60,6 +60,24 @@ const DIA_ORDER: Record<string, number> = {
   LUNES: 1, MARTES: 2, MIERCOLES: 3, MIÉRCOLES: 3,
   JUEVES: 4, VIERNES: 5, SABADO: 6, SÁBADO: 6, DOMINGO: 7,
 };
+
+// ── FICA constants ──────────────────────────────────────────────────────────
+const CARRERAS_FICA: Record<string, Record<string, string>> = {
+  PRINCIPAL: { AE:"Adm. de Empresas", AF:"Adm. de Empresas (F)", AR:"Arquitectura", DE:"Derecho", EN:"Enfermería", IC:"Ing. Civil", IN:"Ing. Industrial", IS:"Ing. de Sistemas", OB:"Obstetricia", PS:"Psicología" },
+  FILIAL:    { AF:"Adm. de Empresas", CA:"Contabilidad", DE:"Derecho", EN:"Enfermería", IC:"Ing. Civil", IN:"Ing. Industrial", OB:"Obstetricia", PS:"Psicología", T1:"Tec. Méd. - Lab. Clínico", T2:"Tec. Méd. - Ter. Ocupacional" },
+  HUAURA:    { AE:"Adm. de Empresas", DE:"Derecho", EN:"Enfermería", OB:"Obstetricia", PS:"Psicología" },
+  PORUMA:    { MH:"Medicina Humana", T1:"Tec. Méd. - Lab. Clínico", T2:"Tec. Méd. - Ter. Ocupacional", T3:"Tec. Méd. - Ter. Física" },
+  SUNAMPE:   { MH:"Medicina Humana", OB:"Obstetricia", PS:"Psicología", T1:"Tec. Méd. - Lab. Clínico", T3:"Tec. Méd. - Ter. Física", T4:"Tec. Méd. - Ter. del Lenguaje" },
+};
+const CARRERAS_FICA_FULL: Record<string, string> = {
+  AE:"ADMINISTRACIÓN DE EMPRESAS", AF:"ADMINISTRACIÓN DE EMPRESAS", AR:"ARQUITECTURA",
+  CA:"CONTABILIDAD", DE:"DERECHO", EN:"ENFERMERÍA", IC:"INGENIERÍA CIVIL",
+  IN:"INGENIERÍA INDUSTRIAL", IS:"INGENIERÍA DE SISTEMAS", MH:"MEDICINA HUMANA",
+  OB:"OBSTETRICIA", PS:"PSICOLOGÍA", T1:"TEC. MÉD. - LAB. CLÍNICO",
+  T2:"TEC. MÉD. - TERAPIA OCUPACIONAL", T3:"TEC. MÉD. - TERAPIA FÍSICA",
+  T4:"TEC. MÉD. - TERAPIA DEL LENGUAJE",
+};
+const FICA_LOCALS = ["PRINCIPAL", "FILIAL", "HUAURA", "PORUMA", "SUNAMPE"] as const;
 const DAYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 const DAYS_LABEL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const SLOTS = [
@@ -651,6 +669,9 @@ function buildSheet(
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function HorarioCarrera() {
+  const [facultad, setFacultad] = useState<"FCS" | "FICA">("FCS");
+
+  // ── FCS state ─────────────────────────────────────────────────────────────
   const [data, setData]         = useState<FCSRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [local, setLocal]       = useState("SEDE");
@@ -660,11 +681,27 @@ export default function HorarioCarrera() {
   const [exporting, setExporting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  // ── FICA state ─────────────────────────────────────────────────────────────
+  const [ficaData, setFicaData]         = useState<FCSRow[]>([]);
+  const [ficaLoading, setFicaLoading]   = useState(true);
+  const [ficaLocal, setFicaLocal]       = useState("PRINCIPAL");
+  const [ficaCarrera, setFicaCarrera]   = useState("TODOS");
+  const [ficaSelectedCiclos, setFicaSelectedCiclos] = useState<string[]>([]);
+  const [ficaSearch, setFicaSearch]     = useState("");
+  const [ficaExporting, setFicaExporting] = useState(false);
+
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}planificacion-fcs-2026-1.json`)
       .then(r => r.json())
       .then((d: FCSRow[]) => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}planificacion-fica-2026-1.json`)
+      .then(r => r.json())
+      .then((d: FCSRow[]) => { setFicaData(d); setFicaLoading(false); })
+      .catch(() => setFicaLoading(false));
   }, []);
 
   const carrerasForLocal = local === "SEDE" ? CARRERAS_SEDE : CARRERAS_SUNAMPE;
@@ -763,7 +800,105 @@ export default function HorarioCarrera() {
     }
   };
 
-  if (loading) {
+  // ── FICA computed values ────────────────────────────────────────────────
+  const ficaCarrerasForLocal = CARRERAS_FICA[ficaLocal] ?? {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setFicaCarrera("TODOS"); setFicaSelectedCiclos([]); }, [ficaLocal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setFicaSelectedCiclos([]); }, [ficaCarrera]);
+
+  const ficaAvailCiclos = useMemo(() => {
+    const set = new Set(
+      ficaData.filter(r => r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera)).map(r => r.ciclo)
+    );
+    return Array.from(set).sort((a, b) => Number(a) - Number(b));
+  }, [ficaData, ficaLocal, ficaCarrera]);
+
+  const ficaActiveCiclos = ficaSelectedCiclos.length > 0 ? ficaSelectedCiclos : ficaAvailCiclos;
+
+  const ficaFiltered = useMemo(() => {
+    const q = ficaSearch.toLowerCase().trim();
+    return ficaData.filter(r =>
+      r.local === ficaLocal &&
+      (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) &&
+      ficaActiveCiclos.includes(r.ciclo) &&
+      (!q || r.curso.toLowerCase().includes(q) || (r.docente || "").toLowerCase().includes(q))
+    ).sort((a, b) => {
+      const cc = a.carrera.localeCompare(b.carrera);
+      if (cc !== 0) return cc;
+      const nc = Number(a.ciclo) - Number(b.ciclo);
+      if (nc !== 0) return nc;
+      return a.curso.localeCompare(b.curso, "es");
+    });
+  }, [ficaData, ficaLocal, ficaCarrera, ficaActiveCiclos, ficaSearch]);
+
+  const ficaGrouped = useMemo(() => {
+    const map = new Map<string, { codigo: string; curso: string; carrera: string; ciclo: string; rows: FCSRow[] }>();
+    ficaFiltered.forEach(r => {
+      const key = r.carrera + "|" + r.ciclo + "|" + (r.codigo||"") + "|" + r.curso;
+      if (!map.has(key)) map.set(key, { codigo: r.codigo||"", curso: r.curso, carrera: r.carrera, ciclo: r.ciclo, rows: [] });
+      map.get(key)!.rows.push(r);
+    });
+    return Array.from(map.values());
+  }, [ficaFiltered]);
+
+  const ficaTotalDocentes = useMemo(() => new Set(ficaFiltered.map(r => r.docente).filter(Boolean)).size, [ficaFiltered]);
+
+  const ficaSheetCount = useMemo(() => {
+    const combos = new Set<string>();
+    ficaData.filter(r =>
+      r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ficaActiveCiclos.includes(r.ciclo)
+    ).forEach(r => { combos.add(`${r.carrera}|${r.ciclo}|${baseSeccion(r.seccion)}`); });
+    return combos.size;
+  }, [ficaData, ficaLocal, ficaCarrera, ficaActiveCiclos]);
+
+  const exportFicaExcel = async () => {
+    if (ficaExporting) return;
+    setFicaExporting(true);
+    try {
+      const srcRows = ficaData.filter(r =>
+        r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ficaActiveCiclos.includes(r.ciclo)
+      );
+      const orderedKeys: Array<[string, string, string]> = [];
+      const seen = new Set<string>();
+      srcRows.forEach(r => {
+        const base = baseSeccion(r.seccion);
+        const k = `${r.carrera}|${r.ciclo}|${base}`;
+        if (!seen.has(k)) { seen.add(k); orderedKeys.push([r.carrera, r.ciclo, base]); }
+      });
+      orderedKeys.sort((a, b) => {
+        const cc = a[0].localeCompare(b[0]);
+        if (cc !== 0) return cc;
+        const nc = Number(a[1]) - Number(b[1]);
+        if (nc !== 0) return nc;
+        return a[2].localeCompare(b[2]);
+      });
+      const logo64 = await fetchLogoBase64(import.meta.env.BASE_URL);
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "UAI Portal Académico";
+      wb.created = new Date();
+      for (const [carr, cic, base] of orderedKeys) {
+        const secRows = srcRows.filter(r => r.carrera === carr && r.ciclo === cic && baseSeccion(r.seccion) === base);
+        buildSheet(wb, logo64, secRows, carr, cic, base, ficaLocal);
+      }
+      const buf  = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url;
+      const carreraLabel = ficaCarrera === "TODOS" ? "Todas" : ficaCarrera;
+      const cicloLabel   = ficaSelectedCiclos.length === 0
+        ? "TodosCiclos"
+        : `Ciclos${ficaSelectedCiclos.map(Number).sort((x, y) => x - y).join("_")}`;
+      a.download = `Horario_FICA_${carreraLabel}_${cicloLabel}_${ficaLocal}_2026-1.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setFicaExporting(false);
+    }
+  };
+
+  if (loading || ficaLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -773,6 +908,8 @@ export default function HorarioCarrera() {
 
   const showCarreraCol = carrera === "TODOS";
   const showCicloCol   = activeCiclos.length > 1;
+  const ficaShowCarreraCol = ficaCarrera === "TODOS";
+  const ficaShowCicloCol   = ficaActiveCiclos.length > 1;
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-5">
@@ -783,9 +920,29 @@ export default function HorarioCarrera() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">Horario por Aula</h1>
-          <p className="text-sm text-muted-foreground">Planificación 2026-1 · FCS</p>
+          <p className="text-sm text-muted-foreground">Planificación 2026-1</p>
         </div>
       </div>
+
+      {/* Faculty tabs */}
+      <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+        {(["FCS", "FICA"] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFacultad(f)}
+            className={`px-6 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+              facultad === f
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* ── FCS content ─────────────────────────────────────────────── */}
+      {facultad === "FCS" && (<>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -947,6 +1104,130 @@ export default function HorarioCarrera() {
         carrera={carrera}
         activeCiclos={activeCiclos}
       />
+      </>)}
+
+      {/* ── FICA content ─────────────────────────────────────────────── */}
+      {facultad === "FICA" && (<>
+
+      {/* FICA Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+          <Select value={ficaLocal} onValueChange={setFicaLocal}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {FICA_LOCALS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Select value={ficaCarrera} onValueChange={setFicaCarrera}>
+          <SelectTrigger className="w-[230px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TODOS">
+              <span className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-primary" />Todas las carreras</span>
+            </SelectItem>
+            {Object.entries(ficaCarrerasForLocal).map(([k, v]) => (
+              <SelectItem key={k} value={k}>
+                <span className="font-mono text-xs font-bold text-primary mr-2">{k}</span>{v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <CicloMultiSelect availCiclos={ficaAvailCiclos} selectedCiclos={ficaSelectedCiclos} onChange={setFicaSelectedCiclos} />
+
+        <div className="relative flex-1 max-w-[220px]">
+          <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar curso o docente..." value={ficaSearch} onChange={e => setFicaSearch(e.target.value)} />
+        </div>
+
+        <Button onClick={exportFicaExcel} disabled={ficaExporting || ficaFiltered.length === 0} className="gap-2 shrink-0">
+          {ficaExporting
+            ? <><Loader2 className="w-4 h-4 animate-spin" />Generando...</>
+            : <><Download className="w-4 h-4" />Descargar Excel{ficaSheetCount > 0 ? ` (${ficaSheetCount} hojas)` : ""}</>}
+        </Button>
+
+        <div className="flex gap-3 text-sm text-muted-foreground shrink-0">
+          <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /><b className="text-foreground">{ficaGrouped.length}</b> cursos</span>
+          <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /><b className="text-foreground">{ficaTotalDocentes}</b> docentes</span>
+        </div>
+      </div>
+
+      {/* FICA Summary banner */}
+      <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/5 border border-primary/20 text-sm text-primary">
+        <Layers className="w-4 h-4 shrink-0" />
+        <span>
+          <strong>{ficaLocal}</strong>
+          {" · "}
+          <strong>{ficaCarrera === "TODOS" ? "Todas las carreras" : (CARRERAS_FICA_FULL[ficaCarrera] ?? ficaCarrera)}</strong>
+          {" · Ciclos "}
+          <strong>{ficaActiveCiclos.join(", ")}</strong>
+          {" · "}
+          <strong>{ficaFiltered.length}</strong> filas
+        </span>
+      </div>
+
+      {/* FICA Table */}
+      {ficaGrouped.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground text-sm">
+          No hay datos para los filtros seleccionados.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {ficaGrouped.map((g, gi) => (
+            <Card key={gi} className="overflow-hidden border-border/60 shadow-sm">
+              <CardHeader className="py-3 px-4 bg-muted/30 border-b">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                    {g.carrera} · Ciclo {g.ciclo}
+                  </span>
+                  {g.curso}
+                  {g.codigo && <span className="text-[10px] text-muted-foreground font-mono">({g.codigo})</span>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/10 text-xs text-muted-foreground">
+                      <th className="px-4 py-2 text-left font-medium w-16">Secc.</th>
+                      {ficaShowCicloCol && <th className="px-3 py-2 text-left font-medium w-16">Ciclo</th>}
+                      {ficaShowCarreraCol && <th className="px-3 py-2 text-left font-medium w-14">Car.</th>}
+                      <th className="px-3 py-2 text-left font-medium">Docente</th>
+                      <th className="px-3 py-2 text-left font-medium w-28">Local</th>
+                      <th className="px-3 py-2 text-left font-medium w-24">Tipo</th>
+                      <th className="px-3 py-2 text-left font-medium w-24">Día</th>
+                      <th className="px-3 py-2 text-left font-medium w-28">Hora</th>
+                      <th className="px-4 py-2 text-right font-medium w-16">Hrs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((r, ri) => (
+                      <tr key={ri} className={`border-b last:border-0 ${ri % 2 === 0 ? "bg-white" : "bg-muted/5"} hover:bg-primary/5 transition-colors`}>
+                        <td className="px-4 py-2.5 font-mono text-xs font-semibold text-primary">{r.seccion}</td>
+                        {ficaShowCicloCol && <td className="px-3 py-2.5 text-xs">{r.ciclo}</td>}
+                        {ficaShowCarreraCol && <td className="px-3 py-2.5 text-xs font-mono font-bold">{r.carrera}</td>}
+                        <td className="px-3 py-2.5 text-xs font-medium">{r.docente || <span className="text-muted-foreground italic">Sin asignar</span>}</td>
+                        <td className="px-3 py-2.5 text-xs">{r.local}</td>
+                        <td className="px-3 py-2.5">{tipoBadge(r.tipo)}</td>
+                        <td className="px-3 py-2.5 text-xs">
+                          {r.dia ? <span className="font-semibold text-blue-700">{r.dia.charAt(0)+r.dia.slice(1).toLowerCase()}</span> : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs font-mono">
+                          {r.hora && r.horaFin ? `${r.hora} – ${r.horaFin}` : "—"}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{r.horasAcad || r.horas}h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      </>)}
+
     </div>
   );
 }

@@ -32,7 +32,6 @@ import {
   FolderOpen,
   ChevronDown,
   CalendarDays,
-  Mail,
   School,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -155,11 +154,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       href: "/docentes/horario-docente",
       label: "Horario Docente",
       Icon: CalendarDays,
-    },
-    {
-      href: "/docentes/enviar-correo",
-      label: "Enviar Correo",
-      Icon: Mail,
     },
     {
       href: "/horarios/carrera",
