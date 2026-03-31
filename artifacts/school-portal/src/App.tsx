@@ -32,6 +32,7 @@ import DocentesFICA2026 from "@/pages/docentes-fica-2026";
 import ComparacionFICA from "@/pages/comparacion-fica";
 import HorarioDocente from "@/pages/horario-docente";
 import EnviarCorreo from "@/pages/enviar-correo";
+import HorarioCarrera from "@/pages/horario-carrera";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,10 @@ function AppRouter() {
       <Route
         path="/docentes/enviar-correo"
         component={() => <ProtectedRoute component={EnviarCorreo} />}
+      />
+      <Route
+        path="/horarios/carrera"
+        component={() => <ProtectedRoute component={HorarioCarrera} />}
       />
 
       {/* 404 */}
