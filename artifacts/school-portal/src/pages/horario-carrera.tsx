@@ -782,8 +782,8 @@ export default function HorarioCarrera() {
           <BookOpen className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">Horarios por Carrera — FCS</h1>
-          <p className="text-sm text-muted-foreground">Planificación 2026-1 · Ciclos 1 al 10</p>
+          <h1 className="text-xl font-bold text-foreground">Horario por Aula</h1>
+          <p className="text-sm text-muted-foreground">Planificación 2026-1 · FCS</p>
         </div>
       </div>
 

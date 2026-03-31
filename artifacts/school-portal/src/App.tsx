@@ -21,15 +21,6 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
-import PlanificacionFCS from "@/pages/planificacion-fcs";
-import PlanificacionFICA from "@/pages/planificacion-fica";
-import ListaDocentes from "@/pages/lista-docentes";
-import ListaDocentesFICA from "@/pages/lista-docentes-fica";
-import ExtractorDocentes from "@/pages/extractor-docentes";
-import DocentesRegistro from "@/pages/docentes-registro";
-import VerificacionFICA from "@/pages/verificacion-fica";
-import DocentesFICA2026 from "@/pages/docentes-fica-2026";
-import ComparacionFICA from "@/pages/comparacion-fica";
 import HorarioDocente from "@/pages/horario-docente";
 import EnviarCorreo from "@/pages/enviar-correo";
 import HorarioCarrera from "@/pages/horario-carrera";
@@ -102,42 +93,6 @@ function AppRouter() {
       <Route
         path="/directiva-matricula"
         component={() => <ProtectedRoute component={DirectivaMatricula} />}
-      />
-      <Route
-        path="/planificacion/fcs"
-        component={() => <ProtectedRoute component={PlanificacionFCS} />}
-      />
-      <Route
-        path="/planificacion/fica"
-        component={() => <ProtectedRoute component={PlanificacionFICA} />}
-      />
-      <Route
-        path="/planificacion/lista-docentes"
-        component={() => <ProtectedRoute component={ListaDocentes} />}
-      />
-      <Route
-        path="/planificacion/lista-docentes-fica"
-        component={() => <ProtectedRoute component={ListaDocentesFICA} />}
-      />
-      <Route
-        path="/planificacion/extractor-docentes"
-        component={() => <ProtectedRoute component={ExtractorDocentes} />}
-      />
-      <Route
-        path="/docentes/registro"
-        component={() => <ProtectedRoute component={DocentesRegistro} />}
-      />
-      <Route
-        path="/docentes/verificacion-fica"
-        component={() => <ProtectedRoute component={VerificacionFICA} />}
-      />
-      <Route
-        path="/docentes/fica-2026"
-        component={() => <ProtectedRoute component={DocentesFICA2026} />}
-      />
-      <Route
-        path="/docentes/comparacion-fica"
-        component={() => <ProtectedRoute component={ComparacionFICA} />}
       />
       <Route
         path="/docentes/horario-docente"

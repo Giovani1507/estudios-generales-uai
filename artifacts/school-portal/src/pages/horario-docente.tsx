@@ -104,10 +104,15 @@ export default function HorarioDocente() {
     }).catch(() => setLoading(false));
   }, []);
 
-  /* All unique teachers sorted — todos los ciclos */
+  /* Only ciclos 1 and 2 */
+  const dataCiclo12 = useMemo(() =>
+    data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
+  [data]);
+
+  /* All unique teachers sorted — ciclo 1 y 2 */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number }>();
-    data.forEach(r => {
+    dataCiclo12.forEach(r => {
       if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0 });
@@ -119,7 +124,7 @@ export default function HorarioDocente() {
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [data]);
+  }, [dataCiclo12]);
 
   /* Filtered dropdown list */
   const filteredTeachers = useMemo(() => {
@@ -127,17 +132,17 @@ export default function HorarioDocente() {
     return q ? teachers.filter(t => t.nombre.toLowerCase().includes(q)) : teachers;
   }, [teachers, search]);
 
-  /* Courses for selected teacher — todos los ciclos */
+  /* Courses for selected teacher — ciclo 1 y 2 */
   const courses = useMemo(() => {
     if (!selected) return [];
-    return data
+    return dataCiclo12
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
-  }, [data, selected]);
+  }, [dataCiclo12, selected]);
 
   /* Totals for selected teacher */
   const totals = useMemo(() => ({
@@ -499,6 +504,7 @@ export default function HorarioDocente() {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-primary" />
             Horario por Docente
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-600 text-white">Ciclos 1 y 2</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Planificación 2026-1 · {teachers.length} docentes · FICA y FCS

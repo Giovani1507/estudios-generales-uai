@@ -24,8 +24,6 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
-  GraduationCap,
-  Clock,
   LogOut,
   ChevronRight,
   ClipboardList,
@@ -33,13 +31,9 @@ import {
   LayoutGrid,
   FolderOpen,
   ChevronDown,
-  Stethoscope,
-  Building2,
-  FileSpreadsheet,
-  ClipboardCheck,
-  RefreshCw,
   CalendarDays,
   Mail,
+  School,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -131,10 +125,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   });
 
   const [planOpen, setPlanOpen] = useState(
-    location.startsWith("/planificacion")
-  );
-  const [horCarreraOpen, setHorCarreraOpen] = useState(
-    location.startsWith("/horarios/carrera")
+    location.startsWith("/planificacion") ||
+    location.startsWith("/docentes") ||
+    location.startsWith("/horarios")
   );
 
   const filteredMenu = useMemo(() => {
@@ -156,6 +149,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  const subItems = [
+    {
+      href: "/docentes/horario-docente",
+      label: "Horario Docente",
+      Icon: CalendarDays,
+    },
+    {
+      href: "/docentes/enviar-correo",
+      label: "Enviar Correo",
+      Icon: Mail,
+    },
+    {
+      href: "/horarios/carrera",
+      label: "Horario por Aula",
+      Icon: School,
+    },
+  ];
 
   return (
     <SidebarProvider
@@ -216,7 +227,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           </SidebarMenuButton>
                         </SidebarMenuItem>
 
-                        {/* Planificación after Inicio (index 0) */}
+                        {/* Planificación submenu after Inicio */}
                         {idx === 0 && (
                           <SidebarMenuItem>
                             <div className="border-b border-white/10">
@@ -233,166 +244,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
                               {planOpen && (
                                 <div className="bg-black/15">
-                                  <Link
-                                    href="/planificacion/fcs"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/planificacion/fcs"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Stethoscope className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">FCS</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/planificacion/fica"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/planificacion/fica"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Building2 className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">FICA</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/planificacion/lista-docentes"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/planificacion/lista-docentes"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Users className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Lista de Docentes FCS</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/planificacion/lista-docentes-fica"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/planificacion/lista-docentes-fica"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Users className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Lista de Docentes FICA</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/planificacion/extractor-docentes"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/planificacion/extractor-docentes"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Extractor de Docentes</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/registro"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/registro"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Users className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Registro de Docentes</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/fica-2026"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/fica-2026"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Building2 className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Docentes FICA 2026</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/verificacion-fica"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/verificacion-fica"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <ClipboardCheck className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Verificación FICA</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/comparacion-fica"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/comparacion-fica"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <RefreshCw className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Comparación FICA</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/horario-docente"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/horario-docente"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <CalendarDays className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Horario Docente</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <Link
-                                    href="/docentes/enviar-correo"
-                                    className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
-                                      location === "/docentes/enviar-correo"
-                                        ? "bg-white/20 text-white font-semibold"
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
-                                    <Mail className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                    <span className="flex-1">Enviar Correo</span>
-                                    <ChevronRight className="w-3 h-3 text-white/40" />
-                                  </Link>
-                                  <div className="border-t border-white/10">
-                                    <button
-                                      onClick={() => setHorCarreraOpen((o) => !o)}
-                                      className="w-full flex items-center gap-3 pl-10 pr-4 h-10 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                  {subItems.map(({ href, label, Icon }) => (
+                                    <Link
+                                      key={href}
+                                      href={href}
+                                      className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                        location === href
+                                          ? "bg-white/20 text-white font-semibold"
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
                                     >
-                                      <BookOpen className="w-3.5 h-3.5 shrink-0 text-white/70" />
-                                      <span className="flex-1 text-left">Horarios por Carrera</span>
-                                      <ChevronDown
-                                        className={`w-3 h-3 text-white/40 transition-transform duration-200 ${horCarreraOpen ? "rotate-180" : ""}`}
-                                      />
-                                    </button>
-                                    {horCarreraOpen && (
-                                      <div className="bg-black/15">
-                                        <Link
-                                          href="/horarios/carrera"
-                                          className={`flex items-center gap-3 pl-14 pr-4 h-9 text-xs transition-colors border-t border-white/10 ${
-                                            location === "/horarios/carrera"
-                                              ? "bg-white/20 text-white font-semibold"
-                                              : "text-white/70 hover:bg-white/10 hover:text-white"
-                                          }`}
-                                        >
-                                          <Stethoscope className="w-3 h-3 shrink-0 text-white/60" />
-                                          <span className="flex-1">FCS</span>
-                                          <ChevronRight className="w-2.5 h-2.5 text-white/30" />
-                                        </Link>
-                                      </div>
-                                    )}
-                                  </div>
+                                      <Icon className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1">{label}</span>
+                                      <ChevronRight className="w-3 h-3 text-white/40" />
+                                    </Link>
+                                  ))}
                                 </div>
                               )}
                             </div>
@@ -421,13 +287,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         {/* ── Main area ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Top header — white with user info on the right */}
+          {/* Top header */}
           <header className="h-14 flex items-center justify-between px-4 border-b border-border/40 bg-white sticky top-0 z-20 shadow-sm">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="text-muted-foreground hover:text-primary hover:bg-primary/5" />
             </div>
 
-            {/* Right side: icons + user */}
             <div className="flex items-center gap-4">
               <button className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary">
                 <LayoutGrid className="w-5 h-5" />
@@ -436,7 +301,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Bell className="w-5 h-5" />
               </button>
 
-              {/* User block */}
               <div className="flex items-center gap-3 pl-3 border-l border-border">
                 <div className="flex flex-col text-right">
                   <span className="text-xs font-semibold text-foreground leading-tight uppercase tracking-wide">
@@ -459,7 +323,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="w-full">{children}</div>
           </main>
         </div>
-
       </div>
     </SidebarProvider>
   );
