@@ -16,27 +16,35 @@ const AuthContext = createContext<AuthContextType>({
   refetchUser: () => {},
 });
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return "Buenos días";
+  if (hour >= 12 && hour < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 function speakWelcome(fullName: string) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const firstName = fullName.split(" ")[0];
+  const saludo = getGreeting();
 
   const trySpeak = () => {
     const voices = window.speechSynthesis.getVoices();
-    // Priority: Latin American Spanish locales, then any Spanish voice
-    const latinAmCodes = ["es-419", "es-MX", "es-US", "es-CO", "es-AR", "es-CL", "es-PE", "es-VE"];
-    let voice =
-      latinAmCodes.reduce<SpeechSynthesisVoice | null>((found, code) =>
+    // Priority: Peruvian Spanish first, then other Latin American, then any Spanish
+    const preferredCodes = ["es-PE", "es-419", "es-MX", "es-CO", "es-AR", "es-CL", "es-US", "es-VE"];
+    const voice =
+      preferredCodes.reduce<SpeechSynthesisVoice | null>((found, code) =>
         found ?? (voices.find(v => v.lang === code) ?? null), null)
       ?? voices.find(v => v.lang.startsWith("es"))
-      ?? voices[0];
+      ?? null;
 
     const utterance = new SpeechSynthesisUtterance(
-      `¡Bienvenido, ${firstName}! ¡Qué bueno verte por aquí! Portal Académico, Universidad Autónoma de Ica.`
+      `¡${saludo}, ${firstName}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`
     );
-    utterance.lang = "es-419";
-    utterance.rate = 1.08;
-    utterance.pitch = 1.35;
+    utterance.lang = "es-PE";
+    utterance.rate = 1.05;
+    utterance.pitch = 1.3;
     utterance.volume = 1;
     if (voice) utterance.voice = voice;
     window.speechSynthesis.speak(utterance);
