@@ -2,17 +2,17 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import * as XLSX from "xlsx";
 import {
   Upload, Trash2, Edit2, Check, X, AlertTriangle, User,
-  BookOpen, LayoutGrid, ChevronDown, Wand2,
-  FileSpreadsheet, Eye, Plus, CheckCircle2, XCircle,
-  Search, ListChecks, Info,
+  BookOpen, LayoutGrid, ChevronDown, Wand2, Download,
+  FileSpreadsheet, Eye, CheckCircle2, XCircle,
+  Search, ListChecks, Info, ArrowRight, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-type SlotKey = string; // "DIA|07:40"
+// ── Types ─────────────────────────────────────────────────────────────────────
+type SlotKey = string; // "LUNES|07:40"
 
 type DocenteDisp = {
   id: string;
@@ -24,225 +24,410 @@ type DocenteDisp = {
   fileName: string;
 };
 
-type CursoTemplate = {
+/** One row from the planning Excel (columns 0-based from index 0) */
+type CursoRow = {
   id: string;
-  carrera: string;
-  ciclo: string;
-  seccion: string;
-  curso: string;
-  tipo: string;          // T | P | TP
-  horasSesion: number;   // horas académicas por sesión (p.ej. 2, 4, 6)
-  sesionesSemanales: number; // nro de sesiones por semana (normalmente 1)
-};
-
-type Asignacion = {
-  id: string;
-  cursoTemplateId?: string; // link to catalog
-  docenteId: string;
-  docente: string;
-  curso: string;
-  carrera: string;
-  ciclo: string;
-  seccion: string;
-  tipo: string;
-  dia: string;
-  horaInicio: string;
-  horaFin: string;
+  // original data
+  semestre: string;
+  plan: string;
+  codigoPlan: string;
   local: string;
-  autoAsignado?: boolean;
+  codFacultad: string;
+  programa: string;
+  ciclo: string;
+  seccion: string;
+  nd: string;
+  codigoCurso: string;
+  nombreCurso: string;
+  tipoEstudios: string;
+  tipoCurso: string;
+  modalidad: string;
+  horasT: number;
+  horasP: number;
+  totalHoras: number;
+  creditos: number;
+  vacantes: number;
+  horasAcad: number;
+  modalidadEns: string;
+  turno: string;
+  jefePractica: string;
+  pabellon: string;
+  aula: string;
+  aforoAula: string;
+  lab: string;
+  aforoLab: string;
+  denominacion: string;
+  // assignment (filled by auto-assign or manual)
+  docenteId?: string;
+  docente?: string;
+  dni?: string;
+  dia?: number;      // 1=Lun...6=Sab
+  horaInicio?: string; // "07:40"
+  horaFin?: string;    // "09:20"
 };
 
-// ── Constants ─────────────────────────────────────────────────────────────
-const DIAS = ["LUNES","MARTES","MIERCOLES","JUEVES","VIERNES","SABADO"];
+// ── Constants ─────────────────────────────────────────────────────────────────
+const DIAS_NUM: Record<number,string> = {1:"LUNES",2:"MARTES",3:"MIERCOLES",4:"JUEVES",5:"VIERNES",6:"SABADO"};
 const DIAS_LABEL: Record<string,string> = {
   LUNES:"Lunes",MARTES:"Martes",MIERCOLES:"Miércoles",
   JUEVES:"Jueves",VIERNES:"Viernes",SABADO:"Sábado",
+};
+const DIAS_LIST = ["LUNES","MARTES","MIERCOLES","JUEVES","VIERNES","SABADO"];
+const HEADER_TO_DIA: Record<string,string> = {
+  lunes:"LUNES",martes:"MARTES","miércoles":"MIERCOLES",miercoles:"MIERCOLES",
+  jueves:"JUEVES",viernes:"VIERNES","sábado":"SABADO",sabado:"SABADO",
 };
 const SLOTS = [
   "07:40","08:30","09:20","10:10","11:00","11:50",
   "12:40","13:30","14:20","15:10","16:00","16:50",
   "17:40","18:30","19:20","20:10","21:00","21:50","22:40",
 ];
-const SLOT_ENDS: Record<string,string> = {
-  "07:40":"08:30","08:30":"09:20","09:20":"10:10","10:10":"11:00",
-  "11:00":"11:50","11:50":"12:40","12:40":"13:30","13:30":"14:20",
-  "14:20":"15:10","15:10":"16:00","16:00":"16:50","16:50":"17:40",
-  "17:40":"18:30","18:30":"19:20","19:20":"20:10","20:10":"21:00",
-  "21:00":"21:50","21:50":"22:40","22:40":"23:30",
-};
-const HEADER_TO_DIA: Record<string,string> = {
-  lunes:"LUNES",martes:"MARTES","mi\u00e9rcoles":"MIERCOLES",
-  miercoles:"MIERCOLES",jueves:"JUEVES",viernes:"VIERNES",
-  "s\u00e1bado":"SABADO",sabado:"SABADO",
-};
-
-function uid() { return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-function timeToMin(t:string) { const[h,m]=t.split(":").map(Number); return h*60+(m||0); }
-function overlaps(aS:string,aE:string,bS:string,bE:string) {
-  return timeToMin(aS)<timeToMin(bE)&&timeToMin(bS)<timeToMin(aE);
+function slotToMinutes(s: string) {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+function minutesToSlot(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
 }
 
-// ── Parse Excel ───────────────────────────────────────────────────────────
-async function parseDisponibilidadExcel(file:File): Promise<Omit<DocenteDisp,"id">> {
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      try {
-        const data = new Uint8Array(e.target!.result as ArrayBuffer);
-        const wb = XLSX.read(data,{type:"array"});
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows:any[][] = XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-        let docente="",local="",grado="",titulo="";
+// ── Parse planning Excel ──────────────────────────────────────────────────────
+async function parsePlanningExcel(file: File): Promise<CursoRow[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buf = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb = XLSX.read(buf, { type: "array" });
+        // Find the planning sheet
+        const sheetName = wb.SheetNames.find(n =>
+          /planificaci[oó]n/i.test(n) || /editable/i.test(n)
+        ) || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+        // Find header row (has "SEMESTRE" and "PROGRAMA")
+        let headerIdx = -1;
+        for (let i = 0; i < Math.min(15, rows.length); i++) {
+          const flat = rows[i].map((c: any) => String(c).trim().toUpperCase());
+          if (flat.some(c => c === "SEMESTRE") && flat.some(c => c.includes("PROGRAMA"))) {
+            headerIdx = i;
+            break;
+          }
+        }
+        if (headerIdx < 0) {
+          // fallback: row 6 (index 5)
+          headerIdx = 5;
+        }
+
+        const results: CursoRow[] = [];
+        for (let ri = headerIdx + 1; ri < rows.length; ri++) {
+          const r = rows[ri];
+          const programa = String(r[7] ?? "").trim();
+          const nombreCurso = String(r[12] ?? "").trim();
+          if (!programa || !nombreCurso) continue;
+
+          const horasT = Number(r[16]) || 0;
+          const horasP = Number(r[17]) || 0;
+          const horasAcad = Number(r[39]) || (horasT + horasP) || 2;
+
+          results.push({
+            id: uid(),
+            semestre: String(r[2] ?? "").trim(),
+            plan: String(r[3] ?? "").trim(),
+            codigoPlan: String(r[4] ?? "").trim(),
+            local: String(r[5] ?? "").trim(),
+            codFacultad: String(r[6] ?? "").trim(),
+            programa,
+            ciclo: String(r[8] ?? "").trim(),
+            seccion: String(r[9] ?? "").trim(),
+            nd: String(r[10] ?? "").trim(),
+            codigoCurso: String(r[11] ?? "").trim(),
+            nombreCurso,
+            tipoEstudios: String(r[13] ?? "").trim(),
+            tipoCurso: String(r[14] ?? "").trim(),
+            modalidad: String(r[15] ?? "").trim(),
+            horasT,
+            horasP,
+            totalHoras: Number(r[18]) || horasT + horasP,
+            creditos: Number(r[19]) || 0,
+            vacantes: Number(r[21]) || 0,
+            horasAcad,
+            modalidadEns: String(r[24] ?? "").trim(),
+            turno: String(r[25] ?? "").trim(),
+            jefePractica: String(r[26] ?? "").trim(),
+            pabellon: String(r[27] ?? "").trim(),
+            aula: String(r[28] ?? "").trim(),
+            aforoAula: String(r[29] ?? "").trim(),
+            lab: String(r[30] ?? "").trim(),
+            aforoLab: String(r[31] ?? "").trim(),
+            denominacion: String(r[44] ?? "").trim(),
+            // Don't carry over old teacher/time assignments
+          });
+        }
+        resolve(results);
+      } catch (err: any) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── Parse teacher availability Excel ─────────────────────────────────────────
+async function parseDisponibilidadExcel(file: File): Promise<Omit<DocenteDisp, "id">> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buf = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb = XLSX.read(buf, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+        let docente = "", local = "", grado = "", titulo = "";
         for (const row of rows) {
-          const flat=row.map((c:any)=>String(c).trim());
-          for (let ci=0;ci<flat.length;ci++) {
-            const cell=flat[ci];
-            if(/apellidos|nombres/i.test(cell)&&!docente) {
-              for (let k=ci+1;k<flat.length;k++) { if(flat[k]&&!/disponible|local|grado|t[íi]tulo/i.test(flat[k])){docente=flat[k];break;} }
+          const flat = row.map((c: any) => String(c).trim());
+          for (let ci = 0; ci < flat.length; ci++) {
+            const cell = flat[ci];
+            if (/apellidos|nombres/i.test(cell) && !docente) {
+              for (let k = ci + 1; k < flat.length; k++) {
+                if (flat[k] && !/disponible|local|grado|t[íi]tulo/i.test(flat[k])) {
+                  docente = flat[k]; break;
+                }
+              }
             }
-            if(/^local:/i.test(cell)&&!local) { for(let k=ci+1;k<flat.length;k++){if(flat[k]){local=flat[k];break;}} }
-            if(/grado:/i.test(cell)&&!grado) { for(let k=ci+1;k<flat.length;k++){if(flat[k]){grado=flat[k];break;}} }
-            if(/t[íi]tulo/i.test(cell)&&!titulo) { for(let k=ci+1;k<flat.length;k++){if(flat[k]){titulo=flat[k];break;}} }
+            if (/^local:/i.test(cell) && !local) {
+              for (let k = ci + 1; k < flat.length; k++) { if (flat[k]) { local = flat[k]; break; } }
+            }
+            if (/grado:/i.test(cell) && !grado) {
+              for (let k = ci + 1; k < flat.length; k++) { if (flat[k]) { grado = flat[k]; break; } }
+            }
+            if (/t[íi]tulo/i.test(cell) && !titulo) {
+              for (let k = ci + 1; k < flat.length; k++) { if (flat[k]) { titulo = flat[k]; break; } }
+            }
           }
         }
 
-        let headerRow=-1;
-        const colToDia:Record<number,string>={};
-        let horaCol=-1;
-        for (let ri=0;ri<rows.length;ri++) {
-          const row=rows[ri].map((c:any)=>String(c).trim().toLowerCase());
-          if(row.some(c=>c==="lunes"||c==="martes")) {
-            headerRow=ri;
-            for(let ci=0;ci<row.length;ci++){
-              const mapped=HEADER_TO_DIA[row[ci]];
-              if(mapped) colToDia[ci]=mapped;
-              if(row[ci]==="hora") horaCol=ci;
+        let headerRow = -1;
+        const colToDia: Record<number, string> = {};
+        let horaCol = -1;
+        for (let ri = 0; ri < rows.length; ri++) {
+          const row = rows[ri].map((c: any) => String(c).trim().toLowerCase());
+          if (row.some(c => c === "lunes" || c === "martes")) {
+            headerRow = ri;
+            for (let ci = 0; ci < row.length; ci++) {
+              const mapped = HEADER_TO_DIA[row[ci]];
+              if (mapped) colToDia[ci] = mapped;
+              if (row[ci] === "hora") horaCol = ci;
             }
             break;
           }
         }
 
-        const slots:SlotKey[]=[];
-        if(headerRow>=0) {
-          for(let ri=headerRow+1;ri<rows.length;ri++) {
-            const row=rows[ri].map((c:any)=>String(c).trim());
-            const horaRaw=horaCol>=0?row[horaCol]:row.find(c=>/^\d{2}:\d{2}/.test(c))||"";
-            const horaInicio=horaRaw.split(/[\r\n]/)[0].trim().slice(0,5);
-            if(!horaInicio||!SLOTS.includes(horaInicio)) continue;
-            for(const[ci,dia] of Object.entries(colToDia)){
-              if(/disponible/i.test(row[Number(ci)])) slots.push(`${dia}|${horaInicio}`);
+        const slots: SlotKey[] = [];
+        if (headerRow >= 0) {
+          for (let ri = headerRow + 1; ri < rows.length; ri++) {
+            const row = rows[ri].map((c: any) => String(c).trim());
+            const horaRaw = horaCol >= 0 ? row[horaCol] :
+              (row.find(c => /^\d{2}:\d{2}/.test(c)) || "");
+            const horaInicio = horaRaw.split(/[\r\n]/)[0].trim().slice(0, 5);
+            if (!horaInicio || !SLOTS.includes(horaInicio)) continue;
+            for (const [ci, dia] of Object.entries(colToDia)) {
+              if (/disponible/i.test(row[Number(ci)])) slots.push(`${dia}|${horaInicio}`);
             }
           }
         }
 
-        resolve({docente:docente||file.name.replace(/\.xlsx?$/,""),local,grado,titulo,slots,fileName:file.name});
-      } catch(err){ reject(err); }
+        resolve({
+          docente: docente || file.name.replace(/\.xlsx?$/, ""),
+          local, grado, titulo, slots,
+          fileName: file.name,
+        });
+      } catch (err: any) {
+        reject(err);
+      }
     };
-    reader.onerror=()=>reject(new Error("No se pudo leer el archivo."));
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
     reader.readAsArrayBuffer(file);
   });
 }
 
-// ── Auto-assign algorithm ─────────────────────────────────────────────────
+// ── Auto-assign algorithm ─────────────────────────────────────────────────────
 function runAutoAssign(
-  catalogo: CursoTemplate[],
+  cursos: CursoRow[],
   disps: DocenteDisp[],
-  existingAsignaciones: Asignacion[],
-): { nuevas: Asignacion[]; sinDocente: CursoTemplate[] } {
-  const nuevas: Asignacion[] = [...existingAsignaciones];
-  const sinDocente: CursoTemplate[] = [];
+): CursoRow[] {
+  const updated = cursos.map(c => ({ ...c }));
+  // Track occupied slots per teacher: docenteId -> Set<"DIA|SLOT">
+  const occupied = new Map<string, Set<string>>();
 
-  // Already assigned course templates
-  const assignedTemplates = new Set(existingAsignaciones.map(a=>a.cursoTemplateId).filter(Boolean));
+  // Pre-fill from already-assigned courses
+  updated.forEach(c => {
+    if (c.docenteId && c.dia && c.horaInicio) {
+      const key = c.docenteId;
+      if (!occupied.has(key)) occupied.set(key, new Set());
+      const si = SLOTS.indexOf(c.horaInicio);
+      const dia = DIAS_NUM[c.dia] || "";
+      for (let i = si; i < si + c.horasAcad && i < SLOTS.length; i++) {
+        occupied.get(key)!.add(`${dia}|${SLOTS[i]}`);
+      }
+    }
+  });
 
-  for (const ct of catalogo) {
-    if(assignedTemplates.has(ct.id)) continue; // already assigned
+  // Sort unassigned: most hours first (harder to assign)
+  const unassigned = updated.filter(c => !c.docenteId);
+  unassigned.sort((a, b) => b.horasAcad - a.horasAcad);
 
-    let assigned = false;
+  for (const curso of unassigned) {
+    const target = updated.find(c => c.id === curso.id)!;
+
+    // Try each teacher
     for (const disp of disps) {
-      if(assigned) break;
       const slotSet = new Set(disp.slots);
-      // Build currently occupied slots for this teacher (from nuevas)
-      const occupied = new Set<string>();
-      nuevas.filter(a=>a.docenteId===disp.id).forEach(a=>{
-        const si=SLOTS.indexOf(a.horaInicio), ei=SLOTS.indexOf(a.horaFin);
-        for(let i=si;i<ei;i++) DIAS.forEach(d=>{ if(d===a.dia) occupied.add(`${d}|${SLOTS[i]}`); });
-      });
+      if (!occupied.has(disp.id)) occupied.set(disp.id, new Set());
+      const occ = occupied.get(disp.id)!;
 
-      // Try each day and start slot
-      for(const dia of DIAS) {
-        if(assigned) break;
-        for(let si=0;si<=SLOTS.length-ct.horasSesion;si++){
-          // Check ct.horasSesion consecutive slots available and not occupied
-          let ok=true;
-          for(let i=si;i<si+ct.horasSesion;i++){
-            const k=`${dia}|${SLOTS[i]}`;
-            if(!slotSet.has(k)||occupied.has(k)){ok=false;break;}
+      let assigned = false;
+      for (const diaStr of DIAS_LIST) {
+        if (assigned) break;
+        for (let si = 0; si <= SLOTS.length - curso.horasAcad; si++) {
+          // Check all needed slots are available and not occupied
+          let ok = true;
+          for (let i = si; i < si + curso.horasAcad; i++) {
+            const k = `${diaStr}|${SLOTS[i]}`;
+            if (!slotSet.has(k) || occ.has(k)) { ok = false; break; }
           }
-          if(!ok) continue;
+          if (!ok) continue;
 
-          const horaInicio=SLOTS[si];
-          const horaFin=SLOTS[si+ct.horasSesion] || SLOT_ENDS[SLOTS[si+ct.horasSesion-1]] || "";
-          if(!horaFin) continue;
+          const horaInicio = SLOTS[si];
+          const horaFinIdx = si + curso.horasAcad;
+          const horaFin = horaFinIdx < SLOTS.length
+            ? SLOTS[horaFinIdx]
+            : minutesToSlot(slotToMinutes(SLOTS[SLOTS.length - 1]) + 50);
 
-          // Check conflict with existing assignments of this teacher
-          const conflict=nuevas.some(a=>
-            a.docenteId===disp.id&&a.dia===dia&&
-            overlaps(a.horaInicio,a.horaFin,horaInicio,horaFin)
-          );
-          if(conflict) continue;
-
-          // Assign!
-          const asgn: Asignacion = {
-            id:uid(), cursoTemplateId:ct.id,
-            docenteId:disp.id, docente:disp.docente,
-            curso:ct.curso, carrera:ct.carrera, ciclo:ct.ciclo, seccion:ct.seccion,
-            tipo:ct.tipo, dia, horaInicio, horaFin, local:disp.local,
-            autoAsignado:true,
-          };
-          nuevas.push(asgn);
-          assignedTemplates.add(ct.id);
           // Mark slots occupied
-          for(let i=si;i<si+ct.horasSesion;i++) occupied.add(`${dia}|${SLOTS[i]}`);
-          assigned=true;
+          for (let i = si; i < si + curso.horasAcad; i++) {
+            occ.add(`${diaStr}|${SLOTS[i]}`);
+          }
+
+          // Find DIA number
+          const diaNum = Object.entries(DIAS_NUM).find(([, v]) => v === diaStr)?.[0];
+
+          target.docenteId = disp.id;
+          target.docente = disp.docente;
+          target.dia = Number(diaNum);
+          target.horaInicio = horaInicio;
+          target.horaFin = horaFin;
+          assigned = true;
           break;
         }
       }
+      if (assigned) break;
     }
-    if(!assigned) sinDocente.push(ct);
   }
 
-  return { nuevas: nuevas.filter(a=>!existingAsignaciones.find(e=>e.id===a.id)), sinDocente };
+  return updated;
 }
 
-// ── Sel ────────────────────────────────────────────────────────────────────
-function Sel({value,onChange,options,placeholder="Seleccionar...",className=""}:{
-  value:string;onChange:(v:string)=>void;
-  options:{value:string;label:string}[];
-  placeholder?:string;className?:string;
+// ── Export to Excel ───────────────────────────────────────────────────────────
+function exportPlanningExcel(cursos: CursoRow[], semestre: string) {
+  const header = [
+    "", "", "SEMESTRE", "PLAN DE ESTUDIOS", "CODIGO DE  PLAN", "LOCAL",
+    "Cod Facultad:", "PROGRAMA ACADÉMICO", "CICLO", "SECCIÓN", "nd",
+    "CÓDIGO", "NOMBRE DE CURSO", "TIPO DE ESTUDIOS", "TIPO DE CURSO",
+    "MODALIDAD DE CURSO", "HORAS TEORÍA", "HORAS PRÁCTICA", "TOTAL DE HORAS",
+    "TOTAL DE CREDITOS", "", "NÚMERO VACANTES PROYECTADAS", "DNI",
+    "APELLIDOS Y NOMBRES", "MODALIDAD\n(Presenc./VIRTUAL/HIBRIDO)",
+    "TURNO\n(DIURNO/\nMAÑANA/ TARDE/NOCHE)", "JEFE DE PRACTICA\n(SI / NO)",
+    "PABELLON", "AULA", "AFORO AULA", "LABORATORIO", "AFORO LAB",
+    "TURNO", "TIPO DE CURSO", "DIA", "HORA INICIO", "MINUTO INICIO",
+    "HORA FIN", "MINUTO FIN", "HORAS\nACADEM.", "HORA INICIO", "HORA FIN",
+    "CRUCE DOCENTE", "CRUCE LABORATORIO", "DENOMINACIÓN", "CRUCE DE SECCIÓN",
+  ];
+
+  const dataRows = cursos.map(c => {
+    const horaInicioMin = c.horaInicio ? slotToMinutes(c.horaInicio) : null;
+    const horaFinMin = c.horaFin ? slotToMinutes(c.horaFin) : null;
+    return [
+      "", "",
+      c.semestre || semestre,
+      c.plan, c.codigoPlan, c.local, c.codFacultad, c.programa,
+      c.ciclo, c.seccion, c.nd, c.codigoCurso, c.nombreCurso,
+      c.tipoEstudios, c.tipoCurso, c.modalidad,
+      c.horasT, c.horasP, c.totalHoras, c.creditos,
+      "", c.vacantes,
+      c.dni || "",
+      c.docente || "",
+      c.modalidadEns, c.turno, c.jefePractica,
+      c.pabellon, c.aula, c.aforoAula, c.lab, c.aforoLab,
+      "", "",
+      c.dia || "",
+      horaInicioMin !== null ? Math.floor(horaInicioMin / 60) : "",
+      horaInicioMin !== null ? horaInicioMin % 60 : "",
+      horaFinMin !== null ? Math.floor(horaFinMin / 60) : "",
+      horaFinMin !== null ? horaFinMin % 60 : "",
+      c.horasAcad,
+      c.horaInicio || "",
+      c.horaFin || "",
+      "", "", c.denominacion, "",
+    ];
+  });
+
+  const wb = XLSX.utils.book_new();
+  const wsData = [
+    Array(46).fill(""),
+    Array(46).fill(""),
+    ["", "", `PLANIFICACIÓN ACADÉMICA PREGRADO ${semestre}`, ...Array(43).fill("")],
+    Array(46).fill(""),
+    Array(46).fill(""),
+    header,
+    ...dataRows,
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws["!cols"] = Array(46).fill({ wch: 18 });
+  ws["!cols"][12] = { wch: 35 };
+  ws["!cols"][23] = { wch: 35 };
+  XLSX.utils.book_append_sheet(wb, ws, "Planificación");
+  XLSX.writeFile(wb, `PLANIFICACION_${semestre}_GENERADA.xlsx`);
+}
+
+// ── Helper: Dropdown ──────────────────────────────────────────────────────────
+function Sel({
+  value, onChange, options, placeholder = "Seleccionar...", className = "",
+}: {
+  value: string; onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string; className?: string;
 }) {
-  const[open,setOpen]=useState(false);
-  const ref=useRef<HTMLDivElement>(null);
-  useEffect(()=>{
-    const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))setOpen(false);};
-    document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);
-  },[]);
-  const label=options.find(o=>o.value===value)?.label??placeholder;
-  return(
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (ev: MouseEvent) => {
+      if (ref.current && !ref.current.contains(ev.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const label = options.find(o => o.value === value)?.label ?? placeholder;
+  return (
     <div ref={ref} className={`relative ${className}`}>
-      <button type="button" onClick={()=>setOpen(o=>!o)}
+      <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent transition-colors">
-        <span className={value?"text-foreground":"text-muted-foreground"}>{label}</span>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open?"rotate-180":""}`}/>
+        <span className={value ? "text-foreground" : "text-muted-foreground truncate"}>{label}</span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 ml-1 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open&&(
-        <div className="absolute z-50 top-10 left-0 right-0 bg-popover border border-border rounded-md shadow-lg py-1 max-h-52 overflow-y-auto">
-          {options.map(o=>(
-            <button key={o.value} type="button" onClick={()=>{onChange(o.value);setOpen(false);}}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2 ${o.value===value?"bg-primary/10 text-primary font-medium":""}`}>
-              {o.value===value?<Check className="w-3 h-3 shrink-0"/>:<span className="w-3 h-3 shrink-0"/>}
-              {o.label}
+      {open && (
+        <div className="absolute z-50 top-10 left-0 right-0 bg-popover border border-border rounded-md shadow-lg py-1 max-h-56 overflow-y-auto">
+          {options.map(o => (
+            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2 ${o.value === value ? "bg-primary/10 text-primary font-medium" : ""}`}>
+              {o.value === value ? <Check className="w-3 h-3 shrink-0" /> : <span className="w-3 h-3 shrink-0" />}
+              <span className="truncate">{o.label}</span>
             </button>
           ))}
         </div>
@@ -251,26 +436,26 @@ function Sel({value,onChange,options,placeholder="Seleccionar...",className=""}:
   );
 }
 
-// ── Disp Grid ──────────────────────────────────────────────────────────────
-function DispGrid({disp}:{disp:DocenteDisp}) {
-  const slotSet=new Set(disp.slots);
-  const usedDias=DIAS.filter(d=>disp.slots.some(s=>s.startsWith(d+"|")));
-  const usedSlots=SLOTS.filter(s=>disp.slots.some(k=>k.endsWith("|"+s)));
-  if(!usedDias.length) return <div className="text-xs text-muted-foreground py-4 text-center">Sin disponibilidades registradas.</div>;
-  return(
+// ── DispGrid ──────────────────────────────────────────────────────────────────
+function DispGrid({ disp }: { disp: DocenteDisp }) {
+  const slotSet = new Set(disp.slots);
+  const usedDias = DIAS_LIST.filter(d => disp.slots.some(s => s.startsWith(d + "|")));
+  const usedSlots = SLOTS.filter(s => disp.slots.some(k => k.endsWith("|" + s)));
+  if (!usedDias.length) return <div className="text-xs text-muted-foreground py-4 text-center">Sin disponibilidades registradas.</div>;
+  return (
     <div className="overflow-x-auto">
       <table className="text-[10px] border-collapse">
         <thead><tr>
           <th className="px-2 py-1 bg-primary text-white font-semibold border border-primary/40 w-20">Hora</th>
-          {usedDias.map(d=><th key={d} className="px-4 py-1 bg-primary text-white font-semibold border border-primary/40 min-w-[80px]">{DIAS_LABEL[d]}</th>)}
+          {usedDias.map(d => <th key={d} className="px-4 py-1 bg-primary text-white font-semibold border border-primary/40 min-w-[70px]">{DIAS_LABEL[d]}</th>)}
         </tr></thead>
         <tbody>
-          {usedSlots.map(slot=>(
+          {usedSlots.map(slot => (
             <tr key={slot}>
-              <td className="px-2 py-1 bg-[#D9E0F1] border border-gray-200 font-mono font-bold text-center whitespace-nowrap">{slot}<br/>{SLOT_ENDS[slot]}</td>
-              {usedDias.map(dia=>{
-                const has=slotSet.has(`${dia}|${slot}`);
-                return <td key={dia} className={`border border-gray-200 text-center px-2 py-1 ${has?"bg-green-100 text-green-700 font-bold":"bg-gray-50 text-gray-300"}`}>{has?"✓":"—"}</td>;
+              <td className="px-2 py-1 bg-[#D9E0F1] border border-gray-200 font-mono font-bold text-center text-[9px]">{slot}</td>
+              {usedDias.map(dia => {
+                const has = slotSet.has(`${dia}|${slot}`);
+                return <td key={dia} className={`border border-gray-200 text-center px-2 py-1 ${has ? "bg-green-100 text-green-700 font-bold" : "bg-gray-50 text-gray-300"}`}>{has ? "✓" : "—"}</td>;
               })}
             </tr>
           ))}
@@ -280,225 +465,195 @@ function DispGrid({disp}:{disp:DocenteDisp}) {
   );
 }
 
-// ── Types for tabs ─────────────────────────────────────────────────────────
-type Tab = "disponibilidades"|"catalogo"|"asignaciones"|"horario";
+// ═══════════════════════════════════════════════════════════════════════════════
+type Tab = "importar" | "disponibilidades" | "asignaciones" | "exportar";
 
-// ══════════════════════════════════════════════════════════════════════════
 export default function CrearPlanificacion() {
-  const[tab,setTab]=useState<Tab>("disponibilidades");
+  const [tab, setTab] = useState<Tab>("importar");
 
-  // Persistence
-  const[disps,setDisps]=useState<DocenteDisp[]>(()=>{try{return JSON.parse(localStorage.getItem("plan3_disps")||"[]");}catch{return[];}});
-  const[catalogo,setCatalogo]=useState<CursoTemplate[]>(()=>{try{return JSON.parse(localStorage.getItem("plan3_cat")||"[]");}catch{return[];}});
-  const[asignaciones,setAsignaciones]=useState<Asignacion[]>(()=>{try{return JSON.parse(localStorage.getItem("plan3_asgn")||"[]");}catch{return[];}});
-  useEffect(()=>{localStorage.setItem("plan3_disps",JSON.stringify(disps));},[disps]);
-  useEffect(()=>{localStorage.setItem("plan3_cat",JSON.stringify(catalogo));},[catalogo]);
-  useEffect(()=>{localStorage.setItem("plan3_asgn",JSON.stringify(asignaciones));},[asignaciones]);
+  // Persisted state
+  const [cursos, setCursos] = useState<CursoRow[]>(() => {
+    try { return JSON.parse(localStorage.getItem("plan4_cursos") || "[]"); } catch { return []; }
+  });
+  const [disps, setDisps] = useState<DocenteDisp[]>(() => {
+    try { return JSON.parse(localStorage.getItem("plan4_disps") || "[]"); } catch { return []; }
+  });
+  useEffect(() => { localStorage.setItem("plan4_cursos", JSON.stringify(cursos)); }, [cursos]);
+  useEffect(() => { localStorage.setItem("plan4_disps", JSON.stringify(disps)); }, [disps]);
 
-  // Upload
-  const[uploading,setUploading]=useState(false);
-  const[uploadMsgs,setUploadMsgs]=useState<{name:string;ok:boolean;msg:string}[]>([]);
-  const[preview,setPreview]=useState<string|null>(null);
-  const[search,setSearch]=useState("");
-  const[dragging,setDragging]=useState(false);
+  // UI state
+  const [dragging1, setDragging1] = useState(false);
+  const [dragging2, setDragging2] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [msgs, setMsgs] = useState<{ ok: boolean; text: string }[]>([]);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterProg, setFilterProg] = useState("");
+  const [filterLocal, setFilterLocal] = useState("");
+  const [autoMsg, setAutoMsg] = useState("");
+  const [importing, setImporting] = useState(false);
 
-  // Auto-assign toast
-  const[autoMsg,setAutoMsg]=useState("");
+  // ── Import planning Excel ──────────────────────────────────────────────────
+  const importPlanningFile = useCallback(async (files: FileList | File[]) => {
+    const file = Array.from(files).find(f => f.name.match(/\.xlsx?$/i));
+    if (!file) return;
+    setImporting(true);
+    setMsgs([]);
+    try {
+      const rows = await parsePlanningExcel(file);
+      setCursos(rows);
+      setMsgs([{ ok: true, text: `✓ Importados ${rows.length} cursos desde "${file.name}"` }]);
+      setTab("disponibilidades");
+    } catch (err: any) {
+      setMsgs([{ ok: false, text: `Error: ${err.message}` }]);
+    } finally {
+      setImporting(false);
+    }
+  }, []);
 
-  const processFiles=useCallback(async(files:FileList|File[])=>{
-    const arr=Array.from(files).filter(f=>f.name.match(/\.xlsx?$/i));
-    if(!arr.length) return;
+  // ── Upload teacher availability ────────────────────────────────────────────
+  const uploadAvailability = useCallback(async (files: FileList | File[]) => {
+    const arr = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i));
+    if (!arr.length) return;
     setUploading(true);
-    const msgs:typeof uploadMsgs=[];
-    const newDisps=[...disps];
+    const newMsgs: typeof msgs = [];
+    const newDisps = [...disps];
 
-    for(const file of arr){
-      try{
-        const parsed=await parseDisponibilidadExcel(file);
-        const existing=newDisps.find(d=>d.docente===parsed.docente&&d.local===parsed.local);
-        let dispId="";
-        if(existing){
-          const updated={...existing,...parsed,id:existing.id};
-          const idx=newDisps.findIndex(d=>d.id===existing.id);
-          newDisps[idx]=updated;
-          dispId=existing.id;
-          msgs.push({name:file.name,ok:true,msg:`Actualizado: ${parsed.docente} — ${parsed.slots.length} slots`});
+    for (const file of arr) {
+      try {
+        const parsed = await parseDisponibilidadExcel(file);
+        const existing = newDisps.find(d => d.docente === parsed.docente);
+        if (existing) {
+          const idx = newDisps.findIndex(d => d.id === existing.id);
+          newDisps[idx] = { ...existing, ...parsed };
+          newMsgs.push({ ok: true, text: `Actualizado: ${parsed.docente} — ${parsed.slots.length} slots` });
         } else {
-          const newD={...parsed,id:uid()};
-          newDisps.push(newD);
-          dispId=newD.id;
-          msgs.push({name:file.name,ok:true,msg:`Cargado: ${parsed.docente} — ${parsed.slots.length} slots disponibles`});
+          newDisps.push({ ...parsed, id: uid() });
+          newMsgs.push({ ok: true, text: `Cargado: ${parsed.docente} — ${parsed.slots.length} slots disponibles` });
         }
-
-        // ── Auto-assign: try to assign unassigned catalog courses to this teacher ──
-        if(catalogo.length>0){
-          const assignedTpls=new Set(asignaciones.map(a=>a.cursoTemplateId).filter(Boolean));
-          const unassigned=catalogo.filter(ct=>!assignedTpls.has(ct.id));
-          if(unassigned.length>0){
-            const disp=newDisps.find(d=>d.id===dispId)!;
-            const{nuevas}=runAutoAssign(unassigned,[disp],asignaciones);
-            if(nuevas.length>0){
-              setAsignaciones(prev=>[...prev,...nuevas]);
-              msgs[msgs.length-1].msg+=` · ✓ Auto-asignado ${nuevas.length} curso(s)`;
-            }
-          }
-        }
-      } catch(err:any){
-        msgs.push({name:file.name,ok:false,msg:`Error: ${err.message}`});
+      } catch (err: any) {
+        newMsgs.push({ ok: false, text: `Error en "${file.name}": ${err.message}` });
       }
     }
+
     setDisps(newDisps);
-    setUploadMsgs(msgs);
+    setMsgs(newMsgs);
     setUploading(false);
-  },[disps,catalogo,asignaciones]);
+  }, [disps]);
 
-  // ── Catalog form ──────────────────────────────────────────────────────
-  const emptyCt:Omit<CursoTemplate,"id">={carrera:"",ciclo:"",seccion:"",curso:"",tipo:"T",horasSesion:2,sesionesSemanales:1};
-  const[ctForm,setCtForm]=useState(emptyCt);
-  const[ctEdit,setCtEdit]=useState<string|null>(null);
-  const[ctErr,setCtErr]=useState("");
+  // ── Auto-assign ────────────────────────────────────────────────────────────
+  const handleAutoAssign = useCallback(() => {
+    if (!cursos.length) { setAutoMsg("⚠ Primero importa el archivo de planificación."); return; }
+    if (!disps.length) { setAutoMsg("⚠ Primero sube las disponibilidades de los docentes."); return; }
+    const updated = runAutoAssign(cursos, disps);
+    setCursos(updated);
+    const assigned = updated.filter(c => c.docenteId).length;
+    const total = updated.length;
+    setAutoMsg(`✓ ${assigned} de ${total} cursos asignados automáticamente. ${total - assigned} sin docente disponible.`);
+    setTimeout(() => setAutoMsg(""), 8000);
+    setTab("asignaciones");
+  }, [cursos, disps]);
 
-  function saveCt(){
-    const{carrera,ciclo,seccion,curso}=ctForm;
-    if(!carrera.trim()||!ciclo.trim()||!seccion.trim()||!curso.trim()){setCtErr("Completa todos los campos.");return;}
-    setCtErr("");
-    if(ctEdit){
-      setCatalogo(prev=>prev.map(c=>c.id===ctEdit?{...c,...ctForm}:c));
-      setCtEdit(null);
-    } else {
-      setCatalogo(prev=>[...prev,{id:uid(),...ctForm}]);
-    }
-    setCtForm(emptyCt);
-  }
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const total = cursos.length;
+    const assigned = cursos.filter(c => c.docenteId).length;
+    const unassigned = total - assigned;
+    const uniqueDocentes = new Set(cursos.filter(c => c.docente).map(c => c.docente)).size;
+    return { total, assigned, unassigned, uniqueDocentes };
+  }, [cursos]);
 
-  // ── Manual assignment form ────────────────────────────────────────────
-  const emptyAsgn={docenteId:"",docente:"",cursoTemplateId:"",curso:"",carrera:"",ciclo:"",seccion:"",tipo:"T",dia:"",horaInicio:"",horaFin:"",local:"",autoAsignado:false};
-  const[asgnForm,setAsgnForm]=useState(emptyAsgn);
-  const[asgnEdit,setAsgnEdit]=useState<string|null>(null);
-  const[asgnErr,setAsgnErr]=useState("");
-  const[asgnWarn,setAsgnWarn]=useState("");
+  // ── Filter options ─────────────────────────────────────────────────────────
+  const programOptions = useMemo(() => {
+    const s = new Set(cursos.map(c => c.programa).filter(Boolean));
+    return [{ value: "", label: "Todos los programas" }, ...[...s].sort().map(v => ({ value: v, label: v }))];
+  }, [cursos]);
+  const localOptions = useMemo(() => {
+    const s = new Set(cursos.map(c => c.local).filter(Boolean));
+    return [{ value: "", label: "Todos los locales" }, ...[...s].sort().map(v => ({ value: v, label: v }))];
+  }, [cursos]);
 
-  const selectedDisp=useMemo(()=>disps.find(d=>d.id===asgnForm.docenteId)||null,[disps,asgnForm.docenteId]);
-  const slotSet=useMemo(()=>new Set(selectedDisp?.slots||[]),[selectedDisp]);
-  function slotAvail(dia:string,hora:string){return slotSet.has(`${dia}|${hora}`);}
-
-  function checkConflict(form:typeof emptyAsgn,excludeId?:string){
-    const errs:string[]=[],warns:string[]=[];
-    if(!form.docenteId||!form.dia||!form.horaInicio||!form.horaFin) return{errs,warns};
-    if(!slotAvail(form.dia,form.horaInicio)) warns.push(`${form.docente} no marcó disponibilidad para ese horario.`);
-    const conflict=asignaciones.find(a=>a.id!==excludeId&&a.docenteId===form.docenteId&&a.dia===form.dia&&overlaps(a.horaInicio,a.horaFin,form.horaInicio,form.horaFin));
-    if(conflict) errs.push(`CRUCE: ${form.docente} ya tiene "${conflict.curso}" el ${DIAS_LABEL[form.dia]} ${conflict.horaInicio}–${conflict.horaFin}.`);
-    return{errs,warns};
-  }
-
-  function updAsgn(patch:Partial<typeof emptyAsgn>){
-    const next={...asgnForm,...patch};
-    if(patch.docenteId){const d=disps.find(x=>x.id===patch.docenteId);if(d){next.docente=d.docente;next.local=d.local;}}
-    if(patch.cursoTemplateId){
-      const ct=catalogo.find(c=>c.id===patch.cursoTemplateId);
-      if(ct){next.curso=ct.curso;next.carrera=ct.carrera;next.ciclo=ct.ciclo;next.seccion=ct.seccion;next.tipo=ct.tipo;}
-    }
-    setAsgnForm(next);
-    const{errs,warns}=checkConflict(next,asgnEdit||undefined);
-    setAsgnErr(errs[0]||"");setAsgnWarn(warns[0]||"");
-  }
-
-  function saveAsgn(){
-    const{docenteId,curso,carrera,ciclo,seccion,dia,horaInicio,horaFin}=asgnForm;
-    if(!docenteId||!curso.trim()||!carrera.trim()||!ciclo.trim()||!seccion.trim()||!dia||!horaInicio||!horaFin){setAsgnErr("Completa todos los campos.");return;}
-    if(timeToMin(horaInicio)>=timeToMin(horaFin)){setAsgnErr("Hora fin debe ser posterior al inicio.");return;}
-    const{errs}=checkConflict(asgnForm,asgnEdit||undefined);
-    if(errs.length){setAsgnErr(errs[0]);return;}
-    if(asgnEdit){
-      setAsignaciones(prev=>prev.map(a=>a.id===asgnEdit?{...a,...asgnForm,autoAsignado:false}:a));
-      setAsgnEdit(null);
-    } else {
-      setAsignaciones(prev=>[...prev,{id:uid(),...asgnForm}]);
-    }
-    setAsgnForm(emptyAsgn);setAsgnErr("");setAsgnWarn("");
-  }
-
-  // ── Full auto-assign ───────────────────────────────────────────────────
-  function runFullAutoAssign(){
-    if(!catalogo.length){setAutoMsg("⚠ Primero define el catálogo de cursos.");return;}
-    if(!disps.length){setAutoMsg("⚠ Primero sube las disponibilidades de los docentes.");return;}
-    const{nuevas,sinDocente}=runAutoAssign(catalogo,disps,asignaciones);
-    if(nuevas.length>0) setAsignaciones(prev=>[...prev,...nuevas]);
-    const msg=nuevas.length>0
-      ? `✓ ${nuevas.length} asignación(es) creadas automáticamente.${sinDocente.length?` ${sinDocente.length} curso(s) sin docente disponible.`:""}`
-      : sinDocente.length>0
-        ? `⚠ No se pudo auto-asignar ${sinDocente.length} curso(s). Revisa disponibilidades.`
-        : "✓ Todos los cursos ya estaban asignados.";
-    setAutoMsg(msg);
-    setTimeout(()=>setAutoMsg(""),6000);
-  }
-
-  // ── Conflicts ─────────────────────────────────────────────────────────
-  const crucesTotal=useMemo(()=>{
-    let c=0;
-    asignaciones.forEach(a=>{
-      if(asignaciones.some(b=>b.id!==a.id&&b.docenteId===a.docenteId&&b.dia===a.dia&&overlaps(b.horaInicio,b.horaFin,a.horaInicio,a.horaFin))) c++;
+  const filteredCursos = useMemo(() => {
+    return cursos.filter(c => {
+      if (filterProg && c.programa !== filterProg) return false;
+      if (filterLocal && c.local !== filterLocal) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return c.nombreCurso.toLowerCase().includes(q) ||
+          c.docente?.toLowerCase().includes(q) ||
+          c.seccion.toLowerCase().includes(q);
+      }
+      return true;
     });
-    return c;
-  },[asignaciones]);
+  }, [cursos, filterProg, filterLocal, search]);
 
-  const assignedTemplateIds=useMemo(()=>new Set(asignaciones.map(a=>a.cursoTemplateId).filter(Boolean)),[asignaciones]);
+  // ── Semestre ───────────────────────────────────────────────────────────────
+  const semestre = cursos[0]?.semestre || "2026-1";
 
-  // ── Grid ──────────────────────────────────────────────────────────────
-  const activeDias=useMemo(()=>{const s=new Set(asignaciones.map(a=>a.dia));return DIAS.filter(d=>s.has(d));},[asignaciones]);
-  const activeSlots=useMemo(()=>{
-    const used=new Set<number>();
-    asignaciones.forEach(a=>{const si=SLOTS.indexOf(a.horaInicio),ei=SLOTS.indexOf(a.horaFin);if(si>=0)for(let i=si;i<Math.max(si+1,ei);i++)used.add(i);});
-    if(!used.size) return[];
-    const arr=Array.from(used).sort((a,b)=>a-b);
-    return SLOTS.filter((_,i)=>i>=Math.max(0,arr[0]-1)&&i<=Math.min(SLOTS.length-1,arr[arr.length-1]+1));
-  },[asignaciones]);
-  const gridCells=useMemo(()=>{
-    const m=new Map<string,{a:Asignacion;cruce:boolean}[]>();
-    asignaciones.forEach(a=>{
-      const cruce=asignaciones.some(b=>b.id!==a.id&&b.docenteId===a.docenteId&&b.dia===a.dia&&overlaps(b.horaInicio,b.horaFin,a.horaInicio,a.horaFin));
-      const k=`${a.dia}|${a.horaInicio}`;
-      if(!m.has(k)) m.set(k,[]);
-      m.get(k)!.push({a,cruce});
+  // ── Schedule grid ──────────────────────────────────────────────────────────
+  const activeDias = useMemo(() => {
+    const s = new Set(cursos.filter(c => c.dia).map(c => DIAS_NUM[c.dia!]).filter(Boolean));
+    return DIAS_LIST.filter(d => s.has(d));
+  }, [cursos]);
+  const activeSlots = useMemo(() => {
+    if (!cursos.some(c => c.horaInicio)) return [];
+    const used = new Set<number>();
+    cursos.forEach(c => {
+      if (!c.horaInicio) return;
+      const si = SLOTS.indexOf(c.horaInicio);
+      if (si >= 0) for (let i = si; i < Math.min(si + (c.horasAcad || 1), SLOTS.length); i++) used.add(i);
+    });
+    const arr = [...used].sort((a, b) => a - b);
+    if (!arr.length) return [];
+    return SLOTS.filter((_, i) => i >= arr[0] && i <= arr[arr.length - 1]);
+  }, [cursos]);
+
+  const gridCells = useMemo(() => {
+    const m = new Map<string, CursoRow[]>();
+    cursos.forEach(c => {
+      if (!c.dia || !c.horaInicio) return;
+      const k = `${DIAS_NUM[c.dia]}|${c.horaInicio}`;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(c);
     });
     return m;
-  },[asignaciones]);
+  }, [cursos]);
 
-  const docenteOptions=useMemo(()=>disps.map(d=>({value:d.id,label:d.docente+(d.local?` (${d.local})`:"")})),[disps]);
-  const catalogoOptions=useMemo(()=>catalogo.map(c=>({value:c.id,label:`${c.carrera} ${c.ciclo}${c.seccion} — ${c.curso} (${c.tipo})`})),[catalogo]);
-
-  // ──────────────────────────────────────────────────────────────────────
-  return(
-    <div className="max-w-6xl mx-auto space-y-5">
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="max-w-[1400px] mx-auto space-y-5">
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-            <FileSpreadsheet className="w-5 h-5 text-primary"/>
+            <FileSpreadsheet className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-bold">Crear Planificación</h1>
-            <p className="text-sm text-muted-foreground">Semestre 2026-1 · Disponibilidades docentes + auto-asignación</p>
+            <p className="text-sm text-muted-foreground">Semestre {semestre} · Importa cursos → sube disponibilidades → auto-asigna → exporta</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {crucesTotal>0&&(
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-bold">
-              <AlertTriangle className="w-4 h-4"/>{crucesTotal} cruce{crucesTotal>1?"s":""}
-            </div>
-          )}
-          <Button onClick={runFullAutoAssign} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-            <Wand2 className="w-4 h-4"/>Auto-asignar todo
+          <Button onClick={handleAutoAssign}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            disabled={!cursos.length || !disps.length}>
+            <Wand2 className="w-4 h-4" />Auto-asignar todo
+          </Button>
+          <Button onClick={() => exportPlanningExcel(cursos, semestre)}
+            variant="outline"
+            className="gap-2"
+            disabled={!cursos.length}>
+            <Download className="w-4 h-4" />Exportar Excel
           </Button>
         </div>
       </div>
 
       {/* Auto-assign toast */}
-      {autoMsg&&(
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium border ${
-          autoMsg.startsWith("✓")?"bg-green-50 border-green-200 text-green-700":"bg-amber-50 border-amber-200 text-amber-700"}`}>
-          {autoMsg.startsWith("✓")?<CheckCircle2 className="w-4 h-4 shrink-0"/>:<AlertTriangle className="w-4 h-4 shrink-0"/>}
+      {autoMsg && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium border
+          ${autoMsg.startsWith("✓") ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+          {autoMsg.startsWith("✓") ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
           {autoMsg}
         </div>
       )}
@@ -506,86 +661,185 @@ export default function CrearPlanificacion() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          {label:"Docentes",value:disps.length,Icon:User,c:"text-blue-600 bg-blue-50"},
-          {label:"Cursos en catálogo",value:catalogo.length,Icon:ListChecks,c:"text-indigo-600 bg-indigo-50"},
-          {label:"Asignados",value:assignedTemplateIds.size,Icon:CheckCircle2,c:"text-green-600 bg-green-50"},
-          {label:"Sin asignar",value:catalogo.filter(c=>!assignedTemplateIds.has(c.id)).length,Icon:AlertTriangle,c:"text-amber-600 bg-amber-50"},
-        ].map(s=>(
+          { label: "Total cursos", value: stats.total, Icon: BookOpen, c: "text-blue-600 bg-blue-50" },
+          { label: "Asignados", value: stats.assigned, Icon: CheckCircle2, c: "text-green-600 bg-green-50" },
+          { label: "Sin asignar", value: stats.unassigned, Icon: AlertTriangle, c: "text-amber-600 bg-amber-50" },
+          { label: "Docentes cargados", value: disps.length, Icon: User, c: "text-indigo-600 bg-indigo-50" },
+        ].map(s => (
           <Card key={s.label} className="border-border/60">
             <CardContent className="flex items-center gap-3 p-4">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${s.c}`}><s.Icon className="w-4 h-4"/></div>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${s.c}`}><s.Icon className="w-4 h-4" /></div>
               <div><div className="text-xl font-bold">{s.value}</div><div className="text-xs text-muted-foreground">{s.label}</div></div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit flex-wrap">
-        {([
-          {id:"disponibilidades" as Tab,label:"1. Disponibilidades",Icon:Upload},
-          {id:"catalogo" as Tab,label:"2. Catálogo de Cursos",Icon:ListChecks},
-          {id:"asignaciones" as Tab,label:"3. Asignaciones",Icon:BookOpen},
-          {id:"horario" as Tab,label:"4. Vista de Horario",Icon:LayoutGrid},
-        ]).map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${tab===t.id?"bg-primary text-white shadow-sm":"text-muted-foreground hover:text-foreground"}`}>
-            <t.Icon className="w-4 h-4"/>{t.label}
-            {t.id==="horario"&&crucesTotal>0&&<span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{crucesTotal}</span>}
-          </button>
+      {/* Steps indicator */}
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        {[
+          { id: "importar" as Tab, label: "1. Importar Plan" },
+          { id: "disponibilidades" as Tab, label: "2. Disponibilidades" },
+          { id: "asignaciones" as Tab, label: "3. Revisar & Editar" },
+          { id: "exportar" as Tab, label: "4. Vista & Exportar" },
+        ].map((s, i, arr) => (
+          <React.Fragment key={s.id}>
+            <button onClick={() => setTab(s.id)}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${tab === s.id ? "bg-primary text-white" : "hover:bg-muted text-muted-foreground hover:text-foreground"}`}>
+              {s.label}
+            </button>
+            {i < arr.length - 1 && <ArrowRight className="w-3 h-3 shrink-0" />}
+          </React.Fragment>
         ))}
       </div>
 
-      {/* ══ TAB 1: DISPONIBILIDADES ════════════════════════════════════════ */}
-      {tab==="disponibilidades"&&(
+      {/* ══ STEP 1: IMPORT PLAN ════════════════════════════════════════════════ */}
+      {tab === "importar" && (
         <div className="space-y-5">
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2 text-sm text-blue-800">
-            <Info className="w-4 h-4 shrink-0 mt-0.5"/>
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
-              <strong>Flujo recomendado:</strong> Primero define el catálogo de cursos (paso 2), luego sube los Excel de disponibilidad.
-              El sistema intentará auto-asignar al cargar cada archivo.
+              <strong>Paso 1:</strong> Sube el Excel de planificación del semestre anterior (PLANIFICACION_PREGRADO_2026-1_FCS).
+              El sistema extrae todos los cursos y crea el catálogo automáticamente.
+            </div>
+          </div>
+
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging1(true); }}
+            onDragLeave={() => setDragging1(false)}
+            onDrop={e => { e.preventDefault(); setDragging1(false); importPlanningFile(e.dataTransfer.files); }}
+            onClick={() => {
+              const inp = document.createElement("input");
+              inp.type = "file"; inp.accept = ".xlsx,.xls";
+              inp.onchange = e => importPlanningFile((e.target as HTMLInputElement).files!);
+              inp.click();
+            }}
+            className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer
+              ${dragging1 ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20"}`}>
+            <FileSpreadsheet className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-base font-semibold">
+              {importing ? "Procesando..." : "Arrastra el Excel de planificación aquí"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Archivo PLANIFICACION_PREGRADO_2026-1_FCS.xlsx · Hoja "Planificación 2026-1"
+            </p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Extrae: Local, Programa, Ciclo, Sección, Código Curso, Nombre, Horas T/P, Créditos, Vacantes
+            </p>
+          </div>
+
+          {msgs.length > 0 && (
+            <div className="space-y-1.5">
+              {msgs.map((m, i) => (
+                <div key={i} className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm
+                  ${m.ok ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
+                  {m.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+                  {m.text}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {cursos.length > 0 && (
+            <Card className="border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ListChecks className="w-4 h-4 text-primary" />
+                  Catálogo importado
+                  <Badge className="bg-primary/10 text-primary border-0">{cursos.length} cursos</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <table className="w-full text-xs">
+                  <thead><tr className="border-b bg-muted/20 text-muted-foreground">
+                    <th className="px-4 py-2 text-left">Programa</th>
+                    <th className="px-3 py-2 text-left">Local</th>
+                    <th className="px-3 py-2 text-center">Ciclo</th>
+                    <th className="px-3 py-2 text-left">Curso (muestra)</th>
+                    <th className="px-3 py-2 text-center">H.Acad</th>
+                  </tr></thead>
+                  <tbody>
+                    {cursos.slice(0, 12).map(c => (
+                      <tr key={c.id} className="border-b last:border-0 hover:bg-muted/10">
+                        <td className="px-4 py-2 font-bold text-primary">{c.programa}</td>
+                        <td className="px-3 py-2">{c.local}</td>
+                        <td className="px-3 py-2 text-center">{c.ciclo}</td>
+                        <td className="px-3 py-2 font-medium">{c.nombreCurso} <span className="text-muted-foreground font-normal">Sec {c.seccion}</span></td>
+                        <td className="px-3 py-2 text-center"><Badge className="bg-blue-100 text-blue-700 border-0">{c.horasAcad}h</Badge></td>
+                      </tr>
+                    ))}
+                    {cursos.length > 12 && (
+                      <tr><td colSpan={5} className="px-4 py-2 text-muted-foreground text-center">
+                        ... y {cursos.length - 12} cursos más
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="px-4 py-3 border-t">
+                  <Button onClick={() => setTab("disponibilidades")} className="gap-2 w-full">
+                    Continuar → Paso 2: Subir disponibilidades<ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ══ STEP 2: DISPONIBILIDADES ═══════════════════════════════════════════ */}
+      {tab === "disponibilidades" && (
+        <div className="space-y-5">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2 text-sm text-blue-800">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <strong>Paso 2:</strong> Sube los Excel de disponibilidad horaria de cada docente.
+              Puedes subir varios archivos a la vez.
+              Cuando termines, usa el botón <strong>"Auto-asignar todo"</strong> en la parte superior.
             </div>
           </div>
 
           {/* Drop zone */}
           <div
-            onDragOver={e=>{e.preventDefault();setDragging(true);}}
-            onDragLeave={()=>setDragging(false)}
-            onDrop={e=>{e.preventDefault();setDragging(false);processFiles(e.dataTransfer.files);}}
-            className={`border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer ${dragging?"border-primary bg-primary/5":"border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20"}`}
-            onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls";inp.multiple=true;inp.onchange=e=>processFiles((e.target as HTMLInputElement).files!);inp.click();}}
-          >
-            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3"/>
-            <p className="text-base font-semibold">{uploading?"Procesando...":"Arrastra los Excel de disponibilidad aquí o haz clic para seleccionar"}</p>
+            onDragOver={e => { e.preventDefault(); setDragging2(true); }}
+            onDragLeave={() => setDragging2(false)}
+            onDrop={e => { e.preventDefault(); setDragging2(false); uploadAvailability(e.dataTransfer.files); }}
+            onClick={() => {
+              const inp = document.createElement("input");
+              inp.type = "file"; inp.accept = ".xlsx,.xls"; inp.multiple = true;
+              inp.onchange = e => uploadAvailability((e.target as HTMLInputElement).files!);
+              inp.click();
+            }}
+            className={`border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer
+              ${dragging2 ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20"}`}>
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-base font-semibold">{uploading ? "Procesando..." : "Arrastra los Excel de disponibilidad aquí"}</p>
             <p className="text-sm text-muted-foreground mt-1">Formato: DISPONIBILIDAD HORARIA DOCENTE · Múltiples archivos .xlsx</p>
-            {catalogo.length>0&&<p className="text-xs text-green-600 mt-2 font-semibold">✓ El sistema auto-asignará cursos del catálogo al cargar cada archivo</p>}
           </div>
 
-          {uploadMsgs.length>0&&(
+          {msgs.length > 0 && (
             <div className="space-y-1.5">
-              {uploadMsgs.map((m,i)=>(
-                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${m.ok?"bg-green-50 border border-green-200 text-green-700":"bg-red-50 border border-red-200 text-red-700"}`}>
-                  {m.ok?<CheckCircle2 className="w-4 h-4 shrink-0"/>:<XCircle className="w-4 h-4 shrink-0"/>}
-                  <span className="font-mono text-xs text-muted-foreground">{m.name}</span>
-                  <span>{m.msg}</span>
+              {msgs.map((m, i) => (
+                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm
+                  ${m.ok ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
+                  {m.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+                  {m.text}
                 </div>
               ))}
-              <button className="text-xs text-muted-foreground underline" onClick={()=>setUploadMsgs([])}>Limpiar</button>
             </div>
           )}
 
-          {/* Docentes table */}
-          {disps.length>0&&(
+          {disps.length > 0 && (
             <Card className="border-border/60">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary"/>Docentes cargados
-                    <Badge className="bg-primary/10 text-primary border-0 font-semibold">{disps.length}</Badge>
+                    <User className="w-4 h-4 text-primary" />
+                    Docentes cargados
+                    <Badge className="bg-primary/10 text-primary border-0">{disps.length}</Badge>
                   </CardTitle>
                   <div className="relative w-60">
-                    <Search className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground"/>
-                    <Input className="pl-8 h-8 text-sm" placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/>
+                    <Search className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-8 h-8 text-sm" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} />
                   </div>
                 </div>
               </CardHeader>
@@ -593,331 +847,230 @@ export default function CrearPlanificacion() {
                 <table className="w-full text-sm">
                   <thead><tr className="border-b bg-muted/20 text-xs text-muted-foreground">
                     <th className="px-4 py-2.5 text-left font-medium">Docente</th>
-                    <th className="px-3 py-2.5 text-left font-medium w-28">Local</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-20">Slots</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-24">Asignados</th>
-                    <th className="px-3 py-2.5 text-left font-medium">Grado</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-20">Ver</th>
+                    <th className="px-3 py-2.5 text-left font-medium">Local</th>
+                    <th className="px-3 py-2.5 text-center font-medium">Slots</th>
+                    <th className="px-3 py-2.5 text-center font-medium">Ver</th>
                   </tr></thead>
                   <tbody>
-                    {disps.filter(d=>!search||d.docente.toLowerCase().includes(search.toLowerCase())).map(d=>{
-                      const asignados=asignaciones.filter(a=>a.docenteId===d.id).length;
-                      return(
+                    {disps
+                      .filter(d => !search || d.docente.toLowerCase().includes(search.toLowerCase()))
+                      .map(d => (
                         <React.Fragment key={d.id}>
                           <tr className="border-b hover:bg-muted/10 transition-colors">
                             <td className="px-4 py-2.5 font-semibold text-xs">{d.docente}</td>
-                            <td className="px-3 py-2.5 text-xs">{d.local||"—"}</td>
-                            <td className="px-3 py-2.5 text-center"><Badge className="bg-green-100 text-green-700 border-0 text-[11px]">{d.slots.length}</Badge></td>
+                            <td className="px-3 py-2.5 text-xs">{d.local || "—"}</td>
                             <td className="px-3 py-2.5 text-center">
-                              {asignados>0?<Badge className="bg-primary/10 text-primary border-0 text-[11px]">{asignados}</Badge>:<span className="text-muted-foreground text-xs">—</span>}
+                              <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">{d.slots.length}</Badge>
                             </td>
-                            <td className="px-3 py-2.5 text-xs text-muted-foreground">{d.grado||d.titulo||"—"}</td>
                             <td className="px-3 py-2.5 text-center">
                               <div className="flex items-center justify-center gap-1">
-                                <button onClick={()=>setPreview(preview===d.id?null:d.id)} className={`p-1.5 rounded transition-colors ${preview===d.id?"bg-primary/10 text-primary":"hover:bg-muted text-muted-foreground"}`}><Eye className="w-3.5 h-3.5"/></button>
-                                <button onClick={()=>setDisps(prev=>prev.filter(x=>x.id!==d.id))} className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => setPreview(preview === d.id ? null : d.id)}
+                                  className={`p-1.5 rounded transition-colors ${preview === d.id ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"}`}>
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => setDisps(prev => prev.filter(x => x.id !== d.id))}
+                                  className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
                             </td>
                           </tr>
-                          {preview===d.id&&(
-                            <tr><td colSpan={6} className="px-4 py-4 bg-muted/5 border-b">
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xs font-bold text-primary">{d.docente}</span>
-                                {d.local&&<Badge className="bg-primary/10 text-primary border-0 text-[10px]">{d.local}</Badge>}
-                                <span className="text-xs text-muted-foreground">— {d.slots.length} slots</span>
-                              </div>
-                              <DispGrid disp={d}/>
+                          {preview === d.id && (
+                            <tr><td colSpan={4} className="px-4 py-4 bg-muted/5 border-b">
+                              <DispGrid disp={d} />
                             </td></tr>
                           )}
                         </React.Fragment>
-                      );
-                    })}
+                      ))}
                   </tbody>
                 </table>
+                <div className="px-4 py-3 border-t">
+                  <Button onClick={handleAutoAssign}
+                    className="gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={!cursos.length || !disps.length}>
+                    <Wand2 className="w-4 h-4" />Auto-asignar todos los cursos
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
         </div>
       )}
 
-      {/* ══ TAB 2: CATÁLOGO ═════════════════════════════════════════════ */}
-      {tab==="catalogo"&&(
-        <div className="grid grid-cols-[360px_1fr] gap-5">
-          <Card className="border-border/60 h-fit">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                {ctEdit?<><Edit2 className="w-4 h-4 text-primary"/>Editar Curso</>:<><Plus className="w-4 h-4 text-primary"/>Nuevo Curso</>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Carrera *</label>
-                  <Input placeholder="IC" value={ctForm.carrera} onChange={e=>setCtForm(f=>({...f,carrera:e.target.value.toUpperCase()}))} className="uppercase"/>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Ciclo *</label>
-                  <Input placeholder="1" value={ctForm.ciclo} onChange={e=>setCtForm(f=>({...f,ciclo:e.target.value}))}/>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Sección *</label>
-                  <Input placeholder="A" value={ctForm.seccion} onChange={e=>setCtForm(f=>({...f,seccion:e.target.value.toUpperCase()}))} className="uppercase"/>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Nombre del Curso *</label>
-                <Input placeholder="Ej: Matemática I" value={ctForm.curso} onChange={e=>setCtForm(f=>({...f,curso:e.target.value}))}/>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Tipo</label>
-                <Sel value={ctForm.tipo} onChange={v=>setCtForm(f=>({...f,tipo:v}))}
-                  options={[{value:"T",label:"Teoría (T)"},{value:"P",label:"Práctica (P)"},{value:"TP",label:"Teoría-Práctica (TP)"}]}/>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Horas por sesión</label>
-                  <Sel value={String(ctForm.horasSesion)} onChange={v=>setCtForm(f=>({...f,horasSesion:Number(v)}))}
-                    options={[1,2,3,4,5,6].map(n=>({value:String(n),label:`${n} hora${n>1?"s":""}`}))}/>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Sesiones/semana</label>
-                  <Sel value={String(ctForm.sesionesSemanales)} onChange={v=>setCtForm(f=>({...f,sesionesSemanales:Number(v)}))}
-                    options={[1,2,3].map(n=>({value:String(n),label:`${n} sesión${n>1?"es":""}`}))}/>
-                </div>
-              </div>
-              {ctErr&&<div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-md text-xs text-red-700"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5"/>{ctErr}</div>}
-              <div className="flex gap-2 pt-1">
-                <Button onClick={saveCt} className="flex-1 gap-2"><Check className="w-4 h-4"/>{ctEdit?"Guardar cambios":"Agregar curso"}</Button>
-                {ctEdit&&<Button variant="outline" onClick={()=>{setCtEdit(null);setCtForm(emptyCt);setCtErr("");}}><X className="w-4 h-4"/></Button>}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ListChecks className="w-4 h-4 text-primary"/>Catálogo de Cursos
-                <Badge className="bg-primary/10 text-primary border-0 font-semibold">{catalogo.length}</Badge>
-                {catalogo.filter(c=>!assignedTemplateIds.has(c.id)).length>0&&(
-                  <Badge className="bg-amber-100 text-amber-700 border-0 font-semibold">{catalogo.filter(c=>!assignedTemplateIds.has(c.id)).length} sin asignar</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {catalogo.length===0?(
-                <div className="py-12 text-center text-muted-foreground text-sm">No hay cursos en el catálogo. Agrega cursos para habilitar la auto-asignación.</div>
-              ):(
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b bg-muted/20 text-xs text-muted-foreground">
-                    <th className="px-4 py-2.5 text-left font-medium">Curso</th>
-                    <th className="px-3 py-2.5 text-left font-medium w-28">Car/Cic/Sec</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-16">Tipo</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-24">Horas</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-24">Estado</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-20">Acc.</th>
-                  </tr></thead>
-                  <tbody>
-                    {catalogo.map(ct=>{
-                      const assigned=assignedTemplateIds.has(ct.id);
-                      const asgn=asignaciones.find(a=>a.cursoTemplateId===ct.id);
-                      return(
-                        <tr key={ct.id} className={`border-b last:border-0 hover:bg-muted/10 transition-colors ${assigned?"":"bg-amber-50/30"}`}>
-                          <td className="px-4 py-2.5 font-semibold text-xs">{ct.curso}</td>
-                          <td className="px-3 py-2.5 text-xs font-mono"><span className="font-bold text-primary">{ct.carrera}</span> {ct.ciclo}{ct.seccion}</td>
-                          <td className="px-3 py-2.5 text-center"><Badge className="bg-blue-100 text-blue-700 border-0 text-[10px]">{ct.tipo}</Badge></td>
-                          <td className="px-3 py-2.5 text-center text-xs">{ct.horasSesion}h × {ct.sesionesSemanales} ses.</td>
-                          <td className="px-3 py-2.5 text-center">
-                            {assigned
-                              ?<div className="text-[10px] text-green-700 font-semibold">✓ {asgn?.docente?.split(" ")[0]}</div>
-                              :<Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">Pendiente</Badge>}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <div className="flex items-center justify-center gap-1">
-                              <button onClick={()=>{setCtEdit(ct.id);const{id:_,...rest}=ct;setCtForm(rest);setCtErr("");}} className="p-1.5 rounded hover:bg-primary/10 text-primary transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
-                              <button onClick={()=>setCatalogo(prev=>prev.filter(x=>x.id!==ct.id))} className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ══ TAB 3: ASIGNACIONES ══════════════════════════════════════════ */}
-      {tab==="asignaciones"&&(
-        <div className="grid grid-cols-[380px_1fr] gap-5">
-          <Card className="border-border/60 h-fit">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                {asgnEdit?<><Edit2 className="w-4 h-4 text-primary"/>Editar</>:<><Plus className="w-4 h-4 text-primary"/>Nueva Asignación</>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {disps.length===0?(
-                <div className="text-xs text-muted-foreground p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600"/>Primero sube los Excel de disponibilidad.
-                </div>
-              ):(
-                <>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Docente *</label>
-                    <Sel value={asgnForm.docenteId} onChange={v=>updAsgn({docenteId:v})} options={docenteOptions} placeholder="Seleccionar docente..."/>
-                  </div>
-                  {catalogoOptions.length>0&&(
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Curso del catálogo (opcional)</label>
-                      <Sel value={asgnForm.cursoTemplateId||""} onChange={v=>updAsgn({cursoTemplateId:v})} options={[{value:"",label:"— Ingresar manualmente —"},...catalogoOptions]} placeholder="Seleccionar del catálogo..."/>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Carrera *</label>
-                      <Input placeholder="IC" value={asgnForm.carrera} onChange={e=>updAsgn({carrera:e.target.value.toUpperCase()})} className="uppercase"/></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Ciclo *</label>
-                      <Input placeholder="1" value={asgnForm.ciclo} onChange={e=>updAsgn({ciclo:e.target.value})}/></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Secc. *</label>
-                      <Input placeholder="A" value={asgnForm.seccion} onChange={e=>updAsgn({seccion:e.target.value.toUpperCase()})} className="uppercase"/></div>
-                  </div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Curso *</label>
-                    <Input placeholder="Ej: Cálculo I" value={asgnForm.curso} onChange={e=>updAsgn({curso:e.target.value})}/></div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Tipo</label>
-                    <Sel value={asgnForm.tipo} onChange={v=>updAsgn({tipo:v})} options={[{value:"T",label:"Teoría"},{value:"P",label:"Práctica"},{value:"TP",label:"Teoría-Práctica"}]}/></div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Día *</label>
-                    <Sel value={asgnForm.dia} onChange={v=>updAsgn({dia:v,horaInicio:"",horaFin:""})} options={DIAS.map(d=>({value:d,label:DIAS_LABEL[d]}))} placeholder="Seleccionar día..."/></div>
-                  {asgnForm.dia&&(
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Hora Inicio *</label>
-                        <Sel value={asgnForm.horaInicio} onChange={v=>updAsgn({horaInicio:v,horaFin:SLOT_ENDS[v]||""})}
-                          options={SLOTS.map(s=>({value:s,label:selectedDisp?(slotAvail(asgnForm.dia,s)?`✓ ${s}`:s):s}))} placeholder="Inicio"/></div>
-                      <div><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Hora Fin *</label>
-                        <Sel value={asgnForm.horaFin} onChange={v=>updAsgn({horaFin:v})}
-                          options={SLOTS.filter(s=>!asgnForm.horaInicio||timeToMin(s)>timeToMin(asgnForm.horaInicio)).map(s=>({value:s,label:s}))} placeholder="Fin"/></div>
-                    </div>
-                  )}
-                  {asgnErr&&<div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-semibold"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5"/>{asgnErr}</div>}
-                  {!asgnErr&&asgnWarn&&<div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-700"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5"/>{asgnWarn}</div>}
-                  <div className="flex gap-2 pt-1">
-                    <Button onClick={saveAsgn} disabled={!!asgnErr} className="flex-1 gap-2"><Check className="w-4 h-4"/>{asgnEdit?"Guardar":"Agregar"}</Button>
-                    {asgnEdit&&<Button variant="outline" onClick={()=>{setAsgnEdit(null);setAsgnForm(emptyAsgn);setAsgnErr("");setAsgnWarn("");}}><X className="w-4 h-4"/></Button>}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-primary"/>Asignaciones
-                <Badge className="bg-primary/10 text-primary border-0 font-semibold">{asignaciones.length}</Badge>
-                {crucesTotal>0&&<Badge className="bg-red-100 text-red-700 border-0 font-semibold"><AlertTriangle className="w-3 h-3 mr-1"/>{crucesTotal} cruces</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {asignaciones.length===0
-                ?<div className="py-12 text-center text-muted-foreground text-sm">Sin asignaciones. Usa el botón <strong>Auto-asignar todo</strong> o agrega manualmente.</div>
-                :<table className="w-full text-sm">
-                  <thead><tr className="border-b bg-muted/20 text-xs text-muted-foreground">
-                    <th className="px-4 py-2.5 text-left font-medium">Docente</th>
-                    <th className="px-3 py-2.5 text-left font-medium">Curso</th>
-                    <th className="px-3 py-2.5 text-left font-medium w-24">Car/Cic/Sec</th>
-                    <th className="px-3 py-2.5 text-left font-medium w-24">Día</th>
-                    <th className="px-3 py-2.5 text-left font-medium w-28">Horario</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-20">Estado</th>
-                    <th className="px-3 py-2.5 text-center font-medium w-16">Acc.</th>
-                  </tr></thead>
-                  <tbody>
-                    {[...asignaciones].sort((a,b)=>a.docente.localeCompare(b.docente)||DIAS.indexOf(a.dia)-DIAS.indexOf(b.dia)).map(a=>{
-                      const cruce=asignaciones.some(b=>b.id!==a.id&&b.docenteId===a.docenteId&&b.dia===a.dia&&overlaps(b.horaInicio,b.horaFin,a.horaInicio,a.horaFin));
-                      return(
-                        <tr key={a.id} className={`border-b last:border-0 hover:bg-muted/10 transition-colors ${cruce?"bg-red-50":""}`}>
-                          <td className="px-4 py-2.5 text-xs font-medium">
-                            {a.docente}
-                            {a.autoAsignado&&<span className="ml-1.5 text-[10px] bg-emerald-100 text-emerald-700 px-1 rounded font-semibold">auto</span>}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs">{a.curso}</td>
-                          <td className="px-3 py-2.5 text-xs font-mono"><span className="font-bold text-primary">{a.carrera}</span> {a.ciclo}{a.seccion}</td>
-                          <td className="px-3 py-2.5 text-xs">{DIAS_LABEL[a.dia]}</td>
-                          <td className="px-3 py-2.5 font-mono text-xs">{a.horaInicio}–{a.horaFin}</td>
-                          <td className="px-3 py-2.5 text-center">
-                            {cruce?<Badge className="bg-red-100 text-red-700 border-0 text-[10px]">CRUCE</Badge>:<Badge className="bg-green-100 text-green-700 border-0 text-[10px]">OK</Badge>}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <div className="flex items-center justify-center gap-1">
-                              <button onClick={()=>{setAsgnEdit(a.id);const{id:_,...rest}=a;setAsgnForm({...emptyAsgn,...rest});setAsgnErr("");setAsgnWarn("");setTab("asignaciones");}} className="p-1.5 rounded hover:bg-primary/10 text-primary transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
-                              <button onClick={()=>setAsignaciones(prev=>prev.filter(x=>x.id!==a.id))} className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              }
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ══ TAB 4: HORARIO ══════════════════════════════════════════════ */}
-      {tab==="horario"&&(
+      {/* ══ STEP 3: ASIGNACIONES ══════════════════════════════════════════════ */}
+      {tab === "asignaciones" && (
         <div className="space-y-4">
-          {asignaciones.length===0
-            ?<div className="py-16 text-center text-muted-foreground text-sm">Agrega asignaciones para ver el horario.</div>
-            :(
-              <>
-                {crucesTotal>0&&<div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><AlertTriangle className="w-4 h-4 shrink-0"/><span><strong>{crucesTotal} cruce{crucesTotal>1?"s":""}</strong> detectado{crucesTotal>1?"s":""}. Corrígelos en la pestaña Asignaciones.</span></div>}
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-100 border border-blue-300 inline-block"/>Manual</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300 inline-block"/>Auto-asignado</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-100 border border-red-300 inline-block"/>Con cruce</span>
+          {/* Filters */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground" />
+              <Input className="pl-8 h-9 text-sm" placeholder="Buscar curso o docente..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <Sel value={filterProg} onChange={setFilterProg} options={programOptions} className="w-48" />
+            <Sel value={filterLocal} onChange={setFilterLocal} options={localOptions} className="w-48" />
+            <button onClick={() => { setSearch(""); setFilterProg(""); setFilterLocal(""); }}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 underline">
+              <RefreshCw className="w-3 h-3" />Limpiar filtros
+            </button>
+            <div className="ml-auto text-xs text-muted-foreground">
+              Mostrando {filteredCursos.length} de {cursos.length} cursos
+            </div>
+          </div>
+
+          <Card className="border-border/60">
+            <CardContent className="p-0">
+              {filteredCursos.length === 0
+                ? <div className="py-12 text-center text-muted-foreground text-sm">No hay cursos para mostrar.</div>
+                : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead><tr className="border-b bg-muted/20 text-muted-foreground">
+                        <th className="px-3 py-2.5 text-left font-medium">Programa</th>
+                        <th className="px-3 py-2.5 text-left font-medium">Local</th>
+                        <th className="px-3 py-2.5 text-center font-medium w-12">Cic</th>
+                        <th className="px-3 py-2.5 text-center font-medium w-12">Sec</th>
+                        <th className="px-3 py-2.5 text-left font-medium">Curso</th>
+                        <th className="px-3 py-2.5 text-center font-medium w-12">H</th>
+                        <th className="px-3 py-2.5 text-left font-medium">Docente</th>
+                        <th className="px-3 py-2.5 text-left font-medium w-28">Día</th>
+                        <th className="px-3 py-2.5 text-left font-medium w-28">Horario</th>
+                        <th className="px-3 py-2.5 text-center font-medium w-20">Estado</th>
+                      </tr></thead>
+                      <tbody>
+                        {filteredCursos.map(c => {
+                          const isAssigned = !!c.docenteId;
+                          return (
+                            <tr key={c.id} className={`border-b last:border-0 hover:bg-muted/10 transition-colors ${!isAssigned ? "bg-amber-50/40" : ""}`}>
+                              <td className="px-3 py-2 font-bold text-primary">{c.programa}</td>
+                              <td className="px-3 py-2">{c.local}</td>
+                              <td className="px-3 py-2 text-center">{c.ciclo}</td>
+                              <td className="px-3 py-2 text-center font-mono">{c.seccion}</td>
+                              <td className="px-3 py-2 font-medium">{c.nombreCurso}</td>
+                              <td className="px-3 py-2 text-center">
+                                <Badge className="bg-blue-100 text-blue-700 border-0 text-[10px]">{c.horasAcad}h</Badge>
+                              </td>
+                              <td className="px-3 py-2">
+                                {c.docente
+                                  ? <span className="font-semibold text-[11px]">{c.docente}</span>
+                                  : <span className="text-muted-foreground italic text-[11px]">Sin asignar</span>}
+                              </td>
+                              <td className="px-3 py-2">
+                                {c.dia ? DIAS_LABEL[DIAS_NUM[c.dia]] || "" : "—"}
+                              </td>
+                              <td className="px-3 py-2 font-mono">
+                                {c.horaInicio && c.horaFin ? `${c.horaInicio}–${c.horaFin}` : "—"}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                {isAssigned
+                                  ? <Badge className="bg-green-100 text-green-700 border-0 text-[10px]">✓ OK</Badge>
+                                  : <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">Pendiente</Badge>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ══ STEP 4: VISTA & EXPORTAR ══════════════════════════════════════════ */}
+      {tab === "exportar" && (
+        <div className="space-y-5">
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-4 flex items-center gap-3">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+                <div>
+                  <div className="text-2xl font-bold text-green-700">{stats.assigned}</div>
+                  <div className="text-xs text-green-600">Cursos asignados</div>
                 </div>
-                <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full border-collapse text-[11px] min-w-[600px]">
+              </CardContent>
+            </Card>
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="p-4 flex items-center gap-3">
+                <AlertTriangle className="w-8 h-8 text-amber-600" />
+                <div>
+                  <div className="text-2xl font-bold text-amber-700">{stats.unassigned}</div>
+                  <div className="text-xs text-amber-600">Sin docente disponible</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-4 flex items-center gap-3">
+                <User className="w-8 h-8 text-blue-600" />
+                <div>
+                  <div className="text-2xl font-bold text-blue-700">{stats.uniqueDocentes}</div>
+                  <div className="text-xs text-blue-600">Docentes asignados</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Button onClick={() => exportPlanningExcel(cursos, semestre)}
+            className="gap-2 w-full py-5 text-base bg-primary hover:bg-primary/90"
+            disabled={!cursos.length}>
+            <Download className="w-5 h-5" />
+            Descargar PLANIFICACION_{semestre}_GENERADA.xlsx
+          </Button>
+
+          {stats.unassigned > 0 && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <strong>⚠ {stats.unassigned} cursos sin docente:</strong> Sube más Excel de disponibilidad o asigna manualmente en el paso 3.
+            </div>
+          )}
+
+          {/* Mini schedule by program */}
+          {activeDias.length > 0 && (
+            <Card className="border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-primary" />
+                  Vista de horario
+                  {filterProg && <Badge className="bg-primary/10 text-primary border-0">{filterProg}</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-[10px]">
                     <thead><tr className="bg-primary text-white">
-                      <th className="border border-primary/40 px-3 py-2 text-center font-semibold w-20">Hora</th>
-                      {activeDias.map(d=><th key={d} className="border border-primary/40 px-3 py-2 text-center font-semibold">{DIAS_LABEL[d]}</th>)}
+                      <th className="border border-primary/40 px-2 py-1.5 text-center font-semibold w-16">Hora</th>
+                      {activeDias.map(d => <th key={d} className="border border-primary/40 px-2 py-1.5 text-center font-semibold">{DIAS_LABEL[d]}</th>)}
                     </tr></thead>
                     <tbody>
-                      {activeSlots.map(slot=>(
+                      {activeSlots.map(slot => (
                         <tr key={slot}>
-                          <td className="border border-gray-200 bg-[#D9E0F1] px-2 py-1.5 text-center font-mono text-[9px] whitespace-nowrap font-bold">{slot}<br/>{SLOT_ENDS[slot]}</td>
-                          {activeDias.map(dia=>{
-                            const cells=gridCells.get(`${dia}|${slot}`)??[];
-                            if(cells.length>0) return(
+                          <td className="border border-gray-200 bg-[#D9E0F1] px-1 py-1 text-center font-mono text-[9px] font-bold">{slot}</td>
+                          {activeDias.map(dia => {
+                            const cells = gridCells.get(`${dia}|${slot}`) ?? [];
+                            if (cells.length > 0) return (
                               <td key={dia} className="border border-gray-200 p-0.5 align-top">
-                                <div className="flex flex-col gap-0.5">
-                                  {cells.map((cell,ci)=>(
-                                    <div key={ci} className={`rounded p-1 text-center ${cell.cruce?"bg-red-100 border border-red-300":cell.a.autoAsignado?"bg-emerald-50 border border-emerald-200":"bg-blue-50 border border-blue-200"}`}>
-                                      <div className="font-bold text-[9px] text-gray-800 truncate">{cell.a.curso}</div>
-                                      <div className="text-[8px] text-gray-600 truncate">{cell.a.docente.split(" ").slice(0,2).join(" ")}</div>
-                                      <div className="text-[8px] font-mono text-gray-500">{cell.a.carrera} {cell.a.ciclo}{cell.a.seccion}</div>
-                                      {cell.cruce&&<div className="text-[8px] text-red-600 font-bold">⚠ CRUCE</div>}
+                                <div className="flex flex-col gap-0.5 max-h-24 overflow-y-auto">
+                                  {cells.slice(0, 3).map((c, ci) => (
+                                    <div key={ci} className="rounded p-0.5 bg-blue-50 border border-blue-200 text-center">
+                                      <div className="font-bold text-[8px] truncate">{c.nombreCurso}</div>
+                                      <div className="text-[7px] text-muted-foreground truncate">{c.programa} {c.ciclo}{c.seccion}</div>
+                                      {c.docente && <div className="text-[7px] text-blue-600 truncate">{c.docente.split(" ")[0]}</div>}
                                     </div>
                                   ))}
+                                  {cells.length > 3 && <div className="text-[8px] text-center text-muted-foreground">+{cells.length - 3} más</div>}
                                 </div>
                               </td>
                             );
-                            const spanned=asignaciones.some(a=>{
-                              if(a.dia!==dia) return false;
-                              const si=SLOTS.indexOf(a.horaInicio),ei=SLOTS.indexOf(a.horaFin),ci=SLOTS.indexOf(slot);
-                              return si>=0&&ci>si&&ci<ei;
-                            });
-                            if(spanned) return null;
-                            return <td key={dia} className="border border-gray-100 bg-white"/>;
+                            return <td key={dia} className="border border-gray-100 bg-white" />;
                           })}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </>
-            )
-          }
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>
