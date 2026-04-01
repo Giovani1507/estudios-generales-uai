@@ -1,6 +1,7 @@
 import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, User } from "@workspace/api-client-react";
+import { playAudioBuffer } from "@/lib/audio-unlock";
 
 interface AuthContextType {
   user: User | null;
@@ -35,13 +36,10 @@ async function speakWelcome(fullName: string) {
       body: JSON.stringify({ text, voice: "nova" }),
     });
     if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.onended = () => URL.revokeObjectURL(url);
-    audio.play().catch(() => {});
-  } catch {
-    // silently ignore if audio fails
+    const arrayBuffer = await res.arrayBuffer();
+    await playAudioBuffer(arrayBuffer);
+  } catch (e) {
+    console.error("[tts]", e);
   }
 }
 
@@ -59,8 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user && !greeted.current) {
       greeted.current = true;
-      // Small delay so browser allows audio after navigation
-      setTimeout(() => speakWelcome(user.fullName || user.username), 600);
+      speakWelcome(user.fullName || user.username);
     }
   }, [user]);
 
