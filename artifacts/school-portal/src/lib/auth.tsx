@@ -20,20 +20,28 @@ function speakWelcome(fullName: string) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const firstName = fullName.split(" ")[0];
-  const utterance = new SpeechSynthesisUtterance(
-    `Bienvenido, ${firstName}. Portal Académico de la Universidad Autónoma de Ica.`
-  );
-  utterance.lang = "es-PE";
-  utterance.rate = 0.95;
-  utterance.pitch = 1.05;
-  // Prefer a Spanish voice if available
+
   const trySpeak = () => {
     const voices = window.speechSynthesis.getVoices();
-    const spanish = voices.find(v => v.lang.startsWith("es")) || voices[0];
-    if (spanish) utterance.voice = spanish;
+    // Priority: Latin American Spanish locales, then any Spanish voice
+    const latinAmCodes = ["es-419", "es-MX", "es-US", "es-CO", "es-AR", "es-CL", "es-PE", "es-VE"];
+    let voice =
+      latinAmCodes.reduce<SpeechSynthesisVoice | null>((found, code) =>
+        found ?? (voices.find(v => v.lang === code) ?? null), null)
+      ?? voices.find(v => v.lang.startsWith("es"))
+      ?? voices[0];
+
+    const utterance = new SpeechSynthesisUtterance(
+      `¡Bienvenido, ${firstName}! ¡Qué bueno verte por aquí! Portal Académico, Universidad Autónoma de Ica.`
+    );
+    utterance.lang = "es-419";
+    utterance.rate = 1.08;
+    utterance.pitch = 1.35;
+    utterance.volume = 1;
+    if (voice) utterance.voice = voice;
     window.speechSynthesis.speak(utterance);
   };
-  // Voices may not be loaded yet on first call
+
   if (window.speechSynthesis.getVoices().length > 0) {
     trySpeak();
   } else {
