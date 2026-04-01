@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useEffect } from "react";
+import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, User } from "@workspace/api-client-react";
 
@@ -16,6 +16,31 @@ const AuthContext = createContext<AuthContextType>({
   refetchUser: () => {},
 });
 
+function speakWelcome(fullName: string) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const firstName = fullName.split(" ")[0];
+  const utterance = new SpeechSynthesisUtterance(
+    `Bienvenido, ${firstName}. Portal Académico de la Universidad Autónoma de Ica.`
+  );
+  utterance.lang = "es-PE";
+  utterance.rate = 0.95;
+  utterance.pitch = 1.05;
+  // Prefer a Spanish voice if available
+  const trySpeak = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const spanish = voices.find(v => v.lang.startsWith("es")) || voices[0];
+    if (spanish) utterance.voice = spanish;
+    window.speechSynthesis.speak(utterance);
+  };
+  // Voices may not be loaded yet on first call
+  if (window.speechSynthesis.getVoices().length > 0) {
+    trySpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => { trySpeak(); };
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const { data: user, isLoading, isError, refetch } = useGetMe({
@@ -24,6 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refetchOnWindowFocus: false,
     }
   });
+
+  // Greet once per session when user first logs in
+  const greeted = useRef(false);
+  useEffect(() => {
+    if (user && !greeted.current) {
+      greeted.current = true;
+      // Small delay so browser allows audio after navigation
+      setTimeout(() => speakWelcome(user.fullName || user.username), 600);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isLoading && (isError || !user) && location !== "/login") {
