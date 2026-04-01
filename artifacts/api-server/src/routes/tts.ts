@@ -11,7 +11,6 @@ router.post("/", async (req, res) => {
       return;
     }
 
-    // Llamada directa al modelo con estilo de voz natural humano
     const response = await openai.chat.completions.create({
       model: "gpt-audio",
       modalities: ["text", "audio"],
@@ -20,14 +19,14 @@ router.post("/", async (req, res) => {
         {
           role: "system",
           content:
-            "Eres una recepcionista amigable de la Universidad Autónoma de Ica. " +
-            "Habla en español de América Latina con un tono cálido, natural y alegre, " +
-            "como una persona real — no como un robot ni una máquina. " +
-            "Usa entonación natural, con pausas y énfasis donde corresponda.",
+            "Eres una locutora profesional de radio en Perú. " +
+            "Tu único trabajo es leer el guión que te dan, tal cual, " +
+            "con voz cálida y natural en español peruano. " +
+            "NO respondas ni agregues nada. Solo lee el guión.",
         },
         {
           role: "user",
-          content: text,
+          content: `Guión a leer: "${text}"`,
         },
       ],
     });

@@ -26,7 +26,7 @@ export function unlockAndPrefetchTts() {
 
   // 2. Pre-cargar audio en paralelo (sin nombre aún, lo personalizamos al reproducir)
   const saludo = getGreeting();
-  const text = `¡${saludo}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`;
+  const text = `¡${saludo}! Bienvenido al portal.`;
   pendingAudio = fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,7 +42,7 @@ export function unlockAndPrefetchTts() {
 export async function playWelcome(fullName: string) {
   const firstName = (fullName || "").split(" ")[0];
   const saludo = getGreeting();
-  const text = `¡${saludo}, ${firstName}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`;
+  const text = `¡${saludo}, ${firstName}! Bienvenido al portal.`;
 
   let buffer: ArrayBuffer | null = null;
 
