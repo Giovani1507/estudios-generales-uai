@@ -9,13 +9,11 @@ import schedulesRouter from "./schedules.js";
 import announcementsRouter from "./announcements.js";
 import reportsRouter from "./reports.js";
 import emailRouter from "./email.js";
-import ttsRouter from "./tts.js";
 
 const router = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
-router.use("/tts", ttsRouter);
 router.use("/users", usersRouter);
 router.use("/teachers", teachersRouter);
 router.use("/sections", sectionsRouter);
