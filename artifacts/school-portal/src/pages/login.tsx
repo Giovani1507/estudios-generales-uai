@@ -5,7 +5,7 @@ import * as z from "zod";
 import { motion } from "framer-motion";
 import { useLogin } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { unlockAudio } from "@/lib/audio-unlock";
+import { unlockAndPrefetchTts } from "@/lib/audio-unlock";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -45,7 +45,7 @@ export default function Login() {
 
   const onSubmit = (values: z.infer<typeof loginSchema>) => {
     setErrorMsg("");
-    unlockAudio(); // desbloquear audio mientras estamos en el evento de clic
+    unlockAndPrefetchTts(); // desbloquear audio y pre-cargar TTS en paralelo con el login
     loginMutation.mutate({ data: values });
   };
 

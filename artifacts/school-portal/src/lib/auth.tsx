@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, User } from "@workspace/api-client-react";
-import { playAudioBuffer } from "@/lib/audio-unlock";
+import { playWelcome } from "@/lib/audio-unlock";
 
 interface AuthContextType {
   user: User | null;
@@ -17,31 +17,6 @@ const AuthContext = createContext<AuthContextType>({
   refetchUser: () => {},
 });
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) return "Buenos días";
-  if (hour >= 12 && hour < 19) return "Buenas tardes";
-  return "Buenas noches";
-}
-
-async function speakWelcome(fullName: string) {
-  const firstName = fullName.split(" ")[0];
-  const saludo = getGreeting();
-  const text = `¡${saludo}, ${firstName}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`;
-
-  try {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, voice: "nova" }),
-    });
-    if (!res.ok) return;
-    const arrayBuffer = await res.arrayBuffer();
-    await playAudioBuffer(arrayBuffer);
-  } catch (e) {
-    console.error("[tts]", e);
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -57,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user && !greeted.current) {
       greeted.current = true;
-      speakWelcome(user.fullName || user.username);
+      playWelcome(user.fullName || user.username);
     }
   }, [user]);
 
