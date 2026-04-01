@@ -157,6 +157,9 @@ importers:
 
   .:
     dependencies:
+      exceljs:
+        specifier: ^4.4.0
+        version: 4.4.0
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
