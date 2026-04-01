@@ -23,37 +23,25 @@ function getGreeting(): string {
   return "Buenas noches";
 }
 
-function speakWelcome(fullName: string) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+async function speakWelcome(fullName: string) {
   const firstName = fullName.split(" ")[0];
   const saludo = getGreeting();
+  const text = `¡${saludo}, ${firstName}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`;
 
-  const trySpeak = () => {
-    const voices = window.speechSynthesis.getVoices();
-    // Priority: Peruvian Spanish first, then other Latin American, then any Spanish
-    const preferredCodes = ["es-PE", "es-419", "es-MX", "es-CO", "es-AR", "es-CL", "es-US", "es-VE"];
-    const voice =
-      preferredCodes.reduce<SpeechSynthesisVoice | null>((found, code) =>
-        found ?? (voices.find(v => v.lang === code) ?? null), null)
-      ?? voices.find(v => v.lang.startsWith("es"))
-      ?? null;
-
-    const utterance = new SpeechSynthesisUtterance(
-      `¡${saludo}, ${firstName}! ¡Bienvenido al Portal Académico de la Universidad Autónoma de Ica!`
-    );
-    utterance.lang = "es-PE";
-    utterance.rate = 1.05;
-    utterance.pitch = 1.3;
-    utterance.volume = 1;
-    if (voice) utterance.voice = voice;
-    window.speechSynthesis.speak(utterance);
-  };
-
-  if (window.speechSynthesis.getVoices().length > 0) {
-    trySpeak();
-  } else {
-    window.speechSynthesis.onvoiceschanged = () => { trySpeak(); };
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voice: "nova" }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => URL.revokeObjectURL(url);
+    audio.play().catch(() => {});
+  } catch {
+    // silently ignore if audio fails
   }
 }
 
