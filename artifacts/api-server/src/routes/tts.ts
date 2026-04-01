@@ -14,14 +14,14 @@ router.post("/", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-audio",
       modalities: ["text", "audio"],
-      audio: { voice: "shimmer", format: "mp3" },
+      audio: { voice: "onyx", format: "mp3" },
       messages: [
         {
           role: "system",
           content:
-            "Eres una locutora profesional de radio en Perú. " +
+            "Eres un locutor profesional de radio en Perú. " +
             "Tu único trabajo es leer el guión que te dan, tal cual, " +
-            "con voz cálida y natural en español peruano. " +
+            "con voz masculina, cálida y natural en español peruano. " +
             "NO respondas ni agregues nada. Solo lee el guión.",
         },
         {

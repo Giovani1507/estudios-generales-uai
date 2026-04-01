@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface WelcomeCharacterProps {
   visible: boolean;
@@ -8,69 +8,132 @@ interface WelcomeCharacterProps {
   onDone: () => void;
 }
 
-const SPARKLE_COUNT = 22;
-const sparkles = Array.from({ length: SPARKLE_COUNT }, (_, i) => ({
+// Stable sparkles — generated once
+const sparkles = Array.from({ length: 18 }, (_, i) => ({
   id: i,
-  left: `${5 + Math.random() * 90}%`,
-  top: `${5 + Math.random() * 70}%`,
-  color: ["#FFD700", "#FF6B9D", "#4ECDC4", "#A78BFA", "#FFA500", "#7EE8A2"][i % 6],
-  delay: Math.random() * 2.5,
-  duration: 1.5 + Math.random() * 2,
-  size: 6 + Math.random() * 10,
+  left: `${8 + (i * 5.2) % 84}%`,
+  top: `${10 + (i * 7.3) % 60}%`,
+  color: ["#FFD700", "#FF6B9D", "#4ECDC4", "#A78BFA", "#FFA07A", "#7EE8A2"][i % 6],
+  delay: (i * 0.37) % 2.8,
+  duration: 1.6 + (i % 4) * 0.5,
+  size: 6 + (i % 5) * 2,
 }));
 
-type Phase = "enter" | "talking" | "exit";
+type Phase = "idle" | "enter" | "wave" | "talk" | "exit";
 
 export function WelcomeCharacter({ visible, firstName, saludo, onDone }: WelcomeCharacterProps) {
-  const [phase, setPhase] = useState<Phase>("enter");
+  const [phase, setPhase] = useState<Phase>("idle");
   const [showBubble, setShowBubble] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const fullText = `¡${saludo}, ${firstName}! Bienvenido al portal.`;
 
+  const clear = () => timersRef.current.forEach(clearTimeout);
+  const after = (ms: number, fn: () => void) => {
+    const t = setTimeout(fn, ms);
+    timersRef.current.push(t);
+    return t;
+  };
+
   const handleDone = useCallback(() => {
     setPhase("exit");
-    setTimeout(() => {
+    clear();
+    after(800, () => {
       onDone();
-      setPhase("enter");
+      setPhase("idle");
       setShowBubble(false);
       setDisplayedText("");
-    }, 900);
+    });
   }, [onDone]);
 
   useEffect(() => {
     if (!visible) return;
+    clear();
+    timersRef.current = [];
     setPhase("enter");
     setShowBubble(false);
     setDisplayedText("");
 
-    const t1 = setTimeout(() => setShowBubble(true), 900);
-    const t2 = setTimeout(() => setPhase("talking"), 950);
+    // 1. Enter: bounce in (0 → 1.2s)
+    // 2. Wave: hand wave greeting (1.2s → 2.8s)
+    after(1200, () => setPhase("wave"));
 
-    let idx = 0;
-    const t3 = setTimeout(() => {
+    // 3. Talk: bubble appears, text types out (2.8s)
+    after(2800, () => {
+      setPhase("talk");
+      setShowBubble(true);
+    });
+
+    // 4. Typewriter
+    after(3000, () => {
+      let idx = 0;
       const iv = setInterval(() => {
         idx++;
         setDisplayedText(fullText.slice(0, idx));
         if (idx >= fullText.length) {
           clearInterval(iv);
-          setTimeout(handleDone, 2800);
+          after(2600, handleDone);
         }
-      }, 48);
-      return () => clearInterval(iv);
-    }, 1000);
+      }, 55);
+      timersRef.current.push(iv as unknown as ReturnType<typeof setTimeout>);
+    });
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+    return clear;
   }, [visible]);
 
-  const isTalking = phase === "talking";
-  const isExiting = phase === "exit";
-
   const charSrc = `${import.meta.env.BASE_URL}character-nobg.png`;
+
+  const isWaving = phase === "wave";
+  const isTalking = phase === "talk";
+  const isExiting = phase === "exit";
+  const isEntering = phase === "enter";
+
+  // ── BODY: entrance spring, idle sway when talking ──
+  const bodyVariants = {
+    idle: { rotate: 0, y: 0, scaleX: 1, scaleY: 1 },
+    enter: { y: 0, scaleX: 1, scaleY: 1, rotate: 0,
+              transition: { type: "spring" as const, stiffness: 200, damping: 15 } },
+    wave: { rotate: [0, -3, 3, -2, 2, 0], scaleX: [1, 1.02, 0.99, 1.01, 1],
+            transition: { duration: 1.4, ease: "easeInOut", times: [0, 0.2, 0.5, 0.75, 1] } },
+    talk: { rotate: [-1.5, 1.5, -1.5], y: [0, -4, 0],
+            transition: { duration: 1.3, repeat: Infinity, ease: "easeInOut" } },
+    exit: { y: 380, scaleY: 0.8, opacity: 0,
+            transition: { duration: 0.65, ease: "easeIn" } },
+  };
+
+  // ── ARMS/HANDS: rapid wave during wave phase ──
+  const handsVariants = {
+    idle: { rotate: 0, y: 0 },
+    wave: {
+      rotate: [-20, 20, -20, 20, -20, 20, -10, 0],
+      y: [-8, 8, -8, 8, -8, 8, -4, 0],
+      transition: { duration: 1.5, ease: "easeInOut", times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] },
+    },
+    talk: { rotate: [-5, 5, -5], scale: [1, 1.03, 1],
+            transition: { duration: 0.85, repeat: Infinity, ease: "easeInOut" } },
+    exit: {},
+  };
+
+  // ── HEAD: nod while talking ──
+  const headVariants = {
+    idle: { rotate: 0, y: 0 },
+    wave: { rotate: [-4, 4, -4, 4, 0],
+            transition: { duration: 1.4, ease: "easeInOut" } },
+    talk: { rotate: [-3, 3, -3], y: [-2, 2, -2],
+            transition: { duration: 0.7, repeat: Infinity, ease: "easeInOut" } },
+    exit: {},
+  };
+
+  // ── LEGS: subtle weight shift ──
+  const legsVariants = {
+    idle: { x: 0 },
+    wave: { x: [-3, 3, -3, 3, 0], transition: { duration: 1.5, ease: "easeInOut" } },
+    talk: { x: [-3, 3, -3], transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" } },
+    exit: {},
+  };
+
+  const currentAnim = isExiting ? "exit" : isWaving ? "wave" : isTalking ? "talk" : "idle";
 
   return (
     <AnimatePresence>
@@ -79,12 +142,12 @@ export function WelcomeCharacter({ visible, firstName, saludo, onDone }: Welcome
           className="fixed inset-0 z-[9999] flex items-end justify-center overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.4 } }}
-          onClick={isTalking || isExiting ? handleDone : undefined}
+          exit={{ opacity: 0, transition: { duration: 0.35 } }}
+          onClick={!isEntering ? handleDone : undefined}
           style={{
             background:
-              "radial-gradient(ellipse at 50% 110%, rgba(30,60,130,0.97) 0%, rgba(5,10,35,0.96) 70%)",
-            cursor: "pointer",
+              "radial-gradient(ellipse at 50% 115%, rgba(20,50,120,0.97) 0%, rgba(4,8,30,0.97) 68%)",
+            cursor: isEntering ? "default" : "pointer",
           }}
         >
           {/* Sparkles */}
@@ -93,144 +156,142 @@ export function WelcomeCharacter({ visible, firstName, saludo, onDone }: Welcome
               key={s.id}
               className="absolute rounded-full pointer-events-none"
               style={{
-                left: s.left,
-                top: s.top,
-                width: s.size,
-                height: s.size,
+                left: s.left, top: s.top,
+                width: s.size, height: s.size,
                 background: s.color,
-                boxShadow: `0 0 ${s.size * 2}px ${s.color}`,
+                boxShadow: `0 0 ${s.size * 2}px ${s.color}88`,
               }}
-              animate={{ y: [0, -35, 0], opacity: [0, 1, 0], scale: [0, 1.2, 0] }}
+              animate={{ y: [0, -38, 0], opacity: [0, 1, 0], scale: [0, 1.3, 0] }}
               transition={{ duration: s.duration, repeat: Infinity, delay: s.delay, ease: "easeInOut" }}
             />
           ))}
 
-          {/* Ground glow */}
+          {/* Ground glow pulse */}
           <motion.div
             className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
             style={{
-              width: 340,
-              height: 40,
-              background: "radial-gradient(ellipse, rgba(100,140,255,0.55) 0%, transparent 80%)",
-              filter: "blur(8px)",
+              width: 360, height: 44,
+              background: "radial-gradient(ellipse, rgba(80,130,255,0.5) 0%, transparent 80%)",
+              filter: "blur(12px)",
             }}
-            animate={{ scaleX: [1, 1.12, 1], opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ scaleX: [1, 1.15, 1], opacity: [0.5, 0.9, 0.5] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           />
 
-          {/* Character wrapper — entrance/exit */}
+          {/* ── CHARACTER WRAPPER: entrance bounce ── */}
           <motion.div
             className="relative select-none"
-            style={{ width: 310, marginBottom: -10 }}
-            initial={{ y: 380, opacity: 0, scale: 0.7 }}
+            style={{ width: 320, marginBottom: -8, transformOrigin: "bottom center" }}
+            initial={{ y: 420, scaleX: 0.6, scaleY: 0.5, opacity: 0 }}
             animate={
               isExiting
-                ? { y: 400, opacity: 0, scale: 0.8, transition: { duration: 0.7, ease: "easeIn" } }
-                : { y: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 180, damping: 14 } }
+                ? { y: 420, scaleX: 0.8, scaleY: 0.8, opacity: 0,
+                    transition: { duration: 0.65, ease: "easeIn" } }
+                : { y: 0, scaleX: 1, scaleY: 1, opacity: 1,
+                    transition: { type: "spring", stiffness: 190, damping: 13, mass: 0.9 } }
             }
           >
-            {/* ───── LAYER 1: Legs (bottom 38%) — gentle sway ───── */}
+            {/* Shadow */}
+            <motion.div
+              className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
+              style={{ width: 200, height: 20, background: "rgba(0,5,40,0.55)", filter: "blur(12px)" }}
+              animate={isTalking ? { scaleX: [1, 1.12, 1] } : {}}
+              transition={{ duration: 1.3, repeat: Infinity }}
+            />
+
+            {/* ── LAYER: Legs — weight shift ── */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
-              style={{ clipPath: "polygon(15% 62%, 85% 62%, 85% 100%, 15% 100%)" }}
-              animate={isTalking ? { x: [-4, 4, -4], rotate: [-1, 1, -1] } : { x: 0, rotate: 0 }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              style={{ clipPath: "polygon(18% 63%, 82% 63%, 82% 100%, 18% 100%)" }}
+              variants={legsVariants}
+              animate={currentAnim}
             >
               <img src={charSrc} alt="" className="w-full h-auto object-contain" draggable={false} />
             </motion.div>
 
-            {/* ───── LAYER 2: Torso (30–70%) — breathing ───── */}
+            {/* ── LAYER: Torso — breathing ── */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
-              style={{ clipPath: "polygon(5% 30%, 95% 30%, 95% 65%, 5% 65%)" }}
-              animate={isTalking ? { scaleY: [1, 1.02, 1], scaleX: [1, 0.99, 1] } : {}}
-              transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+              style={{ clipPath: "polygon(8% 32%, 92% 32%, 92% 66%, 8% 66%)" }}
+              animate={
+                isTalking
+                  ? { scaleY: [1, 1.018, 1], scaleX: [1, 0.988, 1] }
+                  : isWaving
+                  ? { scaleY: [1, 1.01, 0.995, 1] }
+                  : {}
+              }
+              transition={{ duration: 1.1, repeat: isTalking ? Infinity : 0, ease: "easeInOut" }}
             >
               <img src={charSrc} alt="" className="w-full h-auto object-contain" draggable={false} />
             </motion.div>
 
-            {/* ───── LAYER 3: Hands (0–72%) — arms wave ───── */}
+            {/* ── LAYER: Hands/Arms — wave greeting then talk ── */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: "polygon(0% 20%, 28% 20%, 28% 68%, 72% 68%, 72% 20%, 100% 20%, 100% 72%, 0% 72%)",
-                transformOrigin: "center 80%",
+                clipPath: "polygon(0% 18%, 30% 18%, 30% 70%, 70% 70%, 70% 18%, 100% 18%, 100% 70%, 0% 70%)",
+                transformOrigin: "center 75%",
               }}
-              animate={
-                isTalking
-                  ? { rotate: [-6, 6, -6], scale: [1, 1.04, 1] }
-                  : { rotate: 0, scale: 1 }
-              }
-              transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut" }}
+              variants={handsVariants}
+              animate={currentAnim}
             >
               <img src={charSrc} alt="" className="w-full h-auto object-contain" draggable={false} />
             </motion.div>
 
-            {/* ───── LAYER 4: Head (0–35%) — head nod ───── */}
+            {/* ── LAYER: Head — nod ── */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
-              style={{ clipPath: "polygon(20% 0%, 80% 0%, 80% 32%, 20% 32%)", transformOrigin: "center 100%" }}
-              animate={
-                isTalking
-                  ? { rotate: [-4, 4, -4], y: [-3, 3, -3] }
-                  : { rotate: 0, y: 0 }
-              }
-              transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+              style={{ clipPath: "polygon(22% 0%, 78% 0%, 78% 33%, 22% 33%)", transformOrigin: "center 95%" }}
+              variants={headVariants}
+              animate={currentAnim}
             >
               <img src={charSrc} alt="" className="w-full h-auto object-contain" draggable={false} />
             </motion.div>
 
-            {/* ───── BASE LAYER: Full image with body sway ───── */}
+            {/* ── BASE LAYER: full image with body sway ── */}
             <motion.div
               style={{ transformOrigin: "bottom center" }}
-              animate={
-                isTalking
-                  ? { rotate: [-2.5, 2.5, -2.5], y: [0, -6, 0] }
-                  : { rotate: 0, y: 0 }
-              }
-              transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+              variants={bodyVariants}
+              animate={isExiting ? "exit" : isWaving ? "wave" : isTalking ? "talk" : "idle"}
             >
-              <img src={charSrc} alt="Personaje animado" className="w-full h-auto object-contain" draggable={false} />
+              <img
+                src={charSrc}
+                alt="Personaje animado"
+                className="w-full h-auto object-contain"
+                draggable={false}
+              />
             </motion.div>
 
-            {/* Shadow under character */}
-            <motion.div
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
-              style={{ width: 180, height: 18, background: "rgba(0,0,50,0.45)", filter: "blur(10px)" }}
-              animate={isTalking ? { scaleX: [1, 1.1, 1] } : {}}
-              transition={{ duration: 1.1, repeat: Infinity }}
-            />
-
-            {/* Speech bubble */}
+            {/* ── SPEECH BUBBLE ── */}
             <AnimatePresence>
               {showBubble && (
                 <motion.div
-                  className="absolute right-0 top-4"
-                  style={{ width: 220, transformOrigin: "bottom left" }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  className="absolute"
+                  style={{ right: -10, top: 10, width: 230, transformOrigin: "bottom left" }}
+                  initial={{ scale: 0, opacity: 0, rotate: -5 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 20 }}
                 >
-                  {/* Bubble tail */}
+                  {/* Tail */}
                   <div
-                    className="absolute bottom-[-12px] left-10"
+                    className="absolute"
                     style={{
-                      width: 0,
-                      height: 0,
-                      borderLeft: "12px solid transparent",
-                      borderRight: "8px solid transparent",
+                      bottom: -13, left: 28,
+                      width: 0, height: 0,
+                      borderLeft: "10px solid transparent",
+                      borderRight: "10px solid transparent",
                       borderTop: "14px solid white",
                     }}
                   />
-                  <div className="bg-white rounded-2xl px-4 py-3 shadow-2xl">
-                    <p className="text-sm font-bold text-gray-800 leading-snug min-h-[36px]">
+                  <div className="bg-white rounded-2xl px-4 py-3 shadow-2xl border border-gray-100">
+                    <p className="text-sm font-bold text-gray-800 leading-snug" style={{ minHeight: 38 }}>
                       {displayedText}
                       {displayedText.length < fullText.length && (
                         <motion.span
                           animate={{ opacity: [1, 0] }}
-                          transition={{ duration: 0.5, repeat: Infinity }}
-                          className="inline-block w-[2px] h-4 bg-blue-600 ml-0.5 align-middle"
+                          transition={{ duration: 0.45, repeat: Infinity }}
+                          className="inline-block w-[2px] h-[14px] bg-blue-500 ml-0.5 align-middle rounded-full"
                         />
                       )}
                     </p>
@@ -240,12 +301,12 @@ export function WelcomeCharacter({ visible, firstName, saludo, onDone }: Welcome
             </AnimatePresence>
           </motion.div>
 
-          {/* Skip hint */}
+          {/* Skip */}
           <motion.p
-            className="absolute bottom-6 text-white/40 text-xs pointer-events-none"
+            className="absolute bottom-5 text-white/35 text-xs pointer-events-none tracking-wide"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
+            transition={{ delay: 2.5 }}
           >
             Clic para continuar
           </motion.p>
