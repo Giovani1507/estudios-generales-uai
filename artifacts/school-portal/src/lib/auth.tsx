@@ -1,7 +1,8 @@
-import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
+import { createContext, useContext, ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, User } from "@workspace/api-client-react";
-import { playWelcome } from "@/lib/audio-unlock";
+import { playWelcome, getGreeting } from "@/lib/audio-unlock";
+import { WelcomeCharacter } from "@/components/WelcomeCharacter";
 
 interface AuthContextType {
   user: User | null;
@@ -17,7 +18,6 @@ const AuthContext = createContext<AuthContextType>({
   refetchUser: () => {},
 });
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const { data: user, isLoading, isError, refetch } = useGetMe({
@@ -27,13 +27,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Greet once per session when user first logs in
+  const [showCharacter, setShowCharacter] = useState(false);
+  const [charFirstName, setCharFirstName] = useState("");
+  const [charSaludo, setCharSaludo] = useState("");
   const greeted = useRef(false);
+
   useEffect(() => {
     if (user && !greeted.current) {
       greeted.current = true;
+      const firstName = (user.fullName || user.username).split(" ")[0];
+      setCharFirstName(firstName);
+      setCharSaludo(getGreeting());
+      setShowCharacter(true);
       playWelcome(user.fullName || user.username);
     }
+    // Reset greeted when user logs out
+    if (!user) greeted.current = false;
   }, [user]);
 
   useEffect(() => {
@@ -52,6 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refetchUser: refetch,
     }}>
       {children}
+      <WelcomeCharacter
+        visible={showCharacter}
+        firstName={charFirstName}
+        saludo={charSaludo}
+        onDone={() => setShowCharacter(false)}
+      />
     </AuthContext.Provider>
   );
 }
