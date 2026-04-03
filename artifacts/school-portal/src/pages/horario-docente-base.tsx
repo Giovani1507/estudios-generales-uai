@@ -546,7 +546,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                 >
                   <span className="truncate">{t.nombre}</span>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {t.horasAcad}H · {t.horasT}T + {t.horasP}P
+                    {t.horasAcad}H
                   </span>
                 </button>
               ))}
@@ -572,14 +572,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
             <div className="bg-white border border-border rounded-xl p-4 shadow-sm text-center">
               <p className="text-xs text-muted-foreground mb-1">Sesiones</p>
               <p className="text-2xl font-bold text-foreground">{courses.length}</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm text-center">
-              <p className="text-xs text-blue-600 font-medium mb-1">H. Teoría</p>
-              <p className="text-2xl font-bold text-blue-700">{totals.horasT}</p>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 shadow-sm text-center">
-              <p className="text-xs text-purple-600 font-medium mb-1">H. Práctica</p>
-              <p className="text-2xl font-bold text-purple-700">{totals.horasP}</p>
             </div>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 shadow-sm text-center">
               <p className="text-xs text-primary font-medium mb-1">Total Horas</p>
@@ -632,9 +624,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Día</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap">Hora</th>
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Tipo</th>
-                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap bg-blue-700">H.T</th>
-                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap bg-purple-700">H.P</th>
-                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Total</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Total H.</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[200px]">Curso</th>
                   </tr>
                 </thead>
@@ -675,8 +665,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-center font-semibold text-blue-600">{row.horasT || "—"}</td>
-                      <td className="px-3 py-2 text-center font-semibold text-purple-600">{row.horasP || "—"}</td>
                       <td className="px-3 py-2 text-center font-bold text-primary">{row.horasAcad || "—"}</td>
                       <td className="px-3 py-2 font-medium max-w-[240px]">
                         <span className="line-clamp-2">{row.curso}</span>
@@ -687,8 +675,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                     <td colSpan={10} className="px-3 py-2.5 text-right text-xs text-primary">
                       TOTALES ({courses.length} sesiones)
                     </td>
-                    <td className="px-3 py-2.5 text-center text-blue-700 font-bold">{totals.horasT}</td>
-                    <td className="px-3 py-2.5 text-center text-purple-700 font-bold">{totals.horasP}</td>
                     <td className="px-3 py-2.5 text-center text-primary font-bold text-sm">{totals.horasAcad}</td>
                     <td className="px-3 py-2.5"></td>
                   </tr>
