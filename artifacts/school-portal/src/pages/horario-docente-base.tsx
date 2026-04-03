@@ -75,21 +75,40 @@ interface Props {
   faculty: "FICA" | "FCS";
 }
 
+const FCS_SEDES = ["PRINCIPAL", "SUNAMPE", "FILIAL", "PORUMA", "HUAURA"] as const;
+type FcsSede = typeof FCS_SEDES[number];
+
+const SEDE_COLOR: Record<FcsSede, string> = {
+  PRINCIPAL: "bg-blue-600",
+  SUNAMPE:   "bg-teal-600",
+  FILIAL:    "bg-orange-500",
+  PORUMA:    "bg-purple-600",
+  HUAURA:    "bg-emerald-600",
+};
+
 export default function HorarioDocenteBase({ faculty }: Props) {
-  const [data, setData]       = useState<FICARow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState("");
+  const [data, setData]         = useState<FICARow[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [dropOpen, setDropOpen] = useState(false);
+  const [sede, setSede]         = useState<FcsSede>("PRINCIPAL");
 
-  const jsonFile   = faculty === "FICA" ? "planificacion-fica-2026-1.json" : "planificacion-fcs-2026-1.json";
+  const jsonFile     = faculty === "FICA" ? "planificacion-fica-2026-1.json" : "planificacion-fcs-2026-1.json";
   const facultyLabel = faculty === "FICA"
     ? "ESTUDIOS GENERALES - FICA"
-    : "ESTUDIOS GENERALES - FCS";
+    : `ESTUDIOS GENERALES - FCS · ${sede}`;
   const facultySubtitle = faculty === "FICA"
     ? "Facultad de Ingeniería y Ciencias Ambientales"
     : "Facultad de Ciencias de la Salud";
   const accentColor = faculty === "FICA" ? "bg-blue-600" : "bg-rose-600";
+
+  const handleSedeChange = (s: FcsSede) => {
+    setSede(s);
+    setSelected(null);
+    setSearch("");
+    setDropOpen(false);
+  };
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -126,10 +145,14 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       .catch(() => setLoading(false));
   }, [faculty, jsonFile]);
 
-  /* Solo ciclos 1 y 2 */
-  const dataCiclo12 = useMemo(() =>
-    data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
-  [data]);
+  /* Solo ciclos 1 y 2, y filtrado por sede en FCS */
+  const dataCiclo12 = useMemo(() => {
+    let rows = data.filter(r => r.ciclo === "1" || r.ciclo === "2");
+    if (faculty === "FCS") {
+      rows = rows.filter(r => r.local.toUpperCase() === sede);
+    }
+    return rows;
+  }, [data, faculty, sede]);
 
   /* Docentes únicos ordenados */
   const teachers = useMemo(() => {
@@ -433,6 +456,30 @@ export default function HorarioDocenteBase({ faculty }: Props) {
           </Button>
         )}
       </div>
+
+      {/* Selector de sede — solo FCS */}
+      {faculty === "FCS" && (
+        <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+            Sede / Local
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {FCS_SEDES.map(s => (
+              <button
+                key={s}
+                onClick={() => handleSedeChange(s)}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all ${
+                  sede === s
+                    ? `${SEDE_COLOR[s]} text-white border-transparent shadow-md`
+                    : "bg-white text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Buscador */}
       <div className="bg-white border border-border rounded-xl p-4 space-y-3 shadow-sm">
