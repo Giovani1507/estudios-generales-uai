@@ -104,30 +104,26 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     fetch(`${base}${jsonFile}`)
       .then(r => r.json())
       .then((raw: FICARow[] | FCSRaw[]) => {
-        let rows: FICARow[];
-        if (faculty === "FCS") {
-          rows = (raw as FCSRaw[]).map(r => ({
-            cod:         r.carrera,
-            carrera:     r.carreraFull || r.carrera,
-            carreraFull: r.carreraFull || r.carrera,
-            ciclo:       String(r.ciclo),
-            seccion:     r.seccion,
-            turno:       turnoFromHora(r.hora),
-            local:       r.local,
-            modalidad:   r.modalidad,
-            tipo:        r.tipo,
-            dia:         r.dia,
-            hora:        r.hora,
-            horaFin:     r.horaFin,
-            curso:       r.curso,
-            docente:     r.docente,
-            horasT:      r.horasT,
-            horasP:      r.horasP,
-            horas:       r.horas || r.horasAcad,
-          }));
-        } else {
-          rows = raw as FICARow[];
-        }
+        /* Ambos JSON (FICA y FCS) tienen la misma estructura: carrera=código, carreraFull=nombre */
+        const rows: FICARow[] = (raw as FCSRaw[]).map(r => ({
+          cod:         r.carrera,
+          carrera:     r.carreraFull || r.carrera,
+          carreraFull: r.carreraFull || r.carrera,
+          ciclo:       String(r.ciclo),
+          seccion:     r.seccion,
+          turno:       turnoFromHora(r.hora),
+          local:       r.local,
+          modalidad:   r.modalidad,
+          tipo:        r.tipo,
+          dia:         r.dia,
+          hora:        r.hora,
+          horaFin:     r.horaFin,
+          curso:       r.curso,
+          docente:     r.docente,
+          horasT:      Number(r.horasT) || 0,
+          horasP:      Number(r.horasP) || 0,
+          horas:       Number(r.horas) || Number(r.horasAcad) || 0,
+        }));
         setData(rows);
         setLoading(false);
       })
