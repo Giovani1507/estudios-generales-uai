@@ -50,6 +50,38 @@ const CARRERA_FULL: Record<string, string> = {
   T1: "TM Laboratorio", T2: "TM Optometría", T3: "TM Terapia Lenguaje", T4: "TM Terapia Física",
 };
 
+function generarRecomendacion(filas: PlanRow[]): { texto: string; nivel: "alta" | "media" | "baja" } {
+  const carreras   = [...new Set(filas.map(r => r.carrera))];
+  const locales    = [...new Set(filas.map(r => r.local))];
+  const modalidades = [...new Set(filas.map(r => r.modalidad))];
+  const distintosProgramas = carreras.length > 1;
+  const distintosSedes     = locales.length > 1;
+  const distintosModo      = modalidades.length > 1;
+
+  if (distintosProgramas && distintosModo) {
+    return {
+      nivel: "alta",
+      texto: `El docente atiende simultáneamente programas distintos (${carreras.join(", ")}) con modalidades diferentes (${modalidades.join(" / ")}). Se recomienda reasignar uno de los grupos a otra franja horaria, o unificar la modalidad y registrar la sección como combinada si la enseñanza conjunta es intencional.`,
+    };
+  }
+  if (distintosProgramas && !distintosModo) {
+    return {
+      nivel: "media",
+      texto: `El docente dicta el mismo curso a programas distintos (${carreras.join(", ")}) en el mismo horario y modalidad. Si el dictado conjunto es deliberado, se recomienda formalizar una sección combinada en el sistema. De lo contrario, separar los grupos en franjas horarias independientes.`,
+    };
+  }
+  if (distintosSedes) {
+    return {
+      nivel: "alta",
+      texto: `El docente tiene asignaciones en sedes distintas (${locales.join(", ")}) para el mismo horario. Esto es físicamente inviable en modalidad presencial. Se recomienda reasignar una de las secciones a otro docente o cambiar su modalidad a virtual/híbrida con justificación académica.`,
+    };
+  }
+  return {
+    nivel: "baja",
+    texto: "Verificar con el área de planificación si la asignación simultánea es intencional. De no serlo, redistribuir los grupos en diferentes franjas horarias.",
+  };
+}
+
 function findCruces(data: PlanRow[], facultad: "FICA" | "FCS"): Cruce[] {
   const map = new Map<string, PlanRow[]>();
   data
@@ -216,6 +248,31 @@ export default function HorarioCruce() {
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>Curso: <strong className="text-foreground">{cruce.filas[0].curso}</strong></span>
               </div>
+
+              {/* Recomendación */}
+              {(() => {
+                const rec = generarRecomendacion(cruce.filas);
+                const styles = {
+                  alta:  { bar: "bg-red-500",    bg: "bg-red-50 border-red-200",    label: "bg-red-100 text-red-700",    icon: "text-red-500",    badge: "Prioridad Alta"   },
+                  media: { bar: "bg-amber-500",  bg: "bg-amber-50 border-amber-200", label: "bg-amber-100 text-amber-700", icon: "text-amber-500", badge: "Prioridad Media"  },
+                  baja:  { bar: "bg-blue-400",   bg: "bg-blue-50 border-blue-200",  label: "bg-blue-100 text-blue-700",  icon: "text-blue-500",   badge: "Para Verificar"   },
+                }[rec.nivel];
+                return (
+                  <div className={`flex gap-0 border-t ${styles.bg}`}>
+                    <div className={`w-1 shrink-0 ${styles.bar} rounded-bl-xl`} />
+                    <div className="flex-1 px-4 py-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${styles.icon}`} />
+                        <span className="text-xs font-semibold text-foreground">Recomendación</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${styles.label}`}>
+                          {styles.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{rec.texto}</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
