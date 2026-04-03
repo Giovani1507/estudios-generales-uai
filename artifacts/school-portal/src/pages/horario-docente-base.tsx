@@ -677,7 +677,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                       </td>
                       <td className="px-3 py-2 text-center font-semibold text-blue-600">{row.horasT || "—"}</td>
                       <td className="px-3 py-2 text-center font-semibold text-purple-600">{row.horasP || "—"}</td>
-                      <td className="px-3 py-2 text-center font-bold text-primary">{row.horas}</td>
+                      <td className="px-3 py-2 text-center font-bold text-primary">{row.horasAcad || "—"}</td>
                       <td className="px-3 py-2 font-medium max-w-[240px]">
                         <span className="line-clamp-2">{row.curso}</span>
                       </td>
@@ -689,7 +689,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                     </td>
                     <td className="px-3 py-2.5 text-center text-blue-700 font-bold">{totals.horasT}</td>
                     <td className="px-3 py-2.5 text-center text-purple-700 font-bold">{totals.horasP}</td>
-                    <td className="px-3 py-2.5 text-center text-primary font-bold text-sm">{totals.horas}</td>
+                    <td className="px-3 py-2.5 text-center text-primary font-bold text-sm">{totals.horasAcad}</td>
                     <td className="px-3 py-2.5"></td>
                   </tr>
                 </tbody>
