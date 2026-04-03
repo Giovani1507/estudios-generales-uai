@@ -100,15 +100,22 @@ function generarSugerencia(cruce: Cruce, allData: PlanRow[]): Sugerencia | null 
     return ((dayOrder[da] || 9) - (dayOrder[db] || 9)) || (timeToMin(ha) - timeToMin(hb));
   });
 
-  // Franjas ocupadas del docente (todo el semestre, todas las ciclos)
-  const busy = new Set(
+  // Franjas ocupadas por el docente (todo el semestre)
+  const busyDocente = new Set(
     allData
       .filter(r => r.docente?.trim() === cruce.docente)
       .map(r => `${r.dia}|${r.hora}`)
   );
 
-  // Primera franja libre
-  const free = validSlots.find(s => !busy.has(s));
+  // Franjas ocupadas por la sección que se quiere mover (para no generar otro cruce a los alumnos)
+  const busySeccion = new Set(
+    allData
+      .filter(r => r.seccion === seccion.seccion && r.carrera === seccion.carrera)
+      .map(r => `${r.dia}|${r.hora}`)
+  );
+
+  // Primera franja libre para ambos (docente Y sección)
+  const free = validSlots.find(s => !busyDocente.has(s) && !busySeccion.has(s));
   if (!free) return null;
 
   const [dia, hora] = free.split("|");
