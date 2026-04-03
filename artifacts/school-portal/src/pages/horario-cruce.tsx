@@ -52,12 +52,14 @@ const CARRERA_FULL: Record<string, string> = {
 
 function findCruces(data: PlanRow[], facultad: "FICA" | "FCS"): Cruce[] {
   const map = new Map<string, PlanRow[]>();
-  data.forEach(r => {
-    if (!r.docente?.trim()) return;
-    const key = `${r.docente.trim()}|${r.dia}|${r.hora}`;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(r);
-  });
+  data
+    .filter(r => r.ciclo === "1" || r.ciclo === "2")
+    .forEach(r => {
+      if (!r.docente?.trim()) return;
+      const key = `${r.docente.trim()}|${r.dia}|${r.hora}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    });
 
   const cruces: Cruce[] = [];
   map.forEach((rows, key) => {
@@ -128,7 +130,7 @@ export default function HorarioCruce() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Cruce de Planificación</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Planificación 2026-1 · Docentes con asignaciones simultáneas en distintas carreras o sedes
+            Planificación 2026-1 · Ciclos 1 y 2 · Docentes con asignaciones simultáneas en distintas carreras o sedes
           </p>
         </div>
       </div>
