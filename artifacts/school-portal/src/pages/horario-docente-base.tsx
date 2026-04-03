@@ -172,7 +172,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     const sedeMap = new Map<string, number>();
     courses.forEach(r => {
       const l = localLabel(r.local);
-      sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horas) || 0));
+      sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horasT) || 0));
     });
     return {
       horasT:   courses.reduce((s, r) => s + (Number(r.horasT) || 0), 0),
@@ -388,7 +388,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     ctLabel.value = "TOTAL DE\nHORAS:"; ctLabel.fill = sf(NAVY);
     ctLabel.font = { size: 10, color: { argb: WHITE } }; ctLabel.alignment = CTR; ctLabel.border = THIN;
     const ctVal = rTot.getCell(9);
-    ctVal.value = teacherRows.reduce((s, r) => s + r.horas, 0);
+    ctVal.value = teacherRows.reduce((s, r) => s + r.horasT, 0);
     ctVal.fill = sf(LIGHT); ctVal.font = { bold: true, size: 15, color: { argb: NAVY } };
     ctVal.alignment = CTR; ctVal.border = THIN;
 
@@ -543,7 +543,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                 >
                   <span className="truncate">{t.nombre}</span>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {t.horas}H · {t.horasT}T + {t.horasP}P
+                    {t.horasT}T + {t.horasP}P
                   </span>
                 </button>
               ))}
@@ -580,7 +580,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
             </div>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 shadow-sm text-center">
               <p className="text-xs text-primary font-medium mb-1">Total Horas</p>
-              <p className="text-2xl font-bold text-primary">{totals.horas}</p>
+              <p className="text-2xl font-bold text-primary">{totals.horasT}</p>
             </div>
             <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-1.5">
