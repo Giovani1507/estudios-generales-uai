@@ -41,23 +41,29 @@ const CARRERA_COLOR: Record<string, string> = {
 };
 
 const DIA_ORDER: Record<string, number> = {
-  LUNES:1, MARTES:2, MIERCOLES:3, JUEVES:4, VIERNES:5, SABADO:6,
+  LUNES:1, MARTES:2, MIERCOLES:3, JUEVES:4, VIERNES:5, SABADO:6, DOMINGO:7,
 };
 
 function localLabel(local: string) {
   const u = (local || "").toUpperCase().trim();
-  if (u === "SEDE" || u === "PRINCIPAL") return "SEDE";
-  if (u === "SUNAMPE") return "SUNAMPE";
-  return u || "FILIAL";
+  if (u === "SEDE" || u === "PRINCIPAL") return "PRINCIPAL";
+  return u || "—";
 }
 
+const LOCAL_BADGE_STYLE: Record<string, { cls: string; label: string }> = {
+  PRINCIPAL: { cls: "bg-blue-600 text-white",    label: "PRINCIPAL" },
+  SEDE:      { cls: "bg-blue-600 text-white",    label: "PRINCIPAL" },
+  SUNAMPE:   { cls: "bg-teal-600 text-white",    label: "SUNAMPE"   },
+  FILIAL:    { cls: "bg-orange-500 text-white",  label: "FILIAL"    },
+  HUAURA:    { cls: "bg-purple-600 text-white",  label: "HUAURA"    },
+  PORUMA:    { cls: "bg-emerald-600 text-white", label: "PORUMA"    },
+};
+
 function localBadge(local: string) {
-  const l = localLabel(local);
-  if (l === "SEDE")
-    return <Badge className="text-[10px] px-1.5 py-0 bg-blue-600 text-white">SEDE</Badge>;
-  if (l === "SUNAMPE")
-    return <Badge className="text-[10px] px-1.5 py-0 bg-teal-600 text-white">SUNAMPE</Badge>;
-  return <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white">FILIAL · {local}</Badge>;
+  const u = (local || "").toUpperCase().trim();
+  const b = LOCAL_BADGE_STYLE[u];
+  if (b) return <Badge className={`text-[10px] px-1.5 py-0 ${b.cls}`}>{b.label}</Badge>;
+  return <Badge className="text-[10px] px-1.5 py-0 bg-gray-500 text-white">{u || "—"}</Badge>;
 }
 
 async function fetchLogoBase64(): Promise<string | null> {
@@ -166,16 +172,21 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       });
   }, [dataCiclo12, selected]);
 
-  const totals = useMemo(() => ({
-    horasT: courses.reduce((s, r) => s + r.horasT, 0),
-    horasP: courses.reduce((s, r) => s + r.horasP, 0),
-    horas:  courses.reduce((s, r) => s + r.horas, 0),
-    sede:   courses.filter(r => localLabel(r.local) === "SEDE").reduce((s, r) => s + r.horas, 0),
-    filial: courses.filter(r => localLabel(r.local) !== "SEDE").reduce((s, r) => s + r.horas, 0),
-    carreras: [...new Set(courses.map(r => r.cod))],
-  }), [courses]);
+  const totals = useMemo(() => {
+    const sedeMap = new Map<string, number>();
+    courses.forEach(r => {
+      const l = localLabel(r.local);
+      sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horas) || 0));
+    });
+    return {
+      horasT:   courses.reduce((s, r) => s + (Number(r.horasT) || 0), 0),
+      horasP:   courses.reduce((s, r) => s + (Number(r.horasP) || 0), 0),
+      horas:    courses.reduce((s, r) => s + (Number(r.horas)  || 0), 0),
+      sedeMap,
+      carreras: [...new Set(courses.map(r => r.cod))],
+    };
+  }, [courses]);
 
-  /* ── Excel export ── */
   /* ── Genera el buffer de un workbook para un docente ── */
   const buildWbBuffer = async (
     teacherName: string,
@@ -577,20 +588,21 @@ export default function HorarioDocenteBase({ faculty }: Props) {
             </div>
             <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-xs text-muted-foreground">Sede / Filial</p>
+                <p className="text-xs text-muted-foreground">Por Sede</p>
                 <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
-              <div className="flex gap-2 text-xs flex-wrap">
-                <span className="bg-blue-100 text-blue-700 rounded px-1.5 py-0.5 font-semibold">
-                  Sede {totals.sede}H
-                </span>
-                {totals.filial > 0 && (
-                  <span className="bg-orange-100 text-orange-700 rounded px-1.5 py-0.5 font-semibold">
-                    Filial {totals.filial}H
-                  </span>
-                )}
+              <div className="flex gap-1.5 text-[10px] flex-wrap mb-1.5">
+                {[...totals.sedeMap.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([sede, h]) => {
+                  const style = LOCAL_BADGE_STYLE[sede];
+                  return (
+                    <span key={sede}
+                      className={`px-1.5 py-0.5 rounded font-semibold text-white ${style?.cls ?? "bg-gray-500"}`}>
+                      {style?.label ?? sede} {h}H
+                    </span>
+                  );
+                })}
               </div>
-              <div className="flex gap-1 mt-1.5 flex-wrap">
+              <div className="flex gap-1 mt-1 flex-wrap">
                 {totals.carreras.map(c => (
                   <span key={c} className="text-[10px] font-bold px-1 py-0.5 rounded text-white"
                     style={{ background: CARRERA_COLOR[c] ?? "#555" }}>{c}</span>
