@@ -10,7 +10,7 @@ type FICARow = {
   carrera: string; carreraFull: string; cod: string; ciclo: string; seccion: string;
   turno: string; local: string; modalidad: string; tipo: string; dia: string;
   hora: string; horaFin: string; curso: string; docente: string;
-  horasT: number; horasP: number; horas: number;
+  horasT: number; horasP: number; horas: number; horasAcad: number;
 };
 type FCSRaw = {
   local: string; carrera: string; carreraFull: string; ciclo: string; seccion: string;
@@ -122,7 +122,8 @@ export default function HorarioDocenteBase({ faculty }: Props) {
           docente:     r.docente,
           horasT:      Number(r.horasT) || 0,
           horasP:      Number(r.horasP) || 0,
-          horas:       Number(r.horas) || Number(r.horasAcad) || 0,
+          horas:       Number(r.horas) || 0,
+          horasAcad:   Math.round(Number(r.horasAcad) || 0),
         }));
         setData(rows);
         setLoading(false);
@@ -137,15 +138,16 @@ export default function HorarioDocenteBase({ faculty }: Props) {
 
   /* Docentes únicos ordenados */
   const teachers = useMemo(() => {
-    const map = new Map<string, { horasT: number; horasP: number; horas: number }>();
+    const map = new Map<string, { horasT: number; horasP: number; horas: number; horasAcad: number }>();
     dataCiclo12.forEach(r => {
       if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
-      if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0 });
+      if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0, horasAcad: 0 });
       const v = map.get(k)!;
-      v.horasT += Number(r.horasT) || 0;
-      v.horasP += Number(r.horasP) || 0;
-      v.horas  += Number(r.horas)  || 0;
+      v.horasT    += Number(r.horasT)    || 0;
+      v.horasP    += Number(r.horasP)    || 0;
+      v.horas     += Number(r.horas)     || 0;
+      v.horasAcad += Number(r.horasAcad) || 0;
     });
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
@@ -172,12 +174,13 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     const sedeMap = new Map<string, number>();
     courses.forEach(r => {
       const l = localLabel(r.local);
-      sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horas) || 0));
+      sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horasAcad) || 0));
     });
     return {
-      horasT:   courses.reduce((s, r) => s + (Number(r.horasT) || 0), 0),
-      horasP:   courses.reduce((s, r) => s + (Number(r.horasP) || 0), 0),
-      horas:    courses.reduce((s, r) => s + (Number(r.horas)  || 0), 0),
+      horasT:    courses.reduce((s, r) => s + (Number(r.horasT)    || 0), 0),
+      horasP:    courses.reduce((s, r) => s + (Number(r.horasP)    || 0), 0),
+      horas:     courses.reduce((s, r) => s + (Number(r.horas)     || 0), 0),
+      horasAcad: courses.reduce((s, r) => s + (Number(r.horasAcad) || 0), 0),
       sedeMap,
       carreras: [...new Set(courses.map(r => r.cod))],
     };
@@ -388,7 +391,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     ctLabel.value = "TOTAL DE\nHORAS:"; ctLabel.fill = sf(NAVY);
     ctLabel.font = { size: 10, color: { argb: WHITE } }; ctLabel.alignment = CTR; ctLabel.border = THIN;
     const ctVal = rTot.getCell(9);
-    ctVal.value = teacherRows.reduce((s, r) => s + r.horas, 0);
+    ctVal.value = teacherRows.reduce((s, r) => s + r.horasAcad, 0);
     ctVal.fill = sf(LIGHT); ctVal.font = { bold: true, size: 15, color: { argb: NAVY } };
     ctVal.alignment = CTR; ctVal.border = THIN;
 
@@ -543,7 +546,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                 >
                   <span className="truncate">{t.nombre}</span>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {t.horas}H · {t.horasT}T + {t.horasP}P
+                    {t.horasAcad}H · {t.horasT}T + {t.horasP}P
                   </span>
                 </button>
               ))}
@@ -580,7 +583,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
             </div>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 shadow-sm text-center">
               <p className="text-xs text-primary font-medium mb-1">Total Horas</p>
-              <p className="text-2xl font-bold text-primary">{totals.horas}</p>
+              <p className="text-2xl font-bold text-primary">{totals.horasAcad}</p>
             </div>
             <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-1.5">
