@@ -21,7 +21,8 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
 import DirectivaMatricula from "@/pages/directiva-matricula";
-import HorarioDocente from "@/pages/horario-docente";
+import HorarioDocenteFica from "@/pages/horario-docente-fica";
+import HorarioDocenteFcs from "@/pages/horario-docente-fcs";
 import HorarioCarrera from "@/pages/horario-carrera";
 import CrearPlanificacion from "@/pages/crear-planificacion";
 
@@ -95,8 +96,12 @@ function AppRouter() {
         component={() => <ProtectedRoute component={DirectivaMatricula} />}
       />
       <Route
-        path="/docentes/horario-docente"
-        component={() => <ProtectedRoute component={HorarioDocente} />}
+        path="/docentes/horario-fica"
+        component={() => <ProtectedRoute component={HorarioDocenteFica} />}
+      />
+      <Route
+        path="/docentes/horario-fcs"
+        component={() => <ProtectedRoute component={HorarioDocenteFcs} />}
       />
       <Route
         path="/horarios/carrera"

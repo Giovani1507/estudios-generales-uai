@@ -151,8 +151,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const subItems = [
     {
-      href: "/docentes/horario-docente",
-      label: "Horario Docente",
+      href: "/docentes/horario-fica",
+      label: "Horario Docente FICA",
+      Icon: CalendarDays,
+    },
+    {
+      href: "/docentes/horario-fcs",
+      label: "Horario Docente FCS",
       Icon: CalendarDays,
     },
     {
