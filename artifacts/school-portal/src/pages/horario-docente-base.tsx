@@ -32,12 +32,12 @@ const TIPO_COLOR: Record<string, string> = {
 };
 
 const CARRERA_COLOR: Record<string, string> = {
-  // FICA
+  // FICA: AE AF AR CA DE IC IN IS
   AE: "#1a5a6b", AF: "#15607a", AR: "#4a1a7a", CA: "#6b4a00",
   DE: "#6b1a1a", IC: "#7a3a00", IN: "#1a6b3a", IS: "#2f5aa6",
-  // FCS
-  EN: "#7a1a5a", ME: "#8b1a1a", OB: "#4a6b1a", OD: "#1a4a6b",
-  FA: "#6b3a1a", TM: "#1a6b6b", PS: "#5a1a6b", NU: "#2a6b2a",
+  // FCS: EN MH OB PS T1 T2 T3 T4
+  EN: "#7a1a5a", MH: "#8b1a1a", OB: "#4a6b1a", PS: "#5a1a6b",
+  T1: "#1a4a6b", T2: "#6b3a1a", T3: "#1a6b6b", T4: "#2a6b2a",
 };
 
 const DIA_ORDER: Record<string, number> = {
@@ -95,7 +95,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     ? "ESTUDIOS GENERALES - FICA"
     : "ESTUDIOS GENERALES - FCS";
   const facultySubtitle = faculty === "FICA"
-    ? "Facultad de Ingeniería y Ciencias Ambientales"
+    ? "Ingeniería, Ciencias y Administración"
     : "Facultad de Ciencias de la Salud";
   const accentColor = faculty === "FICA" ? "bg-blue-600" : "bg-rose-600";
 
