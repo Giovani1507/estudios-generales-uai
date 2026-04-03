@@ -33,6 +33,7 @@ import {
   ChevronDown,
   CalendarDays,
   School,
+  AlertTriangle,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -169,6 +170,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       href: "/planificacion/crear",
       label: "Crear Planificación",
       Icon: ClipboardList,
+    },
+    {
+      href: "/planificacion/cruce",
+      label: "Cruce de Planificación",
+      Icon: AlertTriangle,
     },
   ];
 

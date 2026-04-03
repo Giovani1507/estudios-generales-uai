@@ -25,6 +25,7 @@ import HorarioDocenteFica from "@/pages/horario-docente-fica";
 import HorarioDocenteFcs from "@/pages/horario-docente-fcs";
 import HorarioCarrera from "@/pages/horario-carrera";
 import CrearPlanificacion from "@/pages/crear-planificacion";
+import HorarioCruce from "@/pages/horario-cruce";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,10 @@ function AppRouter() {
       <Route
         path="/planificacion/crear"
         component={() => <ProtectedRoute component={CrearPlanificacion} />}
+      />
+      <Route
+        path="/planificacion/cruce"
+        component={() => <ProtectedRoute component={HorarioCruce} />}
       />
 
       {/* 404 */}
