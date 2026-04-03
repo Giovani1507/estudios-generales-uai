@@ -50,36 +50,71 @@ const CARRERA_FULL: Record<string, string> = {
   T1: "TM Laboratorio", T2: "TM Optometría", T3: "TM Terapia Lenguaje", T4: "TM Terapia Física",
 };
 
-function generarRecomendacion(filas: PlanRow[]): { texto: string; nivel: "alta" | "media" | "baja" } {
-  const carreras   = [...new Set(filas.map(r => r.carrera))];
-  const locales    = [...new Set(filas.map(r => r.local))];
-  const modalidades = [...new Set(filas.map(r => r.modalidad))];
-  const distintosProgramas = carreras.length > 1;
-  const distintosSedes     = locales.length > 1;
-  const distintosModo      = modalidades.length > 1;
+function timeToMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
 
-  if (distintosProgramas && distintosModo) {
-    return {
-      nivel: "alta",
-      texto: `El docente atiende simultáneamente programas distintos (${carreras.join(", ")}) con modalidades diferentes (${modalidades.join(" / ")}). Se recomienda reasignar uno de los grupos a otra franja horaria, o unificar la modalidad y registrar la sección como combinada si la enseñanza conjunta es intencional.`,
-    };
-  }
-  if (distintosProgramas && !distintosModo) {
-    return {
-      nivel: "media",
-      texto: `El docente dicta el mismo curso a programas distintos (${carreras.join(", ")}) en el mismo horario y modalidad. Si el dictado conjunto es deliberado, se recomienda formalizar una sección combinada en el sistema. De lo contrario, separar los grupos en franjas horarias independientes.`,
-    };
-  }
-  if (distintosSedes) {
-    return {
-      nivel: "alta",
-      texto: `El docente tiene asignaciones en sedes distintas (${locales.join(", ")}) para el mismo horario. Esto es físicamente inviable en modalidad presencial. Se recomienda reasignar una de las secciones a otro docente o cambiar su modalidad a virtual/híbrida con justificación académica.`,
-    };
-  }
-  return {
-    nivel: "baja",
-    texto: "Verificar con el área de planificación si la asignación simultánea es intencional. De no serlo, redistribuir los grupos en diferentes franjas horarias.",
+function minToTime(m: number): string {
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+type Sugerencia = {
+  seccion: PlanRow;
+  dia: string;
+  hora: string;
+  horaFin: string;
+  nivel: "alta" | "media";
+  motivo: string;
+};
+
+function generarSugerencia(cruce: Cruce, allData: PlanRow[]): Sugerencia | null {
+  const carreras    = [...new Set(cruce.filas.map(r => r.carrera))];
+  const locales     = [...new Set(cruce.filas.map(r => r.local))];
+  const modalidades = [...new Set(cruce.filas.map(r => r.modalidad))];
+
+  const nivel: "alta" | "media" = (locales.length > 1 || modalidades.length > 1) ? "alta" : "media";
+  const motivo = locales.length > 1
+    ? `Sedes distintas (${locales.join(" / ")}) — inviable en presencial`
+    : modalidades.length > 1
+      ? `Modalidades distintas (${modalidades.join(" / ")}) para programas ${carreras.join(" / ")}`
+      : `Programas distintos (${carreras.join(" / ")}) en mismo horario`;
+
+  // Sección a mover: preferir virtual, luego la segunda fila
+  const seccion = cruce.filas.find(f => f.modalidad?.toUpperCase().includes("VIRTUAL"))
+    ?? cruce.filas.find(f => f.modalidad?.toUpperCase().includes("HYBRID") || f.modalidad?.toUpperCase().includes("HÍBRIDO"))
+    ?? cruce.filas[1]
+    ?? cruce.filas[0];
+
+  const durMin = timeToMin(seccion.horaFin) - timeToMin(seccion.hora);
+
+  // Conjunto de franjas válidas del dataset (universo real de horas UAI)
+  const dayOrder: Record<string, number> = {
+    LUNES: 1, MARTES: 2, MIERCOLES: 3, JUEVES: 4, VIERNES: 5, SABADO: 6, DOMINGO: 7,
   };
+  const validSlots = [...new Set(allData.map(r => `${r.dia}|${r.hora}`))].sort((a, b) => {
+    const [da, ha] = a.split("|");
+    const [db, hb] = b.split("|");
+    return ((dayOrder[da] || 9) - (dayOrder[db] || 9)) || (timeToMin(ha) - timeToMin(hb));
+  });
+
+  // Franjas ocupadas del docente (todo el semestre, todas las ciclos)
+  const busy = new Set(
+    allData
+      .filter(r => r.docente?.trim() === cruce.docente)
+      .map(r => `${r.dia}|${r.hora}`)
+  );
+
+  // Primera franja libre
+  const free = validSlots.find(s => !busy.has(s));
+  if (!free) return null;
+
+  const [dia, hora] = free.split("|");
+  const horaFin = minToTime(timeToMin(hora) + durMin);
+
+  return { seccion, dia, hora, horaFin, nivel, motivo };
 }
 
 function findCruces(data: PlanRow[], facultad: "FICA" | "FCS"): Cruce[] {
@@ -249,26 +284,42 @@ export default function HorarioCruce() {
                 <span>Curso: <strong className="text-foreground">{cruce.filas[0].curso}</strong></span>
               </div>
 
-              {/* Recomendación */}
+              {/* Propuesta de solución */}
               {(() => {
-                const rec = generarRecomendacion(cruce.filas);
-                const styles = {
-                  alta:  { bar: "bg-red-500",    bg: "bg-red-50 border-red-200",    label: "bg-red-100 text-red-700",    icon: "text-red-500",    badge: "Prioridad Alta"   },
-                  media: { bar: "bg-amber-500",  bg: "bg-amber-50 border-amber-200", label: "bg-amber-100 text-amber-700", icon: "text-amber-500", badge: "Prioridad Media"  },
-                  baja:  { bar: "bg-blue-400",   bg: "bg-blue-50 border-blue-200",  label: "bg-blue-100 text-blue-700",  icon: "text-blue-500",   badge: "Para Verificar"   },
-                }[rec.nivel];
+                const allData = cruce.facultad === "FICA" ? ficaData : fcsData;
+                const sug = generarSugerencia(cruce, allData);
+                if (!sug) return null;
+                const styles = sug.nivel === "alta"
+                  ? { bar: "bg-red-500", bg: "bg-red-50 border-red-200", badge: "bg-red-100 text-red-700", icon: "text-red-500", label: "Prioridad Alta" }
+                  : { bar: "bg-amber-500", bg: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-700", icon: "text-amber-500", label: "Prioridad Media" };
                 return (
                   <div className={`flex gap-0 border-t ${styles.bg}`}>
                     <div className={`w-1 shrink-0 ${styles.bar} rounded-bl-xl`} />
-                    <div className="flex-1 px-4 py-3">
-                      <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex-1 px-4 py-3 space-y-2">
+                      {/* Encabezado */}
+                      <div className="flex items-center gap-2 flex-wrap">
                         <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${styles.icon}`} />
-                        <span className="text-xs font-semibold text-foreground">Recomendación</span>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${styles.label}`}>
-                          {styles.badge}
+                        <span className="text-xs font-semibold text-foreground">Propuesta de solución</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${styles.badge}`}>
+                          {styles.label}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{rec.texto}</p>
+                      {/* Motivo */}
+                      <p className="text-xs text-muted-foreground">{sug.motivo}</p>
+                      {/* Propuesta concreta */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground">Mover sección</span>
+                        <span className="font-mono text-xs bg-white border border-border px-1.5 py-0.5 rounded font-bold text-foreground">
+                          {sug.seccion.seccion}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({sug.seccion.carrera} · {sug.seccion.modalidad}) al:
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-white border border-border rounded-lg px-2.5 py-1 text-xs font-semibold text-foreground">
+                          <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                          {sug.dia} &nbsp;{sug.hora} – {sug.horaFin}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
