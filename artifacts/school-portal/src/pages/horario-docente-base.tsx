@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Download, User, BookOpen, X, Clock, MapPin, GraduationCap } from "lucide-react";
+import { Search, Download, User, BookOpen, X, Clock, MapPin, GraduationCap, PackageOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 
 type FICARow = {
   carrera: string; carreraFull: string; cod: string; ciclo: string; seccion: string;
@@ -75,40 +76,22 @@ interface Props {
   faculty: "FICA" | "FCS";
 }
 
-const FCS_SEDES = ["PRINCIPAL", "SUNAMPE", "FILIAL", "PORUMA", "HUAURA"] as const;
-type FcsSede = typeof FCS_SEDES[number];
-
-const SEDE_COLOR: Record<FcsSede, string> = {
-  PRINCIPAL: "bg-blue-600",
-  SUNAMPE:   "bg-teal-600",
-  FILIAL:    "bg-orange-500",
-  PORUMA:    "bg-purple-600",
-  HUAURA:    "bg-emerald-600",
-};
-
 export default function HorarioDocenteBase({ faculty }: Props) {
   const [data, setData]         = useState<FICARow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [dropOpen, setDropOpen] = useState(false);
-  const [sede, setSede]         = useState<FcsSede>("PRINCIPAL");
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
 
   const jsonFile     = faculty === "FICA" ? "planificacion-fica-2026-1.json" : "planificacion-fcs-2026-1.json";
   const facultyLabel = faculty === "FICA"
     ? "ESTUDIOS GENERALES - FICA"
-    : `ESTUDIOS GENERALES - FCS · ${sede}`;
+    : "ESTUDIOS GENERALES - FCS";
   const facultySubtitle = faculty === "FICA"
     ? "Facultad de Ingeniería y Ciencias Ambientales"
     : "Facultad de Ciencias de la Salud";
   const accentColor = faculty === "FICA" ? "bg-blue-600" : "bg-rose-600";
-
-  const handleSedeChange = (s: FcsSede) => {
-    setSede(s);
-    setSelected(null);
-    setSearch("");
-    setDropOpen(false);
-  };
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -145,14 +128,10 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       .catch(() => setLoading(false));
   }, [faculty, jsonFile]);
 
-  /* Solo ciclos 1 y 2, y filtrado por sede en FCS */
-  const dataCiclo12 = useMemo(() => {
-    let rows = data.filter(r => r.ciclo === "1" || r.ciclo === "2");
-    if (faculty === "FCS") {
-      rows = rows.filter(r => r.local.toUpperCase() === sede);
-    }
-    return rows;
-  }, [data, faculty, sede]);
+  /* Solo ciclos 1 y 2 */
+  const dataCiclo12 = useMemo(() =>
+    data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
+  [data]);
 
   /* Docentes únicos ordenados */
   const teachers = useMemo(() => {
@@ -197,10 +176,12 @@ export default function HorarioDocenteBase({ faculty }: Props) {
   }), [courses]);
 
   /* ── Excel export ── */
-  const exportExcel = async () => {
-    if (!selected || courses.length === 0) return;
-
-    const logo64 = await fetchLogoBase64();
+  /* ── Genera el buffer de un workbook para un docente ── */
+  const buildWbBuffer = async (
+    teacherName: string,
+    teacherRows: FICARow[],
+    logo64: string | null,
+  ): Promise<ArrayBuffer> => {
     const wb = new ExcelJS.Workbook();
     wb.creator = "UAI Portal Académico";
     wb.created = new Date();
@@ -294,9 +275,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       { width: 14   }, { width: 2.16  },
     ];
 
-    // Fila 1: Logo + título
-    ws.mergeCells("A1:B1");
-    ws.mergeCells("C1:I1");
+    ws.mergeCells("A1:B1"); ws.mergeCells("C1:I1");
     const r1 = ws.getRow(1); r1.height = 60;
     r1.getCell(1).fill = sf(NAVY);
     const c1title = r1.getCell(3);
@@ -314,17 +293,15 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       } as any);
     }
 
-    // Fila 3: Docente
     ws.mergeCells("A3:C3"); ws.mergeCells("D3:J3");
     const r3 = ws.getRow(3); r3.height = 41.25;
     const c3a = r3.getCell(1);
     c3a.value = "Docente:"; c3a.font = { bold: true, size: 9, color: { argb: GRAY } }; c3a.alignment = BOT;
     const c3b = r3.getCell(4);
-    c3b.value = `SEMESTRE ACADÉMICO 2026-1\n${selected}`;
+    c3b.value = `SEMESTRE ACADÉMICO 2026-1\n${teacherName}`;
     c3b.font  = { size: 11, color: { argb: "FF000000" } };
     c3b.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
 
-    // Fila 4: Programa de estudio
     ws.mergeCells("A4:J4");
     const r4 = ws.getRow(4); r4.height = 14;
     const c4 = r4.getCell(1);
@@ -332,7 +309,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     c4.font  = { size: 10, color: { argb: "FF000000" } };
     c4.alignment = { horizontal: "left", vertical: "middle" };
 
-    // Fila 5: Encabezados días
     ws.mergeCells("C5:D5");
     const r5 = ws.getRow(5); r5.height = 13.5;
     ([
@@ -345,7 +321,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       cell.alignment = CTR; cell.border = THIN;
     });
 
-    // Filas 6-24: franjas
     const LAST_SLOT_ROW = FIRST_DATA_ROW + SLOTS.length - 1;
     SLOTS.forEach((slot, idx) => {
       const rowNum = FIRST_DATA_ROW + idx;
@@ -359,7 +334,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       });
     });
 
-    // Cursos en la grilla
     const COURSE_FILLS = [
       "FFD6E4F7","FFDFF0D8","FFFCE4D6","FFE8D6F7",
       "FFDFF7FC","FFFFE0B2","FFFFE6F0","FFFFE9B3",
@@ -369,7 +343,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     type CourseGroup = { rows: FICARow[]; day: string; dayInfo: { col: number; col2?: number }; startRow: number; endRow: number };
     const grouped = new Map<string, CourseGroup>();
 
-    courses.forEach(row => {
+    teacherRows.forEach(row => {
       const dayNorm = normDay(row.dia);
       const dayInfo = DAY_COL[dayNorm];
       if (!dayInfo) return;
@@ -399,7 +373,6 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       cell.border = MED;
     });
 
-    // Fila total
     const TOT_ROW = LAST_SLOT_ROW + 1;
     ws.mergeCells(`A${TOT_ROW}:G${TOT_ROW}`);
     const rTot = ws.getRow(TOT_ROW); rTot.height = 22.5;
@@ -408,16 +381,50 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     ctLabel.value = "TOTAL DE\nHORAS:"; ctLabel.fill = sf(NAVY);
     ctLabel.font = { size: 10, color: { argb: WHITE } }; ctLabel.alignment = CTR; ctLabel.border = THIN;
     const ctVal = rTot.getCell(9);
-    ctVal.value = courses.reduce((s, r) => s + r.horas, 0);
+    ctVal.value = teacherRows.reduce((s, r) => s + r.horas, 0);
     ctVal.fill = sf(LIGHT); ctVal.font = { bold: true, size: 15, color: { argb: NAVY } };
     ctVal.alignment = CTR; ctVal.border = THIN;
 
-    const buf  = await wb.xlsx.writeBuffer();
+    return wb.xlsx.writeBuffer();
+  };
+
+  /* ── Descargar Excel individual ── */
+  const exportExcel = async () => {
+    if (!selected || courses.length === 0) return;
+    const logo64 = await fetchLogoBase64();
+    const buf  = await buildWbBuffer(selected, courses, logo64);
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const a    = document.createElement("a");
     a.href     = URL.createObjectURL(blob);
     a.download = `${selected.replace(/\s+/g, "_")}_${faculty}_2026-1.xlsx`;
     a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  /* ── Descarga masiva: ZIP con un Excel por docente ── */
+  const exportAll = async () => {
+    if (teachers.length === 0) return;
+    const logo64 = await fetchLogoBase64();
+    const zip = new JSZip();
+    const folder = zip.folder(`Horarios_${faculty}_2026-1`)!;
+
+    for (let i = 0; i < teachers.length; i++) {
+      const t = teachers[i];
+      setBulkProgress({ current: i + 1, total: teachers.length });
+      const teacherRows = dataCiclo12.filter(
+        r => r.docente?.toUpperCase().trim() === t.nombre,
+      );
+      if (teacherRows.length === 0) continue;
+      const buf = await buildWbBuffer(t.nombre, teacherRows, logo64);
+      folder.file(`${t.nombre.replace(/\s+/g, "_")}_${faculty}_2026-1.xlsx`, buf);
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(zipBlob);
+    a.download = `Horarios_${faculty}_2026-1.zip`;
+    a.click(); URL.revokeObjectURL(a.href);
+    setBulkProgress(null);
   };
 
   if (loading) {
@@ -450,33 +457,49 @@ export default function HorarioDocenteBase({ faculty }: Props) {
             {facultySubtitle} · {teachers.length} docentes · Planificación 2026-1
           </p>
         </div>
-        {selected && (
-          <Button onClick={exportExcel} className="gap-2 bg-green-600 hover:bg-green-700 shrink-0">
-            <Download className="w-4 h-4" /> Descargar Excel
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {selected && (
+            <Button onClick={exportExcel} disabled={!!bulkProgress} className="gap-2 bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4" /> Descargar Excel
+            </Button>
+          )}
+          <Button
+            onClick={exportAll}
+            disabled={!!bulkProgress || teachers.length === 0}
+            variant="outline"
+            className="gap-2 border-primary text-primary hover:bg-primary/10"
+          >
+            {bulkProgress ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {bulkProgress.current}/{bulkProgress.total} generando…
+              </>
+            ) : (
+              <>
+                <PackageOpen className="w-4 h-4" />
+                Descargar Todo ({teachers.length})
+              </>
+            )}
           </Button>
-        )}
+        </div>
       </div>
 
-      {/* Selector de sede — solo FCS */}
-      {faculty === "FCS" && (
-        <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-            Sede / Local
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {FCS_SEDES.map(s => (
-              <button
-                key={s}
-                onClick={() => handleSedeChange(s)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all ${
-                  sede === s
-                    ? `${SEDE_COLOR[s]} text-white border-transparent shadow-md`
-                    : "bg-white text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+      {/* Barra de progreso descarga masiva */}
+      {bulkProgress && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-blue-700">
+              Generando archivos Excel… {bulkProgress.current} de {bulkProgress.total}
+            </span>
+            <span className="text-sm text-blue-500 font-semibold">
+              {Math.round((bulkProgress.current / bulkProgress.total) * 100)}%
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+            />
           </div>
         </div>
       )}
