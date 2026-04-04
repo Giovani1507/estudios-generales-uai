@@ -266,9 +266,8 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
   );
 
   const todosDocentes = useMemo(() => {
-    const src = localFiltro === "TODOS"
-      ? activeData
-      : activeData.filter(r => r.local === localFiltro);
+    const src = (localFiltro === "TODOS" ? activeData : activeData.filter(r => r.local === localFiltro))
+      .filter(r => ["1", "2"].includes(r.ciclo));
     return buildDocentes(src);
   }, [activeData, localFiltro]);
 
@@ -312,7 +311,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">Lista de Docentes</h1>
-          <p className="text-sm text-muted-foreground">Planificación 2026-1</p>
+          <p className="text-sm text-muted-foreground">Planificación 2026-1 · Ciclos 1 y 2</p>
         </div>
       </div>
 
