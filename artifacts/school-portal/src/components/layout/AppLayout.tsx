@@ -34,6 +34,7 @@ import {
   CalendarDays,
   School,
   AlertTriangle,
+  UserCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -128,6 +129,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
     location.startsWith("/planificacion") ||
     location.startsWith("/docentes") ||
     location.startsWith("/horarios")
+  );
+  const [listaOpen, setListaOpen] = useState(
+    location.startsWith("/lista-docentes")
   );
 
   const filteredMenu = useMemo(() => {
@@ -265,6 +269,47 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                       }`}
                                     >
                                       <Icon className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1">{label}</span>
+                                      <ChevronRight className="w-3 h-3 text-white/40" />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </SidebarMenuItem>
+                        )}
+
+                        {/* Lista de Docentes submenu after Inicio */}
+                        {idx === 0 && (
+                          <SidebarMenuItem>
+                            <div className="border-b border-white/10">
+                              <button
+                                onClick={() => setListaOpen((o) => !o)}
+                                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                <UserCheck className="w-4 h-4 shrink-0 text-white/80" />
+                                <span className="text-sm flex-1 text-left">Lista de Docentes</span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${listaOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+
+                              {listaOpen && (
+                                <div className="bg-black/15">
+                                  {[
+                                    { href: "/lista-docentes/fica", label: "FICA" },
+                                    { href: "/lista-docentes/fcs",  label: "FCS"  },
+                                  ].map(({ href, label }) => (
+                                    <Link
+                                      key={href}
+                                      href={href}
+                                      className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                        location === href
+                                          ? "bg-white/20 text-white font-semibold"
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
+                                    >
+                                      <UserCheck className="w-3.5 h-3.5 shrink-0 text-white/70" />
                                       <span className="flex-1">{label}</span>
                                       <ChevronRight className="w-3 h-3 text-white/40" />
                                     </Link>
