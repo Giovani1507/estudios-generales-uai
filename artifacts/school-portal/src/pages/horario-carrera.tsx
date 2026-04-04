@@ -43,41 +43,14 @@ interface FCSRow {
   horasAcad: number;
 }
 
-const CARRERAS_SEDE: Record<string, string> = {
-  EN: "Enfermería", OB: "Obstetricia", PS: "Psicología",
-};
-const CARRERAS_SUNAMPE: Record<string, string> = {
-  MH: "Medicina Humana", OB: "Obstetricia", PS: "Psicología",
-  T1: "Tec. Méd. - Lab. Clínico", T3: "Tec. Méd. - Terapia Física",
-  T4: "Tec. Méd. - Terapia del Lenguaje",
-};
-const CARRERAS_FULL: Record<string, string> = {
-  EN: "ENFERMERÍA", OB: "OBSTETRICIA", PS: "PSICOLOGÍA",
-  MH: "MEDICINA HUMANA", T1: "TEC. MÉD. - LAB. CLÍNICO",
-  T3: "TEC. MÉD. - TERAPIA FÍSICA", T4: "TEC. MÉD. - TERAPIA DEL LENGUAJE",
-};
+const FCS_LOCALS = ["PRINCIPAL", "FILIAL", "SUNAMPE", "HUAURA", "PORUMA"] as const;
 const DIA_ORDER: Record<string, number> = {
   LUNES: 1, MARTES: 2, MIERCOLES: 3, MIÉRCOLES: 3,
   JUEVES: 4, VIERNES: 5, SABADO: 6, SÁBADO: 6, DOMINGO: 7,
 };
 
 // ── FICA constants ──────────────────────────────────────────────────────────
-const CARRERAS_FICA: Record<string, Record<string, string>> = {
-  PRINCIPAL: { AE:"Adm. de Empresas", AF:"Adm. de Empresas (F)", AR:"Arquitectura", DE:"Derecho", EN:"Enfermería", IC:"Ing. Civil", IN:"Ing. Industrial", IS:"Ing. de Sistemas", OB:"Obstetricia", PS:"Psicología" },
-  FILIAL:    { AF:"Adm. de Empresas", CA:"Contabilidad", DE:"Derecho", EN:"Enfermería", IC:"Ing. Civil", IN:"Ing. Industrial", OB:"Obstetricia", PS:"Psicología", T1:"Tec. Méd. - Lab. Clínico", T2:"Tec. Méd. - Ter. Ocupacional" },
-  HUAURA:    { AE:"Adm. de Empresas", DE:"Derecho", EN:"Enfermería", OB:"Obstetricia", PS:"Psicología" },
-  PORUMA:    { MH:"Medicina Humana", T1:"Tec. Méd. - Lab. Clínico", T2:"Tec. Méd. - Ter. Ocupacional", T3:"Tec. Méd. - Ter. Física" },
-  SUNAMPE:   { MH:"Medicina Humana", OB:"Obstetricia", PS:"Psicología", T1:"Tec. Méd. - Lab. Clínico", T3:"Tec. Méd. - Ter. Física", T4:"Tec. Méd. - Ter. del Lenguaje" },
-};
-const CARRERAS_FICA_FULL: Record<string, string> = {
-  AE:"ADMINISTRACIÓN DE EMPRESAS", AF:"ADMINISTRACIÓN DE EMPRESAS", AR:"ARQUITECTURA",
-  CA:"CONTABILIDAD", DE:"DERECHO", EN:"ENFERMERÍA", IC:"INGENIERÍA CIVIL",
-  IN:"INGENIERÍA INDUSTRIAL", IS:"INGENIERÍA DE SISTEMAS", MH:"MEDICINA HUMANA",
-  OB:"OBSTETRICIA", PS:"PSICOLOGÍA", T1:"TEC. MÉD. - LAB. CLÍNICO",
-  T2:"TEC. MÉD. - TERAPIA OCUPACIONAL", T3:"TEC. MÉD. - TERAPIA FÍSICA",
-  T4:"TEC. MÉD. - TERAPIA DEL LENGUAJE",
-};
-const FICA_LOCALS = ["PRINCIPAL", "FILIAL", "HUAURA", "PORUMA", "SUNAMPE"] as const;
+const FICA_LOCALS = ["PRINCIPAL", "FILIAL", "HUAURA"] as const;
 const DAYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 const DAYS_LABEL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const SLOTS = [
@@ -312,7 +285,7 @@ function PreviewModal({
   const sheetLabel = sheet
     ? `${sheet.carr} — Ciclo ${sheet.ciclo}${sheet.base} · ${local}`
     : "";
-  const carreraFull = sheet ? (CARRERAS_FULL[sheet.carr] ?? sheet.carr) : "";
+  const carreraFull = sheetRows.length > 0 ? (sheetRows[0].carreraFull || sheet?.carr || "") : (sheet?.carr ?? "");
   const withDia     = sheetRows.filter(r => r.hora);
   const turno       = withDia.length > 0
     ? turnoLabel([...withDia].sort((a, b) => a.hora.localeCompare(b.hora))[0].hora)
@@ -564,6 +537,7 @@ function PreviewModal({
 function buildSheet(
   wb: ExcelJS.Workbook, logo64: string | null, secRows: FCSRow[],
   carreraCode: string, cicloNum: string, baseSec: string, localLabel: string,
+  facultad: "FCS" | "FICA" = "FCS",
 ) {
   const NAVY   = "FF001F5F";
   const WHITE  = "FFFFFFFF";
@@ -592,7 +566,10 @@ function buildSheet(
   ws.mergeCells("A1:B1"); ws.mergeCells("C1:H1");
   const c1l = ws.getCell("A1"); c1l.fill = sf(NAVY); c1l.alignment = CTR;
   const c1t = ws.getCell("C1");
-  c1t.value = "HORARIO DE CLASES 2026-I\nDepartamento Académico de Estudios Generales";
+  const subtitleLine = facultad === "FICA"
+    ? "Ing., Ciencias y Administración"
+    : "Ciencias de la Salud";
+  c1t.value = `HORARIO DE CLASES 2026-I\n${subtitleLine}`;
   c1t.font = { bold: true, size: 13, color: { argb: WHITE } };
   c1t.fill = sf(NAVY); c1t.alignment = CTR; c1t.border = MED;
   if (logo64) {
@@ -612,8 +589,12 @@ function buildSheet(
   const turno = withDia.length > 0
     ? turnoLabel([...withDia].sort((a, b) => a.hora.localeCompare(b.hora))[0].hora)
     : "MAÑANA";
-  infoRow(5, "FACULTAD", "CIENCIAS DE LA SALUD");
-  infoRow(6, "CARRERA PROFESIONAL", CARRERAS_FULL[carreraCode] || carreraCode);
+  const facultadLabel = facultad === "FICA"
+    ? "ING., CIENCIAS Y ADMINISTRACIÓN"
+    : "CIENCIAS DE LA SALUD";
+  const carreraLabel = secRows.length > 0 ? (secRows[0].carreraFull || carreraCode) : carreraCode;
+  infoRow(5, "FACULTAD", facultadLabel);
+  infoRow(6, "CARRERA PROFESIONAL", carreraLabel.toUpperCase());
   infoRow(7, "CICLO ACADÉMICO - SECCIÓN", `${cicloNum}${baseSec}`);
   infoRow(8, "TURNO - LOCAL", `${turno} - ${localLabel}`);
   ws.getRow(9).height = 5;
@@ -674,7 +655,7 @@ export default function HorarioCarrera() {
   // ── FCS state ─────────────────────────────────────────────────────────────
   const [data, setData]         = useState<FCSRow[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [local, setLocal]       = useState("SEDE");
+  const [local, setLocal]       = useState("PRINCIPAL");
   const [carrera, setCarrera]   = useState("TODOS");
   const [selectedCiclos, setSelectedCiclos] = useState<string[]>([]);
   const [search, setSearch]     = useState("");
@@ -704,7 +685,13 @@ export default function HorarioCarrera() {
       .catch(() => setFicaLoading(false));
   }, []);
 
-  const carrerasForLocal = local === "SEDE" ? CARRERAS_SEDE : CARRERAS_SUNAMPE;
+  const carrerasForLocal = useMemo(() => {
+    const map: Record<string, string> = {};
+    data.filter(r => r.local === local).forEach(r => {
+      if (r.carrera && r.carreraFull) map[r.carrera] = r.carreraFull;
+    });
+    return map;
+  }, [data, local]);
   useEffect(() => { setCarrera("TODOS"); setSelectedCiclos([]); }, [local]);
   useEffect(() => { setSelectedCiclos([]); }, [carrera]);
 
@@ -778,10 +765,10 @@ export default function HorarioCarrera() {
       const wb         = new ExcelJS.Workbook();
       wb.creator       = "UAI Portal Académico";
       wb.created       = new Date();
-      const localLabel = local === "SEDE" ? "SEDE" : "SUNAMPE";
+      const localLabel = local;
       for (const [carr, cic, base] of orderedKeys) {
         const secRows = srcRows.filter(r => r.carrera === carr && r.ciclo === cic && baseSeccion(r.seccion) === base);
-        buildSheet(wb, logo64, secRows, carr, cic, base, localLabel);
+        buildSheet(wb, logo64, secRows, carr, cic, base, localLabel, "FCS");
       }
       const buf  = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -801,7 +788,13 @@ export default function HorarioCarrera() {
   };
 
   // ── FICA computed values ────────────────────────────────────────────────
-  const ficaCarrerasForLocal = CARRERAS_FICA[ficaLocal] ?? {};
+  const ficaCarrerasForLocal = useMemo(() => {
+    const map: Record<string, string> = {};
+    ficaData.filter(r => r.local === ficaLocal).forEach(r => {
+      if (r.carrera && r.carreraFull) map[r.carrera] = r.carreraFull;
+    });
+    return map;
+  }, [ficaData, ficaLocal]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setFicaCarrera("TODOS"); setFicaSelectedCiclos([]); }, [ficaLocal]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -879,7 +872,7 @@ export default function HorarioCarrera() {
       wb.created = new Date();
       for (const [carr, cic, base] of orderedKeys) {
         const secRows = srcRows.filter(r => r.carrera === carr && r.ciclo === cic && baseSeccion(r.seccion) === base);
-        buildSheet(wb, logo64, secRows, carr, cic, base, ficaLocal);
+        buildSheet(wb, logo64, secRows, carr, cic, base, ficaLocal, "FICA");
       }
       const buf  = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -949,10 +942,9 @@ export default function HorarioCarrera() {
         <div className="flex items-center gap-1.5">
           <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
           <Select value={local} onValueChange={setLocal}>
-            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="SEDE">SEDE</SelectItem>
-              <SelectItem value="SUNAMPE">SUNAMPE</SelectItem>
+              {FCS_LOCALS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -1007,7 +999,7 @@ export default function HorarioCarrera() {
         <Layers className="w-4 h-4 shrink-0" />
         <span>
           Mostrando{" "}
-          <strong>{carrera === "TODOS" ? "todas las carreras" : CARRERAS_FULL[carrera] ?? carrera}</strong>
+          <strong>{carrera === "TODOS" ? "todas las carreras" : (carrerasForLocal[carrera] ?? carrera)}</strong>
           {" · "}
           <strong>
             {selectedCiclos.length === 0
@@ -1160,7 +1152,7 @@ export default function HorarioCarrera() {
         <span>
           <strong>{ficaLocal}</strong>
           {" · "}
-          <strong>{ficaCarrera === "TODOS" ? "Todas las carreras" : (CARRERAS_FICA_FULL[ficaCarrera] ?? ficaCarrera)}</strong>
+          <strong>{ficaCarrera === "TODOS" ? "Todas las carreras" : (ficaCarrerasForLocal[ficaCarrera] ?? ficaCarrera)}</strong>
           {" · Ciclos "}
           <strong>{ficaActiveCiclos.join(", ")}</strong>
           {" · "}
