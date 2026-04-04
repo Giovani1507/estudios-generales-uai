@@ -697,7 +697,7 @@ export default function HorarioCarrera() {
 
   const availCiclos = useMemo(() => {
     const set = new Set(
-      data.filter(r => r.local === local && (carrera === "TODOS" || r.carrera === carrera)).map(r => r.ciclo)
+      data.filter(r => r.local === local && (carrera === "TODOS" || r.carrera === carrera) && ["1","2"].includes(r.ciclo)).map(r => r.ciclo)
     );
     return Array.from(set).sort((a, b) => Number(a) - Number(b));
   }, [data, local, carrera]);
@@ -709,6 +709,7 @@ export default function HorarioCarrera() {
     return data.filter(r =>
       r.local === local &&
       (carrera === "TODOS" || r.carrera === carrera) &&
+      ["1","2"].includes(r.ciclo) &&
       activeCiclos.includes(r.ciclo) &&
       (!q || r.curso.toLowerCase().includes(q) || r.docente.toLowerCase().includes(q) || r.seccion.toLowerCase().includes(q))
     ).sort((a, b) => {
@@ -735,7 +736,7 @@ export default function HorarioCarrera() {
   const sheetCount = useMemo(() => {
     const combos = new Set<string>();
     data.filter(r =>
-      r.local === local && (carrera === "TODOS" || r.carrera === carrera) && activeCiclos.includes(r.ciclo)
+      r.local === local && (carrera === "TODOS" || r.carrera === carrera) && ["1","2"].includes(r.ciclo) && activeCiclos.includes(r.ciclo)
     ).forEach(r => { combos.add(`${r.carrera}|${r.ciclo}|${baseSeccion(r.seccion)}`); });
     return combos.size;
   }, [data, local, carrera, activeCiclos]);
@@ -745,7 +746,7 @@ export default function HorarioCarrera() {
     setExporting(true);
     try {
       const srcRows = data.filter(r =>
-        r.local === local && (carrera === "TODOS" || r.carrera === carrera) && activeCiclos.includes(r.ciclo)
+        r.local === local && (carrera === "TODOS" || r.carrera === carrera) && ["1","2"].includes(r.ciclo) && activeCiclos.includes(r.ciclo)
       );
       const orderedKeys: Array<[string, string, string]> = [];
       const seen = new Set<string>();
@@ -802,7 +803,7 @@ export default function HorarioCarrera() {
 
   const ficaAvailCiclos = useMemo(() => {
     const set = new Set(
-      ficaData.filter(r => r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera)).map(r => r.ciclo)
+      ficaData.filter(r => r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ["1","2"].includes(r.ciclo)).map(r => r.ciclo)
     );
     return Array.from(set).sort((a, b) => Number(a) - Number(b));
   }, [ficaData, ficaLocal, ficaCarrera]);
@@ -814,6 +815,7 @@ export default function HorarioCarrera() {
     return ficaData.filter(r =>
       r.local === ficaLocal &&
       (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) &&
+      ["1","2"].includes(r.ciclo) &&
       ficaActiveCiclos.includes(r.ciclo) &&
       (!q || r.curso.toLowerCase().includes(q) || (r.docente || "").toLowerCase().includes(q))
     ).sort((a, b) => {
@@ -840,7 +842,7 @@ export default function HorarioCarrera() {
   const ficaSheetCount = useMemo(() => {
     const combos = new Set<string>();
     ficaData.filter(r =>
-      r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ficaActiveCiclos.includes(r.ciclo)
+      r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ["1","2"].includes(r.ciclo) && ficaActiveCiclos.includes(r.ciclo)
     ).forEach(r => { combos.add(`${r.carrera}|${r.ciclo}|${baseSeccion(r.seccion)}`); });
     return combos.size;
   }, [ficaData, ficaLocal, ficaCarrera, ficaActiveCiclos]);
@@ -850,7 +852,7 @@ export default function HorarioCarrera() {
     setFicaExporting(true);
     try {
       const srcRows = ficaData.filter(r =>
-        r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ficaActiveCiclos.includes(r.ciclo)
+        r.local === ficaLocal && (ficaCarrera === "TODOS" || r.carrera === ficaCarrera) && ["1","2"].includes(r.ciclo) && ficaActiveCiclos.includes(r.ciclo)
       );
       const orderedKeys: Array<[string, string, string]> = [];
       const seen = new Set<string>();
@@ -913,7 +915,7 @@ export default function HorarioCarrera() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">Horario por Aula</h1>
-          <p className="text-sm text-muted-foreground">Planificación 2026-1</p>
+          <p className="text-sm text-muted-foreground">Planificación 2026-1 · Ciclos 1 y 2</p>
         </div>
       </div>
 
