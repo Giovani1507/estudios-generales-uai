@@ -288,6 +288,16 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
     setExporting(true);
     try {
       await exportExcel(docentes, facultad, import.meta.env.BASE_URL);
+      const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      fetch(`${base}/api/activity/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          type: "descarga",
+          detail: `Lista de Docentes ${facultad} (${docentes.length} docentes, ciclos 1 y 2)`,
+        }),
+      }).catch(() => {});
     } finally {
       setExporting(false);
     }

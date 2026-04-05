@@ -783,6 +783,12 @@ export default function HorarioCarrera() {
       a.download = `Horario_FCS_${carreraLabel}_${cicloLabel}_${localLabel}_2026-1.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
+      const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      fetch(`${apiBase}/api/activity/log`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "descarga", detail: `Horario por Aula FCS · ${localLabel} · ${carreraLabel} · ${cicloLabel}` }),
+      }).catch(() => {});
     } finally {
       setExporting(false);
     }
@@ -888,6 +894,12 @@ export default function HorarioCarrera() {
       a.download = `Horario_FICA_${carreraLabel}_${cicloLabel}_${ficaLocal}_2026-1.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
+      const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      fetch(`${apiBase}/api/activity/log`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "descarga", detail: `Horario por Aula FICA · ${ficaLocal} · ${carreraLabel} · ${cicloLabel}` }),
+      }).catch(() => {});
     } finally {
       setFicaExporting(false);
     }

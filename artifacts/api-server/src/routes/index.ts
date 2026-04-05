@@ -9,6 +9,7 @@ import schedulesRouter from "./schedules.js";
 import announcementsRouter from "./announcements.js";
 import reportsRouter from "./reports.js";
 import emailRouter from "./email.js";
+import activityRouter from "./activity.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/schedules", schedulesRouter);
 router.use("/announcements", announcementsRouter);
 router.use("/reports", reportsRouter);
 router.use("/email", emailRouter);
+router.use("/activity", activityRouter);
 
 export default router;

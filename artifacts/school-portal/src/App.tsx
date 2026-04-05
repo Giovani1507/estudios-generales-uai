@@ -27,6 +27,7 @@ import HorarioCarrera from "@/pages/horario-carrera";
 import CrearPlanificacion from "@/pages/crear-planificacion";
 import HorarioCruce from "@/pages/horario-cruce";
 import ListaDocentes from "@/pages/lista-docentes";
+import Actividad from "@/pages/actividad";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,10 @@ function AppRouter() {
       <Route
         path="/lista-docentes/fcs"
         component={() => <ProtectedRoute component={() => <ListaDocentes initialFacultad="FCS" />} />}
+      />
+      <Route
+        path="/actividad"
+        component={() => <ProtectedRoute component={Actividad} />}
       />
 
       {/* 404 */}

@@ -1,10 +1,33 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db/schema";
+import { usersTable, activityLogsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { createSession, deleteSession, getTokenFromRequest, getSession } from "../lib/session.js";
 import { requireAuth } from "../middlewares/auth.js";
+
+async function logActivity(
+  req: any,
+  opts: { userId?: number; username: string; fullName?: string; role?: string; type: string; detail?: string }
+) {
+  try {
+    const ip =
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      null;
+    await db.insert(activityLogsTable).values({
+      userId: opts.userId ?? null,
+      username: opts.username,
+      fullName: opts.fullName ?? null,
+      role: opts.role ?? null,
+      type: opts.type,
+      detail: opts.detail ?? null,
+      ip,
+    });
+  } catch (e) {
+    console.error("logActivity error:", e);
+  }
+}
 
 const router = Router();
 
@@ -51,6 +74,15 @@ router.post("/login", async (req, res) => {
       maxAge: 8 * 60 * 60 * 1000,
     });
 
+    await logActivity(req, {
+      userId: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      type: "login",
+      detail: "Inicio de sesión exitoso",
+    });
+
     res.json({
       message: "Inicio de sesión exitoso",
       user: {
@@ -71,9 +103,20 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
   const token = getTokenFromRequest(req);
   if (token) {
+    const session = getSession(token);
+    if (session) {
+      await logActivity(req, {
+        userId: session.id,
+        username: session.username,
+        fullName: session.fullName,
+        role: session.role,
+        type: "logout",
+        detail: "Cierre de sesión",
+      });
+    }
     deleteSession(token);
   }
   res.clearCookie("session_token");

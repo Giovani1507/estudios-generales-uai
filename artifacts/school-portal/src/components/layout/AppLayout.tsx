@@ -35,6 +35,7 @@ import {
   School,
   AlertTriangle,
   UserCheck,
+  Activity,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -95,6 +96,12 @@ const menuItems: MenuItem[] = [
     url: "/reportes",
     icon: BarChart3,
     roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Registro de Actividad",
+    url: "/actividad",
+    icon: Activity,
+    roles: ["administrador"],
   },
   {
     title: "Configuración",
