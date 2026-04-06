@@ -8,3 +8,4 @@ export * from "./conversations";
 export * from "./messages";
 export * from "./activity_logs";
 export * from "./student_registrations";
+export * from "./ingresantes_pagos";

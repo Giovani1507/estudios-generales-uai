@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, Phone, User, BookOpen, GraduationCap } from "lucide-react";
+import { CheckCircle2, AlertCircle, Phone, User, BookOpen, GraduationCap, CreditCard } from "lucide-react";
 
 const CARRERAS = [
   "Administración de Empresas",
@@ -25,6 +25,7 @@ type Status = "idle" | "loading" | "success" | "error";
 export default function RegistroEstudiante() {
   const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
   const [form, setForm] = useState({
+    dni: "",
     apellidos: "",
     nombres: "",
     telefono: "",
@@ -40,8 +41,12 @@ export default function RegistroEstudiante() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.apellidos || !form.nombres || !form.telefono || !form.carrera || !form.ciclo) {
+    if (!form.dni || !form.apellidos || !form.nombres || !form.telefono || !form.carrera || !form.ciclo) {
       setErrorMsg("Por favor completa todos los campos obligatorios.");
+      return;
+    }
+    if (!/^\d{8}$/.test(form.dni.replace(/\s/g, ""))) {
+      setErrorMsg("El DNI debe tener exactamente 8 dígitos.");
       return;
     }
     if (!/^\d{9,15}$/.test(form.telefono.replace(/\s/g, ""))) {
@@ -55,6 +60,7 @@ export default function RegistroEstudiante() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          dni:       form.dni.replace(/\s/g, ""),
           apellidos: form.apellidos,
           nombres:   form.nombres,
           telefono:  form.telefono.replace(/\s/g, ""),
@@ -121,6 +127,23 @@ export default function RegistroEstudiante() {
           <div className="h-1.5" style={{ background: "linear-gradient(90deg, #001F5F 0%, #2f80d6 50%, #001F5F 100%)" }} />
 
           <div className="px-7 py-8 flex flex-col gap-5">
+
+            {/* DNI */}
+            <div>
+              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                <CreditCard className="w-3.5 h-3.5" />
+                DNI <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="dni"
+                value={form.dni}
+                onChange={handleChange}
+                placeholder="Ej: 74123456"
+                inputMode="numeric"
+                maxLength={8}
+                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300 tracking-widest"
+              />
+            </div>
 
             {/* Apellidos */}
             <div>

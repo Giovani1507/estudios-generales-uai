@@ -1,11 +1,12 @@
 import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
 
 export const studentRegistrationsTable = pgTable("student_registrations", {
-  id:          serial("id").primaryKey(),
-  apellidos:   text("apellidos").notNull(),
-  nombres:     text("nombres").notNull(),
-  telefono:    text("telefono").notNull(),
-  carrera:     text("carrera").notNull(),
+  id:              serial("id").primaryKey(),
+  dni:             text("dni"),
+  apellidos:       text("apellidos").notNull(),
+  nombres:         text("nombres").notNull(),
+  telefono:        text("telefono").notNull(),
+  carrera:         text("carrera").notNull(),
   ciclo:           text("ciclo"),
   horarioAsignado: boolean("horario_asignado").notNull().default(false),
   createdAt:       timestamp("created_at").notNull().defaultNow(),

@@ -4,6 +4,7 @@ import * as ExcelJS from "exceljs";
 
 interface StudentReg {
   id: number;
+  dni: string | null;
   apellidos: string;
   nombres: string;
   telefono: string;
@@ -11,6 +12,11 @@ interface StudentReg {
   ciclo: string | null;
   horarioAsignado: boolean;
   createdAt: string;
+  pagado: boolean;
+  modalidadEstudio: string | null;
+  turno: string | null;
+  seccion: string | null;
+  sede: string | null;
 }
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -150,6 +156,7 @@ export default function ReporteEstudiantes() {
   const [search, setSearch]     = useState("");
   const [filterCiclo, setFilterCiclo] = useState<"all" | "1" | "2">("all");
   const [filterHorario, setFilterHorario] = useState<"all" | "asignado" | "pendiente">("all");
+  const [filterPago, setFilterPago] = useState<"all" | "pagado" | "nopagado">("all");
   const [toggling, setToggling] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -200,19 +207,25 @@ export default function ReporteEstudiantes() {
         s.apellidos.toLowerCase().includes(q) ||
         s.nombres.toLowerCase().includes(q) ||
         (s.telefono || "").includes(q) ||
-        s.carrera.toLowerCase().includes(q);
+        s.carrera.toLowerCase().includes(q) ||
+        (s.dni || "").includes(q);
       const matchCiclo = filterCiclo === "all" || s.ciclo === filterCiclo;
       const matchHorario =
         filterHorario === "all" ||
         (filterHorario === "asignado") === s.horarioAsignado;
-      return matchSearch && matchCiclo && matchHorario;
+      const matchPago =
+        filterPago === "all" ||
+        (filterPago === "pagado") === s.pagado;
+      return matchSearch && matchCiclo && matchHorario && matchPago;
     });
-  }, [students, search, filterCiclo, filterHorario]);
+  }, [students, search, filterCiclo, filterHorario, filterPago]);
 
   const totalAsignado  = students.filter(s => s.horarioAsignado).length;
   const totalPendiente = students.filter(s => !s.horarioAsignado).length;
   const totalCiclo1    = students.filter(s => s.ciclo === "1").length;
   const totalCiclo2    = students.filter(s => s.ciclo === "2").length;
+  const totalPagado    = students.filter(s => s.pagado).length;
+  const totalNoPagado  = students.filter(s => !s.pagado).length;
 
   async function downloadExcel() {
     const NAV   = "001F5F";
@@ -235,17 +248,22 @@ export default function ReporteEstudiantes() {
 
     // Column widths  (col A is wider to hold the logo in the header)
     ws.columns = [
-      { key: "n",         width: 14 },
-      { key: "apellidos", width: 26 },
-      { key: "nombres",   width: 26 },
-      { key: "telefono",  width: 16 },
-      { key: "carrera",   width: 34 },
-      { key: "ciclo",     width: 10 },
-      { key: "horario",   width: 18 },
-      { key: "fecha",     width: 20 },
+      { key: "n",               width: 14 },
+      { key: "dni",             width: 12 },
+      { key: "apellidos",       width: 24 },
+      { key: "nombres",         width: 22 },
+      { key: "telefono",        width: 14 },
+      { key: "carrera",         width: 28 },
+      { key: "ciclo",           width: 8  },
+      { key: "pago",            width: 12 },
+      { key: "modalidad",       width: 16 },
+      { key: "turno",           width: 14 },
+      { key: "seccion",         width: 10 },
+      { key: "horario",         width: 16 },
+      { key: "fecha",           width: 18 },
     ];
 
-    const TOTAL_COLS = 8;
+    const TOTAL_COLS = 13;
 
     // ── Try to embed logo (escudo/crest, fixed pixel size) ───────────────
     try {
@@ -309,10 +327,15 @@ export default function ReporteEstudiantes() {
     const ciclo1     = filtered.filter(s => s.ciclo === "1").length;
     const ciclo2     = filtered.filter(s => s.ciclo === "2").length;
 
+    const pagados     = filtered.filter(s => s.pagado).length;
+    const sinData     = filtered.filter(s => !s.pagado).length;
+
     const summaryPairs: [string, string | number][] = [
       ["Total", filtered.length],
       ["Con horario", asignados],
       ["Pendientes", pendientes],
+      ["Pagados", pagados],
+      ["Sin Data", sinData],
       ["Ciclo 1", ciclo1],
       ["Ciclo 2", ciclo2],
     ];
@@ -336,7 +359,7 @@ export default function ReporteEstudiantes() {
     ws.getRow(7).height = 4;
 
     // ── Row 8: Column headers ─────────────────────────────────────────────
-    const HEADERS = ["N°", "Apellidos", "Nombres", "Teléfono", "Carrera", "Ciclo", "Horario", "Fecha Registro"];
+    const HEADERS = ["N°", "DNI", "Apellidos", "Nombres", "Teléfono", "Carrera", "Ciclo", "Pago", "Modalidad", "Turno", "Sección", "Horario", "Fecha Registro"];
     const headerRow = ws.getRow(8);
     headerRow.height = 22;
     HEADERS.forEach((h, idx) => {
@@ -361,13 +384,21 @@ export default function ReporteEstudiantes() {
       const isEven = i % 2 === 1;
       const bgColor = isEven ? LGRAY : WHITE;
 
-      const values = [
+      const PAGADOBG = "F0FDF4"; const PAGADOTX = "16a34a";
+      const NOPAGBG  = "FFFBEB"; const NOPAGTX  = "B45309";
+
+      const values: (string | number)[] = [
         i + 1,
+        s.dni || "—",
         s.apellidos,
         s.nombres,
         s.telefono || "—",
         s.carrera,
         s.ciclo ? `Ciclo ${s.ciclo}` : "—",
+        s.pagado ? "✓ PAGADO" : "✗ SIN DATA",
+        s.modalidadEstudio || "—",
+        s.turno || "—",
+        s.seccion || "—",
         s.horarioAsignado ? "✓ ASIGNADO" : "⏳ PENDIENTE",
         new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" }),
       ];
@@ -376,15 +407,18 @@ export default function ReporteEstudiantes() {
         const cell = dataRow.getCell(colIdx + 1);
         cell.value = val;
         cell.font = { name: "Calibri", size: 10, color: { argb: "FF" + DGRAY } };
-        cell.alignment = { vertical: "middle", horizontal: colIdx === 0 || colIdx === 5 ? "center" : "left" };
+        cell.alignment = { vertical: "middle", horizontal: colIdx === 0 || colIdx === 6 ? "center" : "left" };
 
-        // Horario column special coloring
-        if (colIdx === 6) {
-          cell.font = {
-            name: "Calibri", size: 9, bold: true,
-            color: { argb: "FF" + (s.horarioAsignado ? GREEN : REDTX) },
-          };
+        if (colIdx === 7) {
+          // Pago column
+          cell.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FF" + (s.pagado ? PAGADOTX : NOPAGTX) } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + (s.pagado ? PAGADOBG : NOPAGBG) } };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+        } else if (colIdx === 11) {
+          // Horario column
+          cell.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FF" + (s.horarioAsignado ? GREEN : REDTX) } };
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + (s.horarioAsignado ? GRNBG : REDBG) } };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
         } else {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + bgColor } };
         }
@@ -461,16 +495,18 @@ export default function ReporteEstudiantes() {
         </div>
 
         {/* Stats */}
-        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4 content-start">
+        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4 content-start">
           {[
-            { label: "Total registros", value: students.length,  color: "#2f5aa6", bg: "#dbeafe" },
-            { label: "Con horario",     value: totalAsignado,    color: "#16a34a", bg: "#dcfce7" },
-            { label: "Pendientes",      value: totalPendiente,   color: "#dc2626", bg: "#fee2e2" },
-            { label: "Ciclo 1",         value: totalCiclo1,      color: "#7c3aed", bg: "#ede9fe" },
+            { label: "Total registros", value: students.length,  color: "#2f5aa6" },
+            { label: "Con horario",     value: totalAsignado,    color: "#16a34a" },
+            { label: "Pendientes",      value: totalPendiente,   color: "#dc2626" },
+            { label: "En Data (pagado)",value: totalPagado,      color: "#7c3aed" },
+            { label: "Sin Data",        value: totalNoPagado,    color: "#f59e0b" },
+            { label: "Ciclo 1",         value: totalCiclo1,      color: "#0891b2" },
           ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 flex flex-col gap-1">
+            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 flex flex-col gap-1">
               <div className="w-8 h-1 rounded-full mb-2" style={{ background: s.color }} />
-              <p className="text-3xl font-extrabold leading-none" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-2xl font-extrabold leading-none" style={{ color: s.color }}>{s.value}</p>
               <p className="text-xs font-semibold text-gray-600 mt-0.5">{s.label}</p>
             </div>
           ))}
@@ -519,6 +555,20 @@ export default function ReporteEstudiantes() {
             ))}
           </div>
 
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {(["all","pagado","nopagado"] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setFilterPago(v)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                  filterPago === v ? "bg-white shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {v === "all" ? "Pago: Todos" : v === "pagado" ? "✓ En Data" : "✗ Sin Data"}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={load}
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition text-gray-500"
@@ -552,44 +602,84 @@ export default function ReporteEstudiantes() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">#</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Apellidos y Nombres</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Carrera</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Ciclo</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Horario Asignado</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Fecha</th>
-                  <th className="px-4 py-2.5" />
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">#</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">DNI</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Apellidos y Nombres</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Carrera</th>
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Ciclo</th>
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Pago</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Modalidad / Turno / Sección</th>
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Horario</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Fecha</th>
+                  <th className="px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((s, i) => (
                   <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-400 text-xs">{i + 1}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3 text-gray-400 text-xs">{i + 1}</td>
+                    <td className="px-3 py-3 font-mono text-xs font-bold text-gray-700 whitespace-nowrap">
+                      {s.dni || <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-3 py-3">
                       <p className="font-semibold text-gray-800 text-xs">{s.apellidos}</p>
                       <p className="text-gray-500 text-xs">{s.nombres}</p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5 text-gray-600 text-xs">
                         <Phone className="w-3 h-3 text-gray-400" />
                         {s.telefono || "—"}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">{s.carrera}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3 text-gray-600 text-xs max-w-[160px] truncate">{s.carrera}</td>
+                    <td className="px-3 py-3 text-center">
                       {s.ciclo ? (
                         <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
-                          Ciclo {s.ciclo}
+                          {s.ciclo}
                         </span>
                       ) : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3 text-center">
+                      {s.pagado ? (
+                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          ✓ Pagado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          ✗ Sin data
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3">
+                      {s.pagado ? (
+                        <div className="flex flex-col gap-0.5">
+                          {s.modalidadEstudio && (
+                            <span className="inline-block bg-violet-50 text-violet-700 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                              {s.modalidadEstudio}
+                            </span>
+                          )}
+                          <div className="flex gap-1 flex-wrap">
+                            {s.turno && (
+                              <span className="inline-block bg-blue-50 text-blue-700 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                                {s.turno}
+                              </span>
+                            )}
+                            {s.seccion && (
+                              <span className="inline-block bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                Sec. {s.seccion}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
+                    </td>
+                    <td className="px-3 py-3 text-center">
                       <button
                         onClick={() => toggleHorario(s)}
                         disabled={toggling === s.id}
                         title={s.horarioAsignado ? "Marcar como pendiente" : "Marcar horario asignado"}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${
                           toggling === s.id ? "opacity-50 cursor-wait" : "cursor-pointer hover:scale-105 active:scale-95"
                         }`}
                         style={s.horarioAsignado ? {
@@ -604,21 +694,21 @@ export default function ReporteEstudiantes() {
                       >
                         {s.horarioAsignado ? (
                           <>
-                            <CalendarCheck className="w-3.5 h-3.5" />
+                            <CalendarCheck className="w-3 h-3" />
                             Asignado
                           </>
                         ) : (
                           <>
-                            <Clock className="w-3.5 h-3.5" />
+                            <Clock className="w-3 h-3" />
                             Pendiente
                           </>
                         )}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                    <td className="px-3 py-3 text-gray-400 text-xs whitespace-nowrap">
                       {new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <button
                         onClick={() => handleDelete(s.id)}
                         disabled={deleting === s.id}
