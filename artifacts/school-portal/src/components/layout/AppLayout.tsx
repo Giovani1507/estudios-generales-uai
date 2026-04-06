@@ -351,8 +351,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top header */}
           <header className="h-14 flex items-center justify-between px-4 border-b border-border/40 bg-white sticky top-0 z-20 shadow-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-primary hover:bg-primary/5" />
+              <span className="text-sm font-semibold text-foreground tracking-wide">
+                {getPageTitle(location)}
+              </span>
             </div>
 
             <div className="flex items-center gap-4">
