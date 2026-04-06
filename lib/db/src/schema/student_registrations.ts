@@ -4,7 +4,7 @@ export const studentRegistrationsTable = pgTable("student_registrations", {
   id:          serial("id").primaryKey(),
   apellidos:   text("apellidos").notNull(),
   nombres:     text("nombres").notNull(),
-  dni:         text("dni").notNull(),
+  telefono:    text("telefono").notNull(),
   carrera:     text("carrera").notNull(),
   ciclo:       text("ciclo"),
   matriculado: boolean("matriculado").notNull().default(false),

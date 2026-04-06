@@ -25,8 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const PUBLIC_ROUTES = ["/login", "/registro-estudiante"];
+
   useEffect(() => {
-    if (!isLoading && (isError || !user) && location !== "/login") {
+    if (!isLoading && (isError || !user) && !PUBLIC_ROUTES.includes(location)) {
       setLocation("/login");
     } else if (!isLoading && user && location === "/login") {
       setLocation("/");

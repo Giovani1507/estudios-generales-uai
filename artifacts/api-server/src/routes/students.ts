@@ -17,19 +17,19 @@ function requireAdmin(req: any, res: any, next: any) {
 // POST /api/students/register — public, no auth required
 router.post("/register", async (req, res) => {
   try {
-    const { apellidos, nombres, dni, carrera, ciclo, matriculado } = req.body;
-    if (!apellidos || !nombres || !dni || !carrera) {
+    const { apellidos, nombres, telefono, carrera, ciclo, matriculado } = req.body;
+    if (!apellidos || !nombres || !telefono || !carrera) {
       res.status(400).json({ error: "Faltan campos obligatorios" });
       return;
     }
     const [record] = await db
       .insert(studentRegistrationsTable)
       .values({
-        apellidos: apellidos.trim().toUpperCase(),
-        nombres:   nombres.trim().toUpperCase(),
-        dni:       dni.trim(),
-        carrera:   carrera.trim(),
-        ciclo:     ciclo?.trim() || null,
+        apellidos:   apellidos.trim().toUpperCase(),
+        nombres:     nombres.trim().toUpperCase(),
+        telefono:    telefono.trim(),
+        carrera:     carrera.trim(),
+        ciclo:       ciclo?.trim() || null,
         matriculado: matriculado === true || matriculado === "true",
       })
       .returning();

@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { QrCode, Users, Download, Trash2, Search, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { QrCode, Users, Download, Trash2, Search, CheckCircle2, XCircle, RefreshCw, Phone } from "lucide-react";
 import * as ExcelJS from "exceljs";
 
 interface StudentReg {
   id: number;
   apellidos: string;
   nombres: string;
-  dni: string;
+  telefono: string;
   carrera: string;
   ciclo: string | null;
   matriculado: boolean;
@@ -37,6 +37,7 @@ export default function ReporteEstudiantes() {
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
   const [filterMat, setFilterMat] = useState<"all" | "si" | "no">("all");
+  const [filterCiclo, setFilterCiclo] = useState<"all" | "1" | "2">("all");
   const [deleting, setDeleting] = useState<number | null>(null);
 
   const formUrl = getFormUrl();
@@ -68,15 +69,18 @@ export default function ReporteEstudiantes() {
       const matchSearch = !q ||
         s.apellidos.toLowerCase().includes(q) ||
         s.nombres.toLowerCase().includes(q) ||
-        s.dni.includes(q) ||
+        (s.telefono || "").includes(q) ||
         s.carrera.toLowerCase().includes(q);
       const matchMat = filterMat === "all" || (filterMat === "si") === s.matriculado;
-      return matchSearch && matchMat;
+      const matchCiclo = filterCiclo === "all" || s.ciclo === filterCiclo;
+      return matchSearch && matchMat && matchCiclo;
     });
-  }, [students, search, filterMat]);
+  }, [students, search, filterMat, filterCiclo]);
 
   const totalMat   = students.filter(s => s.matriculado).length;
   const totalNoMat = students.filter(s => !s.matriculado).length;
+  const totalCiclo1 = students.filter(s => s.ciclo === "1").length;
+  const totalCiclo2 = students.filter(s => s.ciclo === "2").length;
 
   async function downloadExcel() {
     const wb = new ExcelJS.Workbook();
@@ -85,7 +89,7 @@ export default function ReporteEstudiantes() {
       { header: "N°",           key: "n",           width: 5  },
       { header: "Apellidos",    key: "apellidos",    width: 24 },
       { header: "Nombres",      key: "nombres",      width: 24 },
-      { header: "DNI",          key: "dni",          width: 12 },
+      { header: "Teléfono",     key: "telefono",     width: 14 },
       { header: "Carrera",      key: "carrera",      width: 32 },
       { header: "Ciclo",        key: "ciclo",        width: 8  },
       { header: "Matriculado",  key: "matriculado",  width: 14 },
@@ -96,7 +100,7 @@ export default function ReporteEstudiantes() {
         n: i + 1,
         apellidos: s.apellidos,
         nombres: s.nombres,
-        dni: s.dni,
+        telefono: s.telefono || "—",
         carrera: s.carrera,
         ciclo: s.ciclo || "—",
         matriculado: s.matriculado ? "SÍ" : "NO",
@@ -146,11 +150,12 @@ export default function ReporteEstudiantes() {
         </div>
 
         {/* Stats */}
-        <div className="lg:col-span-2 grid grid-cols-3 gap-4 content-start">
+        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4 content-start">
           {[
             { label: "Total registros", value: students.length, color: "#2f5aa6", bg: "#dbeafe" },
-            { label: "Matriculados",    value: totalMat,          color: "#16a34a", bg: "#dcfce7" },
-            { label: "No matriculados", value: totalNoMat,        color: "#dc2626", bg: "#fee2e2" },
+            { label: "Matriculados",    value: totalMat,         color: "#16a34a", bg: "#dcfce7" },
+            { label: "Ciclo 1",         value: totalCiclo1,      color: "#7c3aed", bg: "#ede9fe" },
+            { label: "Ciclo 2",         value: totalCiclo2,      color: "#d97706", bg: "#fef3c7" },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 flex flex-col gap-1">
               <div className="w-8 h-1 rounded-full mb-2" style={{ background: s.color }} />
@@ -170,9 +175,23 @@ export default function ReporteEstudiantes() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nombre, DNI o carrera…"
+              placeholder="Buscar por nombre, teléfono o carrera…"
               className="bg-transparent text-sm flex-1 focus:outline-none"
             />
+          </div>
+
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {(["all","1","2"] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setFilterCiclo(v)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                  filterCiclo === v ? "bg-white shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {v === "all" ? "Todos" : `Ciclo ${v}`}
+              </button>
+            ))}
           </div>
 
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
@@ -184,7 +203,7 @@ export default function ReporteEstudiantes() {
                   filterMat === v ? "bg-white shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {v === "all" ? "Todos" : v === "si" ? "Matriculados" : "No matriculados"}
+                {v === "all" ? "Todos" : v === "si" ? "Matriculados" : "No matr."}
               </button>
             ))}
           </div>
@@ -224,7 +243,7 @@ export default function ReporteEstudiantes() {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">#</th>
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Apellidos y Nombres</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">DNI</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</th>
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Carrera</th>
                   <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Ciclo</th>
                   <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Matriculado</th>
@@ -240,12 +259,17 @@ export default function ReporteEstudiantes() {
                       <p className="font-semibold text-gray-800 text-xs">{s.apellidos}</p>
                       <p className="text-gray-500 text-xs">{s.nombres}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs font-mono">{s.dni}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-gray-600 text-xs">
+                        <Phone className="w-3 h-3 text-gray-400" />
+                        {s.telefono || "—"}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-600 text-xs">{s.carrera}</td>
                     <td className="px-4 py-3 text-center">
                       {s.ciclo ? (
                         <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
-                          {s.ciclo}
+                          Ciclo {s.ciclo}
                         </span>
                       ) : <span className="text-gray-300">—</span>}
                     </td>
