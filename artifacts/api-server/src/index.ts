@@ -1,5 +1,5 @@
 import app from "./app";
-import { seedDefaultUsers } from "./lib/seed.js";
+import { seedDefaultUsers, seedIngresantes } from "./lib/seed.js";
 
 const rawPort = process.env["PORT"];
 
@@ -17,6 +17,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 (async () => {
   await seedDefaultUsers();
+  await seedIngresantes();
   app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
   });

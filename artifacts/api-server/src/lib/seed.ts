@@ -1,7 +1,8 @@
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db/schema";
+import { usersTable, ingresantesPagosTable } from "@workspace/db/schema";
 import { sql } from "drizzle-orm";
 import crypto from "crypto";
+import ingresantesData from "../data/ingresantes-seed.json";
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password + "iuac_salt_2026").digest("hex");
@@ -48,5 +49,45 @@ export async function seedDefaultUsers() {
     console.log("[seed] Usuarios base verificados/creados correctamente.");
   } catch (err) {
     console.error("[seed] Error al inicializar usuarios base:", err);
+  }
+}
+
+export async function seedIngresantes() {
+  try {
+    const countResult = await db.execute(
+      sql`SELECT count(*)::int AS count FROM ingresantes_pagos`
+    );
+    const count = Number((countResult.rows?.[0] as any)?.count ?? (countResult as any)[0]?.count ?? 0);
+    if (count > 0) {
+      console.log(`[seed] ingresantes_pagos ya tiene ${count} registros. Omitiendo seed.`);
+      return;
+    }
+    console.log(`[seed] Insertando ${(ingresantesData as any[]).length} ingresantes...`);
+    const BATCH = 100;
+    const data = ingresantesData as {
+      dni: string; apellidos_nombres: string; carrera: string | null;
+      sede: string | null; modalidad_ingreso: string | null; modalidad_estudio: string | null;
+      turno: string | null; seccion: string | null; codigo_estudiante: string | null;
+      celular: string | null; correo: string | null;
+    }[];
+    for (let i = 0; i < data.length; i += BATCH) {
+      const batch = data.slice(i, i + BATCH).map(r => ({
+        dni:              r.dni,
+        apellidosNombres: r.apellidos_nombres,
+        carrera:          r.carrera,
+        sede:             r.sede,
+        modalidadIngreso: r.modalidad_ingreso,
+        modalidadEstudio: r.modalidad_estudio,
+        turno:            r.turno,
+        seccion:          r.seccion,
+        codigoEstudiante: r.codigo_estudiante,
+        celular:          r.celular,
+        correo:           r.correo,
+      }));
+      await db.insert(ingresantesPagosTable).values(batch).onConflictDoNothing();
+    }
+    console.log("[seed] ingresantes_pagos sembrado correctamente.");
+  } catch (err) {
+    console.error("[seed] Error al sembrar ingresantes:", err);
   }
 }
