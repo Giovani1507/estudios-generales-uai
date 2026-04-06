@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useState, useEffect } from "react";
+import React, { ReactNode, useMemo, useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useLogout } from "@workspace/api-client-react";
@@ -36,6 +36,7 @@ import {
   UserCheck,
   Activity,
   GraduationCap,
+  LayoutGrid,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -146,6 +147,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [listaOpen, setListaOpen] = useState(
     location.startsWith("/lista-docentes")
   );
+  const [gridOpen, setGridOpen] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
+        setGridOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const filteredMenu = useMemo(() => {
     if (!user?.role) return [];
     return menuItems.filter((item) =>
@@ -359,6 +373,37 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* Quick-access grid button */}
+              <div ref={gridRef} className="relative">
+                <button
+                  onClick={() => setGridOpen((o) => !o)}
+                  className={`p-2 rounded-lg transition-colors ${gridOpen ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-primary"}`}
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+                {gridOpen && (
+                  <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-border bg-white shadow-lg p-2">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">Acceso rápido</p>
+                    {[
+                      { href: "/reporte-estudiantes", label: "Reporte de Estudiantes", icon: ClipboardList },
+                      { href: "/reportes",            label: "Reportes",               icon: BarChart3 },
+                      { href: "/usuarios",            label: "Usuarios",               icon: Users },
+                      { href: "/calendario",          label: "Calendario 2026",        icon: CalendarIcon },
+                    ].map(({ href, label, icon: Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setGridOpen(false)}
+                        className="flex items-center gap-2 px-2 py-2 rounded-lg text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                      >
+                        <Icon className="w-4 h-4 text-primary/70" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary">
                 <Bell className="w-5 h-5" />
               </button>
