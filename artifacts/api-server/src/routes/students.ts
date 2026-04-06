@@ -102,7 +102,7 @@ router.post("/register", async (req, res) => {
         nombres:         nombres,
         telefono:        "",
         carrera:         carrera,
-        ciclo:           null,
+        ciclo:           "1",
         horarioAsignado: false,
       })
       .returning();

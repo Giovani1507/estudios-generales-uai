@@ -211,7 +211,7 @@ export default function ReporteEstudiantes() {
       const matchSearch = !q ||
         displayName.toLowerCase().includes(q) ||
         displayCarrera.toLowerCase().includes(q) ||
-        (s.telefono || "").includes(q) ||
+        (s.celular || "").includes(q) ||
         (s.dni || "").includes(q);
       const matchCiclo = filterCiclo === "all" || s.ciclo === filterCiclo;
       const matchHorario =
@@ -363,7 +363,7 @@ export default function ReporteEstudiantes() {
     ws.getRow(7).height = 4;
 
     // ── Row 8: Column headers ─────────────────────────────────────────────
-    const HEADERS = ["N°", "Cód. Estudiante", "Apellidos y Nombres", "DNI", "Carrera", "Pago", "Modalidad", "Turno", "Sección", "Sede", "Horario", "Fecha Registro", "Teléfono"];
+    const HEADERS = ["N°", "Cód. Estudiante", "Apellidos y Nombres", "DNI", "Carrera", "Pago", "Modalidad", "Turno", "Sección", "Sede", "Horario", "Fecha Registro", "Nro. Celular"];
     const headerRow = ws.getRow(8);
     headerRow.height = 22;
     HEADERS.forEach((h, idx) => {
@@ -406,7 +406,7 @@ export default function ReporteEstudiantes() {
         s.sede || "—",
         s.horarioAsignado ? "✓ ASIGNADO" : "⏳ PENDIENTE",
         new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" }),
-        s.telefono || "—",
+        s.celular || "—",
       ];
 
       values.forEach((val, colIdx) => {
@@ -611,7 +611,7 @@ export default function ReporteEstudiantes() {
                   <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">#</th>
                   <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">DNI</th>
                   <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Apellidos y Nombres</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Nro. Celular</th>
                   <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Carrera</th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Ciclo</th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Pago</th>
