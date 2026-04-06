@@ -192,16 +192,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar variant="sidebar" className="border-r-0">
           <SidebarContent className="flex flex-col bg-sidebar">
             {/* Logo */}
-            <div className="px-4 py-4 flex flex-col items-center gap-2 border-b border-white/15">
+            <div className="px-3 py-3 flex items-center gap-2.5 border-b border-white/15">
               <img
                 src={`${import.meta.env.BASE_URL}logo-sidebar.png`}
-                alt="Universidad Autónoma de Ica"
-                className="object-contain w-full"
-                style={{ maxWidth: "180px", maxHeight: "64px" }}
+                alt="UAI"
+                className="object-contain shrink-0"
+                style={{ width: "46px", height: "52px" }}
               />
-              <span className="text-white text-[10px] font-bold tracking-widest uppercase text-center leading-tight">
-                Universidad Autónoma de Ica
-              </span>
+              <div className="flex flex-col leading-none">
+                <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "8.5px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.90)", fontWeight: 400, textTransform: "uppercase" }}>
+                  Universidad
+                </span>
+                <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "17px", letterSpacing: "0.04em", color: "#ffffff", fontWeight: 700, lineHeight: 1.05, textTransform: "uppercase" }}>
+                  Autónoma
+                </span>
+                <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "17px", letterSpacing: "0.04em", color: "#ffffff", fontWeight: 700, lineHeight: 1.05, textTransform: "uppercase" }}>
+                  de Ica
+                </span>
+              </div>
             </div>
 
             {/* Menu */}
