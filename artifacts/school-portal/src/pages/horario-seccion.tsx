@@ -128,10 +128,10 @@ export default function HorarioSeccion() {
     fetch(file).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, [facultad, base]);
 
-  // Available ciclos for selected career
+  // Available ciclos for selected career (restricted to 1 and 2)
   const availCiclos = useMemo(() => {
     if (!carrera) return [];
-    return [...new Set(data.filter(r => r.carrera === carrera).map(r => r.ciclo))]
+    return [...new Set(data.filter(r => r.carrera === carrera && (r.ciclo === "1" || r.ciclo === "2")).map(r => r.ciclo))]
       .sort((a, b) => Number(a) - Number(b));
   }, [data, carrera]);
 
