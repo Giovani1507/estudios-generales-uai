@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentRegistrationsTable, ingresantesPagosTable } from "@workspace/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router = Router();
@@ -17,8 +17,9 @@ function requireAdmin(req: any, res: any, next: any) {
 // GET /api/students/lookup?dni=XXXXXXXX — public, looks up ingresantes_pagos by DNI
 router.get("/lookup", async (req, res) => {
   try {
-    const dni = String(req.query.dni || "").replace(/\D/g, "").padStart(8, "0");
-    if (dni.length !== 8) {
+    const raw = String(req.query.dni || "").replace(/\D/g, "");
+    const dni = raw.padStart(8, "0");
+    if (raw.length < 7 || raw.length > 9) {
       res.status(400).json({ error: "DNI inválido" });
       return;
     }
@@ -57,9 +58,21 @@ router.get("/lookup", async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { dni } = req.body;
-    const dniClean = dni ? String(dni).replace(/\D/g, "").padStart(8, "0") : null;
-    if (!dniClean || dniClean.length !== 8) {
+    const raw = dni ? String(dni).replace(/\D/g, "") : "";
+    const dniClean = raw.padStart(8, "0");
+    if (raw.length < 7 || raw.length > 9) {
       res.status(400).json({ error: "DNI inválido o faltante" });
+      return;
+    }
+
+    // Check for duplicate registration
+    const existing = await db
+      .select({ id: studentRegistrationsTable.id })
+      .from(studentRegistrationsTable)
+      .where(eq(studentRegistrationsTable.dni, dniClean))
+      .limit(1);
+    if (existing.length > 0) {
+      res.status(409).json({ error: "DNI ya registrado" });
       return;
     }
 

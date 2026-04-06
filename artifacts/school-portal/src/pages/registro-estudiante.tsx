@@ -4,7 +4,7 @@ import {
   Search, Loader2, BookOpen, Clock, LayoutGrid, User
 } from "lucide-react";
 
-type LookupStatus = "idle" | "loading" | "found" | "notfound";
+type LookupStatus = "idle" | "loading" | "found" | "notfound" | "error";
 type SubmitStatus = "idle" | "loading" | "success" | "error" | "duplicate";
 
 interface Ingresante {
@@ -39,7 +39,7 @@ export default function RegistroEstudiante() {
 
   useEffect(() => {
     const clean = dni.replace(/\D/g, "");
-    if (clean.length !== 8) {
+    if (clean.length < 7) {
       setLookupStatus("idle");
       setIngresante(null);
       return;
@@ -58,20 +58,23 @@ export default function RegistroEstudiante() {
             setIngresante(null);
             setLookupStatus("notfound");
           }
-        } else {
+        } else if (res.status === 404) {
           setIngresante(null);
           setLookupStatus("notfound");
+        } else {
+          setIngresante(null);
+          setLookupStatus("error");
         }
       } catch {
         setIngresante(null);
-        setLookupStatus("notfound");
+        setLookupStatus("error");
       }
     }, 400);
   }, [dni]);
 
   async function handleSubmit() {
     const clean = dni.replace(/\D/g, "");
-    if (clean.length !== 8) return;
+    if (clean.length < 7) return;
     setSubmitStatus("loading");
     try {
       const res = await fetch(`${base}/api/students/register`, {
@@ -124,7 +127,7 @@ export default function RegistroEstudiante() {
   }
 
   const dniClean   = dni.replace(/\D/g, "");
-  const canSubmit  = dniClean.length === 8 && (lookupStatus === "found" || lookupStatus === "notfound");
+  const canSubmit  = dniClean.length >= 7 && (lookupStatus === "found" || lookupStatus === "notfound" || lookupStatus === "error");
 
   return (
     <div
@@ -171,14 +174,15 @@ export default function RegistroEstudiante() {
                   className="w-full h-12 px-4 pr-11 rounded-xl border-2 border-gray-100 bg-gray-50 text-base font-bold focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300 tracking-widest"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  {lookupStatus === "loading" && <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />}
-                  {lookupStatus === "found"   && <CheckCircle2 className="w-5 h-5 text-green-500" />}
-                  {lookupStatus === "notfound" && dniClean.length === 8 && <AlertCircle className="w-5 h-5 text-amber-400" />}
-                  {lookupStatus === "idle"    && <Search className="w-5 h-5 text-gray-300" />}
+                  {lookupStatus === "loading"  && <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />}
+                  {lookupStatus === "found"    && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                  {lookupStatus === "notfound" && dniClean.length >= 7 && <AlertCircle className="w-5 h-5 text-amber-400" />}
+                  {lookupStatus === "error"    && <AlertCircle className="w-5 h-5 text-red-400" />}
+                  {lookupStatus === "idle"     && <Search className="w-5 h-5 text-gray-300" />}
                 </div>
               </div>
               <p className="text-[11px] text-gray-400 mt-1.5 ml-1">
-                Ingresa tu DNI de 8 dígitos para verificar tus datos
+                Ingresa tu DNI (7 u 8 dígitos) para verificar tus datos
               </p>
             </div>
 
@@ -255,6 +259,19 @@ export default function RegistroEstudiante() {
               </div>
             )}
 
+            {/* Error — network/server failure */}
+            {lookupStatus === "error" && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-red-700">Error al verificar el DNI</p>
+                  <p className="text-xs text-red-600 mt-0.5 leading-relaxed">
+                    No se pudo conectar al servidor. Puedes intentarlo de nuevo o registrarte de todas formas.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Error / duplicate */}
             {submitStatus === "error" && (
               <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-xs font-medium">
@@ -283,7 +300,7 @@ export default function RegistroEstudiante() {
                 </span>
               ) : lookupStatus === "found"
                 ? "Confirmar mi registro"
-                : dniClean.length === 8
+                : dniClean.length >= 7
                   ? "Registrarme de todas formas"
                   : "Ingresa tu DNI para continuar"
               }
