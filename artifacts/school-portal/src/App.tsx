@@ -133,7 +133,7 @@ function AppRouter() {
         component={() => <ProtectedRoute component={HorarioSeccion} />}
       />
       <Route
-        path="/registro-estudiante"
+        path="/registroestudiantesinhorario"
         component={RegistroEstudiante}
       />
       <Route

@@ -17,7 +17,7 @@ function requireAdmin(req: any, res: any, next: any) {
 // POST /api/students/register — public, no auth required
 router.post("/register", async (req, res) => {
   try {
-    const { apellidos, nombres, telefono, carrera, ciclo, matriculado } = req.body;
+    const { apellidos, nombres, telefono, carrera, ciclo } = req.body;
     if (!apellidos || !nombres || !telefono || !carrera) {
       res.status(400).json({ error: "Faltan campos obligatorios" });
       return;
@@ -30,7 +30,7 @@ router.post("/register", async (req, res) => {
         telefono:    telefono.trim(),
         carrera:     carrera.trim(),
         ciclo:       ciclo?.trim() || null,
-        matriculado: matriculado === true || matriculado === "true",
+        horarioAsignado: false,
       })
       .returning();
     res.json({ ok: true, id: record.id });
@@ -50,6 +50,27 @@ router.get("/register", requireAuth, requireAdmin, async (_req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("Student list error:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// PATCH /api/students/register/:id/horario — toggle horario asignado, admin only
+router.patch("/register/:id/horario", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
+    const { horarioAsignado } = req.body;
+    if (typeof horarioAsignado !== "boolean") {
+      res.status(400).json({ error: "horarioAsignado debe ser boolean" });
+      return;
+    }
+    await db
+      .update(studentRegistrationsTable)
+      .set({ horarioAsignado })
+      .where(eq(studentRegistrationsTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Horario update error:", err);
     res.status(500).json({ error: "Error interno" });
   }
 });

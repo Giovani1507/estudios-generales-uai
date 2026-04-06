@@ -30,7 +30,6 @@ export default function RegistroEstudiante() {
     telefono: "",
     carrera: "",
     ciclo: "" as "" | "1" | "2",
-    matriculado: "" as "" | "si" | "no",
   });
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -41,7 +40,7 @@ export default function RegistroEstudiante() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.apellidos || !form.nombres || !form.telefono || !form.carrera || !form.ciclo || !form.matriculado) {
+    if (!form.apellidos || !form.nombres || !form.telefono || !form.carrera || !form.ciclo) {
       setErrorMsg("Por favor completa todos los campos obligatorios.");
       return;
     }
@@ -56,12 +55,11 @@ export default function RegistroEstudiante() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          apellidos:   form.apellidos,
-          nombres:     form.nombres,
-          telefono:    form.telefono.replace(/\s/g, ""),
-          carrera:     form.carrera,
-          ciclo:       form.ciclo,
-          matriculado: form.matriculado === "si",
+          apellidos: form.apellidos,
+          nombres:   form.nombres,
+          telefono:  form.telefono.replace(/\s/g, ""),
+          carrera:   form.carrera,
+          ciclo:     form.ciclo,
         }),
       });
       if (!res.ok) throw new Error("Error del servidor");
@@ -78,15 +76,14 @@ export default function RegistroEstudiante() {
         style={{ background: "linear-gradient(160deg, #001F5F 0%, #0d3a8c 40%, #1a5fb4 70%, #2f80d6 100%)" }}
       >
         <div className="relative w-full max-w-sm">
-          <div className="absolute inset-0 rounded-3xl" style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px)" }} />
-          <div className="relative bg-white rounded-3xl shadow-2xl px-8 py-12 flex flex-col items-center text-center">
+          <div className="bg-white rounded-3xl shadow-2xl px-8 py-12 flex flex-col items-center text-center">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
-              style={{ background: "linear-gradient(135deg, #16a34a22 0%, #16a34a33 100%)", border: "2px solid #16a34a44" }}>
+              style={{ background: "#dcfce7", border: "2px solid #bbf7d0" }}>
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">¡Registro exitoso!</h2>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Tus datos han sido registrados correctamente en el sistema.
+              Tus datos han sido registrados. Pronto se te asignará un horario.
             </p>
             <div className="mt-6 w-full bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100">
               <p className="text-xs font-semibold text-blue-700">Universidad Autónoma de Ica</p>
@@ -114,13 +111,13 @@ export default function RegistroEstudiante() {
           <h1 className="text-white text-2xl font-black tracking-tight text-center">
             Registro de Estudiante
           </h1>
-          <p className="text-white/60 text-sm mt-1 text-center">Universidad Autónoma de Ica · 2026-1</p>
+          <p className="text-white/60 text-xs mt-1.5 text-center bg-white/10 rounded-full px-4 py-1">
+            Estudiantes sin horario asignado · 2026-1
+          </p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-
-          {/* Accent bar */}
           <div className="h-1.5" style={{ background: "linear-gradient(90deg, #001F5F 0%, #2f80d6 50%, #001F5F 100%)" }} />
 
           <div className="px-7 py-8 flex flex-col gap-5">
@@ -207,33 +204,6 @@ export default function RegistroEstudiante() {
                     }}
                   >
                     Ciclo {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Matriculado */}
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">
-                ¿Está matriculado? <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: "si", label: "Sí, matriculado", color: "#16a34a" },
-                  { value: "no", label: "No matriculado", color: "#dc2626" },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setForm(p => ({ ...p, matriculado: opt.value as "si" | "no" }))}
-                    className="h-12 rounded-xl text-xs font-bold border-2 transition-all"
-                    style={{
-                      borderColor: form.matriculado === opt.value ? opt.color : "#e5e7eb",
-                      background: form.matriculado === opt.value ? opt.color + "15" : "#f9fafb",
-                      color: form.matriculado === opt.value ? opt.color : "#9ca3af",
-                    }}
-                  >
-                    {opt.label}
                   </button>
                 ))}
               </div>

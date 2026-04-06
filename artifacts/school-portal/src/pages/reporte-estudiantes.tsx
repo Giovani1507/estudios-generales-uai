@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { QrCode, Users, Download, Trash2, Search, CheckCircle2, XCircle, RefreshCw, Phone } from "lucide-react";
+import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock } from "lucide-react";
 import * as ExcelJS from "exceljs";
 
 interface StudentReg {
@@ -9,7 +9,7 @@ interface StudentReg {
   telefono: string;
   carrera: string;
   ciclo: string | null;
-  matriculado: boolean;
+  horarioAsignado: boolean;
   createdAt: string;
 }
 
@@ -17,7 +17,7 @@ const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
 function getFormUrl(): string {
   const origin = window.location.origin;
-  return `${origin}${apiBase}/registro-estudiante`;
+  return `${origin}${apiBase}/registroestudiantesinhorario`;
 }
 
 function QrImage({ url }: { url: string }) {
@@ -36,8 +36,9 @@ export default function ReporteEstudiantes() {
   const [students, setStudents] = useState<StudentReg[]>([]);
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
-  const [filterMat, setFilterMat] = useState<"all" | "si" | "no">("all");
   const [filterCiclo, setFilterCiclo] = useState<"all" | "1" | "2">("all");
+  const [filterHorario, setFilterHorario] = useState<"all" | "asignado" | "pendiente">("all");
+  const [toggling, setToggling] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
 
   const formUrl = getFormUrl();
@@ -52,6 +53,23 @@ export default function ReporteEstudiantes() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function toggleHorario(s: StudentReg) {
+    setToggling(s.id);
+    const newVal = !s.horarioAsignado;
+    try {
+      const res = await fetch(`${apiBase}/api/students/register/${s.id}/horario`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ horarioAsignado: newVal }),
+      });
+      if (res.ok) {
+        setStudents(prev => prev.map(x => x.id === s.id ? { ...x, horarioAsignado: newVal } : x));
+      }
+    } catch {}
+    setToggling(null);
+  }
 
   async function handleDelete(id: number) {
     if (!confirm("¿Eliminar este registro?")) return;
@@ -71,29 +89,31 @@ export default function ReporteEstudiantes() {
         s.nombres.toLowerCase().includes(q) ||
         (s.telefono || "").includes(q) ||
         s.carrera.toLowerCase().includes(q);
-      const matchMat = filterMat === "all" || (filterMat === "si") === s.matriculado;
       const matchCiclo = filterCiclo === "all" || s.ciclo === filterCiclo;
-      return matchSearch && matchMat && matchCiclo;
+      const matchHorario =
+        filterHorario === "all" ||
+        (filterHorario === "asignado") === s.horarioAsignado;
+      return matchSearch && matchCiclo && matchHorario;
     });
-  }, [students, search, filterMat, filterCiclo]);
+  }, [students, search, filterCiclo, filterHorario]);
 
-  const totalMat   = students.filter(s => s.matriculado).length;
-  const totalNoMat = students.filter(s => !s.matriculado).length;
-  const totalCiclo1 = students.filter(s => s.ciclo === "1").length;
-  const totalCiclo2 = students.filter(s => s.ciclo === "2").length;
+  const totalAsignado  = students.filter(s => s.horarioAsignado).length;
+  const totalPendiente = students.filter(s => !s.horarioAsignado).length;
+  const totalCiclo1    = students.filter(s => s.ciclo === "1").length;
+  const totalCiclo2    = students.filter(s => s.ciclo === "2").length;
 
   async function downloadExcel() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Reporte Estudiantes");
     ws.columns = [
-      { header: "N°",           key: "n",           width: 5  },
-      { header: "Apellidos",    key: "apellidos",    width: 24 },
-      { header: "Nombres",      key: "nombres",      width: 24 },
-      { header: "Teléfono",     key: "telefono",     width: 14 },
-      { header: "Carrera",      key: "carrera",      width: 32 },
-      { header: "Ciclo",        key: "ciclo",        width: 8  },
-      { header: "Matriculado",  key: "matriculado",  width: 14 },
-      { header: "Fecha",        key: "createdAt",    width: 20 },
+      { header: "N°",              key: "n",              width: 5  },
+      { header: "Apellidos",       key: "apellidos",      width: 24 },
+      { header: "Nombres",         key: "nombres",        width: 24 },
+      { header: "Teléfono",        key: "telefono",       width: 14 },
+      { header: "Carrera",         key: "carrera",        width: 32 },
+      { header: "Ciclo",           key: "ciclo",          width: 8  },
+      { header: "Horario Asignado", key: "horario",       width: 16 },
+      { header: "Fecha",           key: "createdAt",      width: 20 },
     ];
     filtered.forEach((s, i) => {
       ws.addRow({
@@ -103,7 +123,7 @@ export default function ReporteEstudiantes() {
         telefono: s.telefono || "—",
         carrera: s.carrera,
         ciclo: s.ciclo || "—",
-        matriculado: s.matriculado ? "SÍ" : "NO",
+        horario: s.horarioAsignado ? "SÍ" : "PENDIENTE",
         createdAt: new Date(s.createdAt).toLocaleString("es-PE"),
       });
     });
@@ -123,7 +143,7 @@ export default function ReporteEstudiantes() {
           <Users className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Reporte de Estudiantes</h1>
+          <h1 className="text-xl font-bold text-gray-900">Reporte de Estudiantes sin Horario</h1>
           <p className="text-sm text-gray-500">Registros recibidos mediante formulario QR · 2026-1</p>
         </div>
       </div>
@@ -134,7 +154,7 @@ export default function ReporteEstudiantes() {
           <p className="text-sm font-bold text-gray-700">Código QR para estudiantes</p>
           <QrImage url={formUrl} />
           <p className="text-xs text-gray-400 text-center leading-snug">
-            Los estudiantes escanean este código para registrar sus datos
+            Los estudiantes sin horario escanean este código para registrarse
           </p>
           <div className="w-full border border-gray-100 rounded-xl px-3 py-2 bg-gray-50">
             <p className="text-[10px] text-gray-400 mb-0.5">Enlace directo:</p>
@@ -152,10 +172,10 @@ export default function ReporteEstudiantes() {
         {/* Stats */}
         <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4 content-start">
           {[
-            { label: "Total registros", value: students.length, color: "#2f5aa6", bg: "#dbeafe" },
-            { label: "Matriculados",    value: totalMat,         color: "#16a34a", bg: "#dcfce7" },
+            { label: "Total registros", value: students.length,  color: "#2f5aa6", bg: "#dbeafe" },
+            { label: "Con horario",     value: totalAsignado,    color: "#16a34a", bg: "#dcfce7" },
+            { label: "Pendientes",      value: totalPendiente,   color: "#dc2626", bg: "#fee2e2" },
             { label: "Ciclo 1",         value: totalCiclo1,      color: "#7c3aed", bg: "#ede9fe" },
-            { label: "Ciclo 2",         value: totalCiclo2,      color: "#d97706", bg: "#fef3c7" },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 flex flex-col gap-1">
               <div className="w-8 h-1 rounded-full mb-2" style={{ background: s.color }} />
@@ -195,15 +215,15 @@ export default function ReporteEstudiantes() {
           </div>
 
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-            {(["all","si","no"] as const).map(v => (
+            {(["all","pendiente","asignado"] as const).map(v => (
               <button
                 key={v}
-                onClick={() => setFilterMat(v)}
+                onClick={() => setFilterHorario(v)}
                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                  filterMat === v ? "bg-white shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
+                  filterHorario === v ? "bg-white shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {v === "all" ? "Todos" : v === "si" ? "Matriculados" : "No matr."}
+                {v === "all" ? "Todos" : v === "asignado" ? "Con horario" : "Pendientes"}
               </button>
             ))}
           </div>
@@ -246,7 +266,7 @@ export default function ReporteEstudiantes() {
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</th>
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Carrera</th>
                   <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Ciclo</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Matriculado</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Horario Asignado</th>
                   <th className="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Fecha</th>
                   <th className="px-4 py-2.5" />
                 </tr>
@@ -274,15 +294,35 @@ export default function ReporteEstudiantes() {
                       ) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {s.matriculado ? (
-                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                          <CheckCircle2 className="w-3 h-3" /> Sí
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                          <XCircle className="w-3 h-3" /> No
-                        </span>
-                      )}
+                      <button
+                        onClick={() => toggleHorario(s)}
+                        disabled={toggling === s.id}
+                        title={s.horarioAsignado ? "Marcar como pendiente" : "Marcar horario asignado"}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${
+                          toggling === s.id ? "opacity-50 cursor-wait" : "cursor-pointer hover:scale-105 active:scale-95"
+                        }`}
+                        style={s.horarioAsignado ? {
+                          background: "#dcfce7",
+                          borderColor: "#16a34a",
+                          color: "#16a34a",
+                        } : {
+                          background: "#f9fafb",
+                          borderColor: "#e5e7eb",
+                          color: "#9ca3af",
+                        }}
+                      >
+                        {s.horarioAsignado ? (
+                          <>
+                            <CalendarCheck className="w-3.5 h-3.5" />
+                            Asignado
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5" />
+                            Pendiente
+                          </>
+                        )}
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
                       {new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}

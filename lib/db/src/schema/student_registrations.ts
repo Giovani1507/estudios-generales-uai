@@ -6,9 +6,9 @@ export const studentRegistrationsTable = pgTable("student_registrations", {
   nombres:     text("nombres").notNull(),
   telefono:    text("telefono").notNull(),
   carrera:     text("carrera").notNull(),
-  ciclo:       text("ciclo"),
-  matriculado: boolean("matriculado").notNull().default(false),
-  createdAt:   timestamp("created_at").notNull().defaultNow(),
+  ciclo:           text("ciclo"),
+  horarioAsignado: boolean("horario_asignado").notNull().default(false),
+  createdAt:       timestamp("created_at").notNull().defaultNow(),
 });
 
 export type StudentRegistration = typeof studentRegistrationsTable.$inferSelect;

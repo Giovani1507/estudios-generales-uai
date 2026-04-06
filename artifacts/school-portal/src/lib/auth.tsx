@@ -2,6 +2,8 @@ import { createContext, useContext, ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, User } from "@workspace/api-client-react";
 
+const PUBLIC_ROUTES = ["/login", "/registroestudiantesinhorario"];
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -25,15 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const PUBLIC_ROUTES = ["/login", "/registro-estudiante"];
-
   useEffect(() => {
     if (!isLoading && (isError || !user) && !PUBLIC_ROUTES.includes(location)) {
       setLocation("/login");
     } else if (!isLoading && user && location === "/login") {
       setLocation("/");
     }
-  }, [isLoading, isError, user, location, setLocation]);
+  }, [isLoading, isError, user, location]);
 
   return (
     <AuthContext.Provider value={{
