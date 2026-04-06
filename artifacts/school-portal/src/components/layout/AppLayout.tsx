@@ -62,12 +62,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Directiva de Matrícula",
-    url: "/directiva-matricula",
-    icon: ClipboardList,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Estudiantes",
     url: "/estudiantes",
     icon: Users,

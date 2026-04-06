@@ -20,7 +20,6 @@ import Announcements from "@/pages/announcements";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import StudentsPage from "@/pages/StudentsPage";
-import DirectivaMatricula from "@/pages/directiva-matricula";
 import HorarioDocenteFica from "@/pages/horario-docente-fica";
 import HorarioDocenteFcs from "@/pages/horario-docente-fcs";
 import HorarioCarrera from "@/pages/horario-carrera";
@@ -93,10 +92,6 @@ function AppRouter() {
       <Route
         path="/estudiantes"
         component={() => <ProtectedRoute component={StudentsPage} />}
-      />
-      <Route
-        path="/directiva-matricula"
-        component={() => <ProtectedRoute component={DirectivaMatricula} />}
       />
       <Route
         path="/docentes/horario-fica"
