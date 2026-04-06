@@ -135,17 +135,18 @@ export default function ReporteEstudiantes() {
 
     const TOTAL_COLS = 8;
 
-    // ── Try to embed logo (escudo/crest, stays within col A) ──────────────
+    // ── Try to embed logo (escudo/crest, fixed pixel size) ───────────────
     try {
       const logoUrl = `${window.location.origin}${apiBase}/escudo.png`;
       const resp = await fetch(logoUrl);
       if (resp.ok) {
         const arrayBuf = await resp.arrayBuffer();
         const logoId = wb.addImage({ buffer: arrayBuf, extension: "png" });
-        // tl/br use 0-indexed col/row fractions; keep image inside col A with small padding
+        // Use ext (fixed px) so the image is never distorted/squashed
         ws.addImage(logoId, {
-          tl: { col: 0.1, row: 0.15 },
-          br: { col: 0.9, row: 3.85 },
+          tl: { col: 0.08, row: 0.12 },
+          ext: { width: 88, height: 88 },
+          editAs: "oneCell",
         } as any);
       }
     } catch { /* skip logo if unavailable */ }
@@ -175,7 +176,7 @@ export default function ReporteEstudiantes() {
       for (let c = 1; c <= TOTAL_COLS; c++) {
         ws.getCell(r, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
       }
-      ws.getRow(r).height = r === 1 ? 28 : r === 2 ? 22 : 16;
+      ws.getRow(r).height = r === 1 ? 34 : r === 2 ? 26 : r === 3 ? 20 : 16;
     }
 
     styleHeaderCell(1, 2, "UNIVERSIDAD AUTÓNOMA DE ICA", { size: 16, bold: true, color: WHITE });
