@@ -121,9 +121,9 @@ export default function ReporteEstudiantes() {
       pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1 },
     });
 
-    // Column widths
+    // Column widths  (col A is wider to hold the logo in the header)
     ws.columns = [
-      { key: "n",         width: 5  },
+      { key: "n",         width: 14 },
       { key: "apellidos", width: 26 },
       { key: "nombres",   width: 26 },
       { key: "telefono",  width: 16 },
@@ -135,14 +135,18 @@ export default function ReporteEstudiantes() {
 
     const TOTAL_COLS = 8;
 
-    // ── Try to embed logo ──────────────────────────────────────────────────
+    // ── Try to embed logo (escudo/crest, stays within col A) ──────────────
     try {
-      const logoUrl = `${window.location.origin}${apiBase}/logo-uai.png`;
+      const logoUrl = `${window.location.origin}${apiBase}/escudo.png`;
       const resp = await fetch(logoUrl);
       if (resp.ok) {
         const arrayBuf = await resp.arrayBuffer();
         const logoId = wb.addImage({ buffer: arrayBuf, extension: "png" });
-        ws.addImage(logoId, { tl: { col: 0, row: 0 }, br: { col: 1.6, row: 4 } } as any);
+        // tl/br use 0-indexed col/row fractions; keep image inside col A with small padding
+        ws.addImage(logoId, {
+          tl: { col: 0.1, row: 0.15 },
+          br: { col: 0.9, row: 3.85 },
+        } as any);
       }
     } catch { /* skip logo if unavailable */ }
 
