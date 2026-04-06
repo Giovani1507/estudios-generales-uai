@@ -35,83 +35,104 @@ export default function Dashboard() {
   return (
     <div
       className="relative flex items-center justify-center"
-      style={{ minHeight: "calc(100vh - 56px)", background: "#f8faff" }}
+      style={{ minHeight: "calc(100vh - 56px)", background: "#eef2f9" }}
     >
-      {/* Subtle background image */}
+      {/* Background image very faint */}
       <img
         src={`${base}dashboard-bg.png`}
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
-        style={{ opacity: 0.06 }}
+        style={{ opacity: 0.07 }}
       />
 
       {/* Card */}
       <div
-        className="relative z-10 flex flex-col items-center text-center gap-6 bg-white rounded-3xl shadow-sm border border-gray-100 px-14 py-12"
+        className="relative z-10 bg-white rounded-2xl overflow-hidden shadow-lg"
         style={{
+          width: 380,
+          maxWidth: "92vw",
           opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0)" : "translateY(18px)",
-          transition: "opacity 0.6s ease, transform 0.6s ease",
-          maxWidth: 440,
-          width: "90%",
+          transform: visible ? "translateY(0)" : "translateY(16px)",
+          transition: "opacity 0.55s ease, transform 0.55s ease",
         }}
       >
-        {/* Logo */}
-        <img
-          src={`${base}logo.png`}
-          alt="UAI"
-          className="object-contain"
-          style={{ width: 160, height: 64 }}
-        />
-
-        <div className="w-10 h-px bg-gray-200" />
-
-        {/* Avatar */}
-        {user?.avatarUrl ? (
+        {/* Cover banner */}
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ height: 140, background: "linear-gradient(135deg, #001F5F 0%, #1a3a6b 60%, #2f5aa6 100%)" }}
+        >
           <img
-            src={user.avatarUrl}
-            alt={displayName}
-            className="rounded-full object-cover shadow-md"
-            style={{ width: 80, height: 80, border: "3px solid #e8f0fb" }}
+            src={`${base}dashboard-bg.png`}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+            style={{ opacity: 0.18, mixBlendMode: "luminosity" }}
           />
-        ) : (
-          <div
-            className="rounded-full flex items-center justify-center shadow-md font-bold text-white"
-            style={{
-              width: 80, height: 80, fontSize: 26,
-              background: "linear-gradient(135deg, #2f5aa6 0%, #1a3a6b 100%)",
-              border: "3px solid #e8f0fb",
-            }}
-          >
-            {getInitials(displayName)}
-          </div>
-        )}
+          {/* UAI Logo top-right */}
+          <img
+            src={`${base}logo.png`}
+            alt="UAI"
+            className="absolute top-4 right-5 object-contain"
+            style={{ height: 36, opacity: 0.85 }}
+          />
+        </div>
 
-        {/* Greeting */}
-        <div className="flex flex-col gap-1.5">
+        {/* Square avatar — overlaps banner */}
+        <div className="flex justify-center" style={{ marginTop: -60 }}>
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={displayName}
+              className="object-cover shadow-xl"
+              style={{
+                width: 120, height: 120,
+                borderRadius: 14,
+                border: "4px solid #fff",
+              }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center shadow-xl font-bold text-white"
+              style={{
+                width: 120, height: 120,
+                borderRadius: 14,
+                border: "4px solid #fff",
+                fontSize: 38,
+                background: "linear-gradient(135deg, #2f5aa6 0%, #001F5F 100%)",
+              }}
+            >
+              {getInitials(displayName)}
+            </div>
+          )}
+        </div>
+
+        {/* Text content */}
+        <div className="flex flex-col items-center text-center px-8 pt-4 pb-8 gap-1.5">
           <p className="text-gray-400 text-sm">{greeting()},</p>
-          <h1 className="text-gray-800 font-bold" style={{ fontSize: "1.45rem", lineHeight: 1.2 }}>
+          <h1
+            className="font-bold text-gray-900"
+            style={{ fontSize: "1.4rem", lineHeight: 1.25 }}
+          >
             {displayName}
           </h1>
+
           {roleLabel && (
             <span
-              className="inline-block self-center mt-1 px-4 py-1 rounded-full text-xs font-semibold text-white"
+              className="mt-1 px-4 py-1 rounded-full text-xs font-semibold text-white"
               style={{ background: "#2f5aa6" }}
             >
               {roleLabel}
             </span>
           )}
+
           {user?.cargo && (
-            <p className="text-gray-400 text-xs mt-1">{user.cargo}</p>
+            <p className="text-gray-400 text-xs mt-0.5 leading-snug">{user.cargo}</p>
           )}
-        </div>
 
-        <div className="w-10 h-px bg-gray-200" />
+          <div className="w-12 h-px bg-gray-200 my-3" />
 
-        {/* Footer */}
-        <div className="flex flex-col gap-0.5">
-          <p className="text-gray-500 text-sm font-medium">Universidad Autónoma de Ica</p>
+          <p className="text-gray-600 text-sm font-semibold">Universidad Autónoma de Ica</p>
           <p className="text-gray-400 text-xs">Período 2026-1</p>
         </div>
       </div>
