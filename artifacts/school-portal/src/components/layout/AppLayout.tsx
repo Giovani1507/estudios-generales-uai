@@ -192,18 +192,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar variant="sidebar" className="border-r-0">
           <SidebarContent className="flex flex-col bg-sidebar">
             {/* Logo */}
-            <div className="px-4 py-5 flex items-center justify-center border-b border-white/15">
+            <div className="px-4 py-4 flex flex-col items-center gap-2 border-b border-white/15">
               <img
                 src={`${import.meta.env.BASE_URL}logo-sidebar.png`}
                 alt="Universidad Autónoma de Ica"
                 className="object-contain w-full"
-                style={{
-                  maxWidth: "200px",
-                  maxHeight: "72px",
-                  filter:
-                    "drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,0.7))",
-                }}
+                style={{ maxWidth: "180px", maxHeight: "64px" }}
               />
+              <span className="text-white text-[10px] font-bold tracking-widest uppercase text-center leading-tight">
+                Universidad Autónoma de Ica
+              </span>
             </div>
 
             {/* Menu */}
