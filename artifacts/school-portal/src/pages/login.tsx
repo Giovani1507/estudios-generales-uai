@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Lock, User, Loader2 } from "lucide-react";
+import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Usuario requerido"),
@@ -24,6 +24,7 @@ const loginSchema = z.object({
 
 export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -37,7 +38,7 @@ export default function Login() {
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       },
       onError: (error: any) => {
-        setErrorMsg(error?.response?.data?.error || "Usuario o contraseña incorrectos");
+        setErrorMsg(error?.data?.error || "Usuario o contraseña incorrectos");
       },
     },
   });
@@ -124,11 +125,19 @@ export default function Login() {
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          className="pl-9 h-11 rounded-lg bg-muted/40 border-border"
+                          className="pl-9 pr-10 h-11 rounded-lg bg-muted/40 border-border"
                           {...field}
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(v => !v)}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </FormControl>
                     <FormMessage />

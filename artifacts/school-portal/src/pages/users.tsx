@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Edit, Trash2, Shield, Mail, Key } from "lucide-react";
+import { UserPlus, Edit, Trash2, Shield, Mail, Eye, EyeOff } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const userSchema = z.object({
@@ -33,6 +33,7 @@ export default function Users() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
@@ -120,6 +121,7 @@ export default function Users() {
           setIsDialogOpen(open);
           if (!open) {
             setEditingUser(null);
+            setShowPassword(false);
             form.reset({ username: "", fullName: "", email: "", password: "", role: "administrativo" });
           }
         }}>
@@ -179,7 +181,25 @@ export default function Users() {
                 <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contraseña {editingUser && <span className="text-xs text-muted-foreground font-normal">(Dejar en blanco para no cambiar)</span>}</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" className="rounded-xl" {...field} /></FormControl>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          className="rounded-xl pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(v => !v)}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
