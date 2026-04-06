@@ -14,24 +14,79 @@ function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
-// POST /api/students/register — public
-router.post("/register", async (req, res) => {
+// GET /api/students/lookup?dni=XXXXXXXX — public, looks up ingresantes_pagos by DNI
+router.get("/lookup", async (req, res) => {
   try {
-    const { dni, apellidos, nombres, telefono, carrera, ciclo } = req.body;
-    if (!apellidos || !nombres || !telefono || !carrera) {
-      res.status(400).json({ error: "Faltan campos obligatorios" });
+    const dni = String(req.query.dni || "").replace(/\D/g, "").padStart(8, "0");
+    if (dni.length !== 8) {
+      res.status(400).json({ error: "DNI inválido" });
       return;
     }
+    const rows = await db
+      .select()
+      .from(ingresantesPagosTable)
+      .where(eq(ingresantesPagosTable.dni, dni))
+      .limit(1);
+
+    if (rows.length === 0) {
+      res.status(404).json({ encontrado: false });
+      return;
+    }
+    const r = rows[0];
+    res.json({
+      encontrado: true,
+      dni:              r.dni,
+      apellidosNombres: r.apellidosNombres,
+      carrera:          r.carrera,
+      sede:             r.sede,
+      modalidadIngreso: r.modalidadIngreso,
+      modalidadEstudio: r.modalidadEstudio,
+      turno:            r.turno,
+      seccion:          r.seccion,
+    });
+  } catch (err) {
+    console.error("Lookup error:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// POST /api/students/register — public, only requires DNI (auto-fills from ingresantes_pagos)
+router.post("/register", async (req, res) => {
+  try {
+    const { dni } = req.body;
     const dniClean = dni ? String(dni).replace(/\D/g, "").padStart(8, "0") : null;
+    if (!dniClean || dniClean.length !== 8) {
+      res.status(400).json({ error: "DNI inválido o faltante" });
+      return;
+    }
+
+    // Look up ingresantes_pagos for auto-fill
+    let apellidos = "";
+    let nombres = "";
+    let carrera = "";
+    const rows = await db
+      .select()
+      .from(ingresantesPagosTable)
+      .where(eq(ingresantesPagosTable.dni, dniClean))
+      .limit(1);
+
+    if (rows.length > 0) {
+      const r = rows[0];
+      const partes = (r.apellidosNombres || "").split(" ");
+      apellidos = partes.slice(0, 2).join(" ");
+      nombres   = partes.slice(2).join(" ");
+      carrera   = r.carrera || "";
+    }
+
     const [record] = await db
       .insert(studentRegistrationsTable)
       .values({
         dni:             dniClean,
-        apellidos:       apellidos.trim().toUpperCase(),
-        nombres:         nombres.trim().toUpperCase(),
-        telefono:        telefono.trim(),
-        carrera:         carrera.trim(),
-        ciclo:           ciclo?.trim() || null,
+        apellidos:       apellidos,
+        nombres:         nombres,
+        telefono:        "",
+        carrera:         carrera,
+        ciclo:           null,
         horarioAsignado: false,
       })
       .returning();
@@ -47,20 +102,22 @@ router.get("/register", requireAuth, requireAdmin, async (_req, res) => {
   try {
     const rows = await db
       .select({
-        id:              studentRegistrationsTable.id,
-        dni:             studentRegistrationsTable.dni,
-        apellidos:       studentRegistrationsTable.apellidos,
-        nombres:         studentRegistrationsTable.nombres,
-        telefono:        studentRegistrationsTable.telefono,
-        carrera:         studentRegistrationsTable.carrera,
-        ciclo:           studentRegistrationsTable.ciclo,
-        horarioAsignado: studentRegistrationsTable.horarioAsignado,
-        createdAt:       studentRegistrationsTable.createdAt,
-        _ingresanteDni:  ingresantesPagosTable.dni,
-        modalidadEstudio: ingresantesPagosTable.modalidadEstudio,
-        turno:           ingresantesPagosTable.turno,
-        seccion:         ingresantesPagosTable.seccion,
-        sede:            ingresantesPagosTable.sede,
+        id:                 studentRegistrationsTable.id,
+        dni:                studentRegistrationsTable.dni,
+        apellidos:          studentRegistrationsTable.apellidos,
+        nombres:            studentRegistrationsTable.nombres,
+        telefono:           studentRegistrationsTable.telefono,
+        carrera:            studentRegistrationsTable.carrera,
+        ciclo:              studentRegistrationsTable.ciclo,
+        horarioAsignado:    studentRegistrationsTable.horarioAsignado,
+        createdAt:          studentRegistrationsTable.createdAt,
+        _ingresanteDni:     ingresantesPagosTable.dni,
+        apellidosNombres:   ingresantesPagosTable.apellidosNombres,
+        carreraIngresante:  ingresantesPagosTable.carrera,
+        modalidadEstudio:   ingresantesPagosTable.modalidadEstudio,
+        turno:              ingresantesPagosTable.turno,
+        seccion:            ingresantesPagosTable.seccion,
+        sede:               ingresantesPagosTable.sede,
       })
       .from(studentRegistrationsTable)
       .leftJoin(

@@ -1,105 +1,129 @@
-import { useState } from "react";
-import { CheckCircle2, AlertCircle, Phone, User, BookOpen, GraduationCap, CreditCard } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  CheckCircle2, AlertCircle, CreditCard, GraduationCap,
+  Search, Loader2, BookOpen, Clock, LayoutGrid, User
+} from "lucide-react";
 
-const CARRERAS = [
-  "Administración de Empresas",
-  "Administración y Finanzas",
-  "Arquitectura",
-  "Contabilidad",
-  "Derecho",
-  "Enfermería",
-  "Ingeniería Civil",
-  "Ingeniería Industrial",
-  "Ingeniería de Sistemas",
-  "Medicina Humana",
-  "Obstetricia",
-  "Psicología",
-  "Tecnología Médica I",
-  "Tecnología Médica II",
-  "Tecnología Médica III",
-  "Tecnología Médica IV",
-];
+type LookupStatus = "idle" | "loading" | "found" | "notfound";
+type SubmitStatus = "idle" | "loading" | "success" | "error" | "duplicate";
 
-type Status = "idle" | "loading" | "success" | "error";
+interface Ingresante {
+  dni:              string;
+  apellidosNombres: string;
+  carrera:          string | null;
+  sede:             string | null;
+  modalidadIngreso: string | null;
+  modalidadEstudio: string | null;
+  turno:            string | null;
+  seccion:          string | null;
+}
+
+const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
+function Badge({ label, value, color }: { label: string; value: string | null; color: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color }}>{label}</span>
+      <span className="text-sm font-semibold text-gray-800">{value || "—"}</span>
+    </div>
+  );
+}
 
 export default function RegistroEstudiante() {
-  const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
-  const [form, setForm] = useState({
-    dni: "",
-    apellidos: "",
-    nombres: "",
-    telefono: "",
-    carrera: "",
-    ciclo: "" as "" | "1" | "2",
-  });
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [dni, setDni]                 = useState("");
+  const [lookupStatus, setLookupStatus] = useState<LookupStatus>("idle");
+  const [ingresante, setIngresante]   = useState<Ingresante | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+  useEffect(() => {
+    const clean = dni.replace(/\D/g, "");
+    if (clean.length !== 8) {
+      setLookupStatus("idle");
+      setIngresante(null);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLookupStatus("loading");
+      try {
+        const res = await fetch(`${base}/api/students/lookup?dni=${clean}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.encontrado) {
+            setIngresante(data);
+            setLookupStatus("found");
+          } else {
+            setIngresante(null);
+            setLookupStatus("notfound");
+          }
+        } else {
+          setIngresante(null);
+          setLookupStatus("notfound");
+        }
+      } catch {
+        setIngresante(null);
+        setLookupStatus("notfound");
+      }
+    }, 400);
+  }, [dni]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.dni || !form.apellidos || !form.nombres || !form.telefono || !form.carrera || !form.ciclo) {
-      setErrorMsg("Por favor completa todos los campos obligatorios.");
-      return;
-    }
-    if (!/^\d{8}$/.test(form.dni.replace(/\s/g, ""))) {
-      setErrorMsg("El DNI debe tener exactamente 8 dígitos.");
-      return;
-    }
-    if (!/^\d{9,15}$/.test(form.telefono.replace(/\s/g, ""))) {
-      setErrorMsg("El número de teléfono debe tener entre 9 y 15 dígitos.");
-      return;
-    }
-    setErrorMsg("");
-    setStatus("loading");
+  async function handleSubmit() {
+    const clean = dni.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setSubmitStatus("loading");
     try {
       const res = await fetch(`${base}/api/students/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dni:       form.dni.replace(/\s/g, ""),
-          apellidos: form.apellidos,
-          nombres:   form.nombres,
-          telefono:  form.telefono.replace(/\s/g, ""),
-          carrera:   form.carrera,
-          ciclo:     form.ciclo,
-        }),
+        body: JSON.stringify({ dni: clean }),
       });
-      if (!res.ok) throw new Error("Error del servidor");
-      setStatus("success");
+      if (res.status === 409) { setSubmitStatus("duplicate"); return; }
+      if (!res.ok) throw new Error();
+      setSubmitStatus("success");
     } catch {
-      setStatus("error");
+      setSubmitStatus("error");
     }
   }
 
-  if (status === "success") {
+  /* ── Success screen ── */
+  if (submitStatus === "success") {
     return (
       <div
         className="min-h-screen flex items-center justify-center px-4"
         style={{ background: "linear-gradient(160deg, #001F5F 0%, #0d3a8c 40%, #1a5fb4 70%, #2f80d6 100%)" }}
       >
-        <div className="relative w-full max-w-sm">
-          <div className="bg-white rounded-3xl shadow-2xl px-8 py-12 flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
-              style={{ background: "#dcfce7", border: "2px solid #bbf7d0" }}>
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+        <div className="bg-white rounded-3xl shadow-2xl px-8 py-12 flex flex-col items-center text-center max-w-sm w-full">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+            style={{ background: "#dcfce7", border: "2px solid #bbf7d0" }}
+          >
+            <CheckCircle2 className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-2">¡Registro exitoso!</h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-4">
+            Tu registro ha sido recibido. Pronto se te asignará un horario.
+          </p>
+          {ingresante && (
+            <div className="w-full bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100 text-left">
+              <p className="text-xs font-bold text-blue-700 mb-1">{ingresante.apellidosNombres}</p>
+              <p className="text-xs text-blue-500">{ingresante.carrera}</p>
+              {ingresante.turno && ingresante.seccion && (
+                <p className="text-xs text-blue-400 mt-0.5">Turno {ingresante.turno} · Sección {ingresante.seccion}</p>
+              )}
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">¡Registro exitoso!</h2>
-            <p className="text-gray-500 text-sm leading-relaxed">
-              Tus datos han sido registrados. Pronto se te asignará un horario.
-            </p>
-            <div className="mt-6 w-full bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100">
-              <p className="text-xs font-semibold text-blue-700">Universidad Autónoma de Ica</p>
-              <p className="text-xs text-blue-500 mt-0.5">Semestre Académico 2026-1</p>
-            </div>
+          )}
+          <div className="mt-4 w-full bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+            <p className="text-xs font-semibold text-gray-700">Universidad Autónoma de Ica</p>
+            <p className="text-xs text-gray-400 mt-0.5">Semestre Académico 2026-1</p>
           </div>
         </div>
       </div>
     );
   }
+
+  const dniClean   = dni.replace(/\D/g, "");
+  const canSubmit  = dniClean.length === 8 && (lookupStatus === "found" || lookupStatus === "notfound");
 
   return (
     <div
@@ -110,8 +134,10 @@ export default function RegistroEstudiante() {
 
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.3)" }}>
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.3)" }}
+          >
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-white text-2xl font-black tracking-tight text-center">
@@ -128,132 +154,132 @@ export default function RegistroEstudiante() {
 
           <div className="px-7 py-8 flex flex-col gap-5">
 
-            {/* DNI */}
+            {/* DNI input */}
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
                 <CreditCard className="w-3.5 h-3.5" />
                 DNI <span className="text-red-500">*</span>
               </label>
-              <input
-                name="dni"
-                value={form.dni}
-                onChange={handleChange}
-                placeholder="Ej: 74123456"
-                inputMode="numeric"
-                maxLength={8}
-                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300 tracking-widest"
-              />
-            </div>
-
-            {/* Apellidos */}
-            <div>
-              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                <User className="w-3.5 h-3.5" />
-                Apellidos <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="apellidos"
-                value={form.apellidos}
-                onChange={handleChange}
-                placeholder="Ej: García López"
-                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300"
-              />
-            </div>
-
-            {/* Nombres */}
-            <div>
-              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                <User className="w-3.5 h-3.5" />
-                Nombres <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="nombres"
-                value={form.nombres}
-                onChange={handleChange}
-                placeholder="Ej: Juan Carlos"
-                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300"
-              />
-            </div>
-
-            {/* Teléfono */}
-            <div>
-              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                <Phone className="w-3.5 h-3.5" />
-                Número de Teléfono <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="telefono"
-                value={form.telefono}
-                onChange={handleChange}
-                placeholder="Ej: 987 654 321"
-                inputMode="tel"
-                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300"
-              />
-            </div>
-
-            {/* Carrera */}
-            <div>
-              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                <BookOpen className="w-3.5 h-3.5" />
-                Carrera <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="carrera"
-                value={form.carrera}
-                onChange={handleChange}
-                className="w-full h-11 px-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all text-gray-700"
-              >
-                <option value="">Seleccionar carrera…</option>
-                {CARRERAS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {/* Ciclo — solo 1 o 2 */}
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">
-                Ciclo <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {(["1", "2"] as const).map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setForm(p => ({ ...p, ciclo: c }))}
-                    className="h-12 rounded-xl text-sm font-bold border-2 transition-all"
-                    style={{
-                      borderColor: form.ciclo === c ? "#001F5F" : "#e5e7eb",
-                      background: form.ciclo === c ? "#001F5F" : "#f9fafb",
-                      color: form.ciclo === c ? "#ffffff" : "#9ca3af",
-                    }}
-                  >
-                    Ciclo {c}
-                  </button>
-                ))}
+              <div className="relative">
+                <input
+                  value={dni}
+                  onChange={e => { setDni(e.target.value.replace(/\D/g, "").slice(0, 8)); setSubmitStatus("idle"); }}
+                  placeholder="Ej: 74123456"
+                  inputMode="numeric"
+                  maxLength={8}
+                  className="w-full h-12 px-4 pr-11 rounded-xl border-2 border-gray-100 bg-gray-50 text-base font-bold focus:outline-none focus:border-blue-400 focus:bg-white transition-all placeholder:text-gray-300 tracking-widest"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  {lookupStatus === "loading" && <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />}
+                  {lookupStatus === "found"   && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                  {lookupStatus === "notfound" && dniClean.length === 8 && <AlertCircle className="w-5 h-5 text-amber-400" />}
+                  {lookupStatus === "idle"    && <Search className="w-5 h-5 text-gray-300" />}
+                </div>
               </div>
+              <p className="text-[11px] text-gray-400 mt-1.5 ml-1">
+                Ingresa tu DNI de 8 dígitos para verificar tus datos
+              </p>
             </div>
 
-            {/* Error */}
-            {(errorMsg || status === "error") && (
+            {/* Preview card — found */}
+            {lookupStatus === "found" && ingresante && (
+              <div className="rounded-2xl border-2 border-green-200 bg-green-50 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-green-600">
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                  <span className="text-white text-xs font-bold uppercase tracking-wide">Datos encontrados</span>
+                </div>
+                <div className="px-4 py-4 flex flex-col gap-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-green-700 uppercase tracking-wide">Apellidos y Nombres</p>
+                      <p className="text-sm font-bold text-gray-900 leading-tight">{ingresante.apellidosNombres}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 border-t border-green-100 pt-3">
+                    <div className="flex items-start gap-2">
+                      <BookOpen className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Carrera</p>
+                        <p className="text-xs font-semibold text-gray-800">{ingresante.carrera || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className={`w-4 h-4 rounded-full shrink-0 mt-0.5 flex items-center justify-center ${ingresante.turno ? "bg-blue-100" : "bg-gray-100"}`}>
+                        <Clock className="w-3 h-3 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Turno</p>
+                        <p className="text-xs font-semibold text-gray-800">{ingresante.turno || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <LayoutGrid className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sección</p>
+                        <p className="text-xs font-semibold text-gray-800">{ingresante.seccion || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <GraduationCap className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Modalidad</p>
+                        <p className="text-xs font-semibold text-gray-800">{ingresante.modalidadEstudio || "—"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warning — not found */}
+            {lookupStatus === "notfound" && (
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-amber-700">DNI no encontrado en la lista de ingresantes</p>
+                  <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">
+                    Tu DNI no está en la data de ingresantes con pago. Puedes continuar el registro de todas formas.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error / duplicate */}
+            {submitStatus === "error" && (
               <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-xs font-medium">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                {errorMsg || "Ocurrió un error. Intenta de nuevo."}
+                Ocurrió un error. Por favor intenta de nuevo.
+              </div>
+            )}
+            {submitStatus === "duplicate" && (
+              <div className="flex items-center gap-2.5 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-yellow-700 text-xs font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                Este DNI ya fue registrado anteriormente.
               </div>
             )}
 
             {/* Submit */}
             <button
-              type="submit"
               onClick={handleSubmit}
-              disabled={status === "loading"}
-              className="w-full h-12 rounded-xl font-black text-white text-sm tracking-wide transition-all disabled:opacity-60 shadow-lg active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, #001F5F 0%, #2f80d6 100%)" }}
+              disabled={!canSubmit || submitStatus === "loading"}
+              className="w-full h-12 rounded-xl font-black text-white text-sm tracking-wide transition-all disabled:opacity-50 shadow-lg active:scale-[0.98]"
+              style={{ background: canSubmit ? "linear-gradient(135deg, #001F5F 0%, #2f80d6 100%)" : "#9ca3af" }}
             >
-              {status === "loading" ? (
+              {submitStatus === "loading" ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Enviando…
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Registrando…
                 </span>
-              ) : "Registrar mis datos"}
+              ) : lookupStatus === "found"
+                ? "Confirmar mi registro"
+                : dniClean.length === 8
+                  ? "Registrarme de todas formas"
+                  : "Ingresa tu DNI para continuar"
+              }
             </button>
 
             <p className="text-center text-gray-300 text-[10px] leading-relaxed">

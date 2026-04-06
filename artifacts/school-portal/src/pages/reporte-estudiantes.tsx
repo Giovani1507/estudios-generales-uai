@@ -13,6 +13,8 @@ interface StudentReg {
   horarioAsignado: boolean;
   createdAt: string;
   pagado: boolean;
+  apellidosNombres: string | null;
+  carreraIngresante: string | null;
   modalidadEstudio: string | null;
   turno: string | null;
   seccion: string | null;
@@ -203,11 +205,12 @@ export default function ReporteEstudiantes() {
   const filtered = useMemo(() => {
     return students.filter(s => {
       const q = search.toLowerCase();
+      const displayName = s.apellidosNombres || `${s.apellidos} ${s.nombres}`;
+      const displayCarrera = s.carreraIngresante || s.carrera;
       const matchSearch = !q ||
-        s.apellidos.toLowerCase().includes(q) ||
-        s.nombres.toLowerCase().includes(q) ||
+        displayName.toLowerCase().includes(q) ||
+        displayCarrera.toLowerCase().includes(q) ||
         (s.telefono || "").includes(q) ||
-        s.carrera.toLowerCase().includes(q) ||
         (s.dni || "").includes(q);
       const matchCiclo = filterCiclo === "all" || s.ciclo === filterCiclo;
       const matchHorario =
@@ -359,7 +362,7 @@ export default function ReporteEstudiantes() {
     ws.getRow(7).height = 4;
 
     // ── Row 8: Column headers ─────────────────────────────────────────────
-    const HEADERS = ["N°", "DNI", "Apellidos", "Nombres", "Teléfono", "Carrera", "Ciclo", "Pago", "Modalidad", "Turno", "Sección", "Horario", "Fecha Registro"];
+    const HEADERS = ["N°", "DNI", "Apellidos y Nombres", "Sede", "Teléfono", "Carrera", "Ciclo", "Pago", "Modalidad", "Turno", "Sección", "Horario", "Fecha Registro"];
     const headerRow = ws.getRow(8);
     headerRow.height = 22;
     HEADERS.forEach((h, idx) => {
@@ -387,13 +390,15 @@ export default function ReporteEstudiantes() {
       const PAGADOBG = "F0FDF4"; const PAGADOTX = "16a34a";
       const NOPAGBG  = "FFFBEB"; const NOPAGTX  = "B45309";
 
+      const displayName    = s.apellidosNombres || `${s.apellidos} ${s.nombres}`.trim() || "—";
+      const displayCarrera = s.carreraIngresante || s.carrera || "—";
       const values: (string | number)[] = [
         i + 1,
         s.dni || "—",
-        s.apellidos,
-        s.nombres,
+        displayName,
+        s.sede || "—",
         s.telefono || "—",
-        s.carrera,
+        displayCarrera,
         s.ciclo ? `Ciclo ${s.ciclo}` : "—",
         s.pagado ? "✓ PAGADO" : "✗ SIN DATA",
         s.modalidadEstudio || "—",
@@ -622,9 +627,15 @@ export default function ReporteEstudiantes() {
                     <td className="px-3 py-3 font-mono text-xs font-bold text-gray-700 whitespace-nowrap">
                       {s.dni || <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-3 py-3">
-                      <p className="font-semibold text-gray-800 text-xs">{s.apellidos}</p>
-                      <p className="text-gray-500 text-xs">{s.nombres}</p>
+                    <td className="px-3 py-3 max-w-[200px]">
+                      {s.apellidosNombres ? (
+                        <p className="font-semibold text-gray-800 text-xs leading-snug">{s.apellidosNombres}</p>
+                      ) : (
+                        <>
+                          <p className="font-semibold text-gray-800 text-xs">{s.apellidos}</p>
+                          <p className="text-gray-500 text-xs">{s.nombres}</p>
+                        </>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5 text-gray-600 text-xs">
@@ -632,7 +643,9 @@ export default function ReporteEstudiantes() {
                         {s.telefono || "—"}
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-gray-600 text-xs max-w-[160px] truncate">{s.carrera}</td>
+                    <td className="px-3 py-3 text-gray-600 text-xs max-w-[160px] truncate">
+                      {s.carreraIngresante || s.carrera || "—"}
+                    </td>
                     <td className="px-3 py-3 text-center">
                       {s.ciclo ? (
                         <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
