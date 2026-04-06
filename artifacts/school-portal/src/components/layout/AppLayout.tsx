@@ -370,7 +370,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-4 md:p-6 bg-white">
+          <main
+            className={`flex-1 overflow-auto ${location === "/" ? "" : "p-4 md:p-6 bg-white"}`}
+          >
             <div className="w-full">{children}</div>
           </main>
         </div>
