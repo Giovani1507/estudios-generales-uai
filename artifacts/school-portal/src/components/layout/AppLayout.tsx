@@ -36,6 +36,7 @@ import {
   AlertTriangle,
   UserCheck,
   Activity,
+  GraduationCap,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -53,6 +54,12 @@ const menuItems: MenuItem[] = [
     title: "Inicio",
     url: "/",
     icon: LayoutDashboard,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Horario por Carrera",
+    url: "/horarios/seccion",
+    icon: GraduationCap,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
@@ -129,7 +136,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [planOpen, setPlanOpen] = useState(
     location.startsWith("/planificacion") ||
     location.startsWith("/docentes") ||
-    location.startsWith("/horarios")
+    (location.startsWith("/horarios") && location !== "/horarios/seccion")
   );
   const [listaOpen, setListaOpen] = useState(
     location.startsWith("/lista-docentes")
@@ -165,11 +172,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       href: "/docentes/horario-fcs",
       label: "Horario Docente FCS",
       Icon: CalendarDays,
-    },
-    {
-      href: "/horarios/seccion",
-      label: "Horario por Carrera",
-      Icon: BookOpen,
     },
     {
       href: "/horarios/carrera",

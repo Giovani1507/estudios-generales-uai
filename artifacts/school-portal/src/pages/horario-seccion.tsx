@@ -16,6 +16,9 @@ interface Row {
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
+const FICA_SEDES = ["PRINCIPAL", "FILIAL", "HUAURA"] as const;
+const FCS_SEDES  = ["PRINCIPAL", "FILIAL", "SUNAMPE", "HUAURA", "PORUMA"] as const;
+
 const FICA_CARRERAS: Record<string, string> = {
   AE: "Administración de Empresas",
   AF: "Administración y Finanzas",
@@ -104,15 +107,17 @@ export default function HorarioSeccion() {
   const [carrera, setCarrera] = useState<string>("");
   const [ciclo, setCiclo]     = useState<string>("");
   const [seccion, setSeccion] = useState<string>("");
+  const [sede, setSede]       = useState<string>("ALL");
   const [data, setData]       = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
 
   const carreraMap = facultad === "FICA" ? FICA_CARRERAS : FCS_CARRERAS;
+  const sedeList   = (facultad === "FICA" ? FICA_SEDES : FCS_SEDES) as readonly string[];
 
   // Reset downstream filters when faculty changes
-  useEffect(() => { setCarrera(""); setCiclo(""); setSeccion(""); }, [facultad]);
-  useEffect(() => { setCiclo(""); setSeccion(""); }, [carrera]);
-  useEffect(() => { setSeccion(""); }, [ciclo]);
+  useEffect(() => { setCarrera(""); setCiclo(""); setSeccion(""); setSede("ALL"); }, [facultad]);
+  useEffect(() => { setCiclo(""); setSeccion(""); setSede("ALL"); }, [carrera]);
+  useEffect(() => { setSeccion(""); setSede("ALL"); }, [ciclo]);
 
   // Load JSON data
   useEffect(() => {
@@ -138,13 +143,25 @@ export default function HorarioSeccion() {
     )].sort();
   }, [data, carrera, ciclo]);
 
-  // Filtered rows for selected group
+  // Filtered rows for selected group (+ optional sede filter)
   const rows = useMemo<Row[]>(() => {
     if (!carrera || !ciclo || !seccion) return [];
     return data.filter(r =>
-      r.carrera === carrera && r.ciclo === ciclo && r.seccion === seccion
+      r.carrera === carrera &&
+      r.ciclo === ciclo &&
+      r.seccion === seccion &&
+      (!sede || sede === "ALL" || r.local === sede)
     );
-  }, [data, carrera, ciclo, seccion]);
+  }, [data, carrera, ciclo, seccion, sede]);
+
+  // Sedes available for the selected group
+  const availSedes = useMemo(() => {
+    if (!carrera || !ciclo || !seccion) return sedeList;
+    const inData = new Set(
+      data.filter(r => r.carrera === carrera && r.ciclo === ciclo && r.seccion === seccion).map(r => r.local)
+    );
+    return sedeList.filter(s => inData.has(s));
+  }, [data, carrera, ciclo, seccion, sedeList]);
 
   // Unique courses for color mapping
   const uniqueCursos = useMemo(() => {
@@ -251,7 +268,7 @@ export default function HorarioSeccion() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Carrera */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Carrera</label>
@@ -272,7 +289,7 @@ export default function HorarioSeccion() {
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Ciclo</label>
             <Select value={ciclo} onValueChange={setCiclo} disabled={!carrera}>
               <SelectTrigger className="h-10 bg-gray-50 border-gray-200">
-                <SelectValue placeholder={carrera ? "Seleccionar ciclo…" : "Primero elige carrera"} />
+                <SelectValue placeholder={carrera ? "Seleccionar ciclo…" : "Elige carrera"} />
               </SelectTrigger>
               <SelectContent>
                 {availCiclos.map(c => (
@@ -287,11 +304,29 @@ export default function HorarioSeccion() {
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Sección</label>
             <Select value={seccion} onValueChange={setSeccion} disabled={!ciclo}>
               <SelectTrigger className="h-10 bg-gray-50 border-gray-200">
-                <SelectValue placeholder={ciclo ? "Seleccionar sección…" : "Primero elige ciclo"} />
+                <SelectValue placeholder={ciclo ? "Seleccionar sección…" : "Elige ciclo"} />
               </SelectTrigger>
               <SelectContent>
                 {availSecciones.map(s => (
                   <SelectItem key={s} value={s}>Sección {s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Sede */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Sede</label>
+            <Select value={sede} onValueChange={setSede} disabled={!seccion}>
+              <SelectTrigger className="h-10 bg-gray-50 border-gray-200">
+                <SelectValue placeholder={seccion ? "Todas las sedes" : "Elige sección"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas las sedes</SelectItem>
+                {availSedes.map(s => (
+                  <SelectItem key={s} value={s}>
+                    {s.charAt(0) + s.slice(1).toLowerCase()}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
