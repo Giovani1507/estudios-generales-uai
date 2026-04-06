@@ -20,6 +20,7 @@ interface StudentReg {
   turno: string | null;
   seccion: string | null;
   sede: string | null;
+  celular: string | null;
 }
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -648,7 +649,7 @@ export default function ReporteEstudiantes() {
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5 text-gray-600 text-xs">
                         <Phone className="w-3 h-3 text-gray-400" />
-                        {s.telefono || "—"}
+                        {s.celular || "—"}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-gray-600 text-xs max-w-[160px] truncate">
