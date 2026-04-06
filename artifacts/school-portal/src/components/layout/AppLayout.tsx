@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useState } from "react";
+import React, { ReactNode, useMemo, useState, useRef, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useLogout } from "@workspace/api-client-react";
@@ -105,6 +105,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador"],
   },
   {
+    title: "Reporte de Estudiantes",
+    url: "/reporte-estudiantes",
+    icon: GraduationCap,
+    roles: ["administrador"],
+  },
+  {
     title: "Configuración",
     url: "/configuracion",
     icon: Settings,
@@ -141,6 +147,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [listaOpen, setListaOpen] = useState(
     location.startsWith("/lista-docentes")
   );
+  const [gridOpen, setGridOpen] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
+        setGridOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const filteredMenu = useMemo(() => {
     if (!user?.role) return [];
@@ -352,9 +370,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary">
-                <LayoutGrid className="w-5 h-5" />
-              </button>
+              {/* Grid quick-access dropdown */}
+              <div ref={gridRef} className="relative">
+                <button
+                  onClick={() => setGridOpen(o => !o)}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+                {gridOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
+                    <p className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acceso rápido</p>
+                    <Link
+                      href="/reporte-estudiantes"
+                      onClick={() => setGridOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary/5 hover:text-primary transition-colors"
+                    >
+                      <GraduationCap className="w-4 h-4 text-primary/70" />
+                      <span className="font-medium">Reporte de Estudiantes</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
               <button className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary">
                 <Bell className="w-5 h-5" />
               </button>

@@ -28,6 +28,8 @@ import HorarioCruce from "@/pages/horario-cruce";
 import ListaDocentes from "@/pages/lista-docentes";
 import Actividad from "@/pages/actividad";
 import HorarioSeccion from "@/pages/horario-seccion";
+import RegistroEstudiante from "@/pages/registro-estudiante";
+import ReporteEstudiantes from "@/pages/reporte-estudiantes";
 
 const queryClient = new QueryClient();
 
@@ -129,6 +131,14 @@ function AppRouter() {
       <Route
         path="/horarios/seccion"
         component={() => <ProtectedRoute component={HorarioSeccion} />}
+      />
+      <Route
+        path="/registro-estudiante"
+        component={RegistroEstudiante}
+      />
+      <Route
+        path="/reporte-estudiantes"
+        component={() => <ProtectedRoute component={ReporteEstudiantes} />}
       />
 
       {/* 404 */}
