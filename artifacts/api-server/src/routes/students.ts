@@ -34,15 +34,18 @@ router.get("/lookup", async (req, res) => {
     }
     const r = rows[0];
     res.json({
-      encontrado: true,
+      encontrado:       true,
       dni:              r.dni,
       apellidosNombres: r.apellidosNombres,
+      codigoEstudiante: r.codigoEstudiante,
       carrera:          r.carrera,
       sede:             r.sede,
       modalidadIngreso: r.modalidadIngreso,
       modalidadEstudio: r.modalidadEstudio,
       turno:            r.turno,
       seccion:          r.seccion,
+      celular:          r.celular,
+      correo:           r.correo,
     });
   } catch (err) {
     console.error("Lookup error:", err);
@@ -113,11 +116,14 @@ router.get("/register", requireAuth, requireAdmin, async (_req, res) => {
         createdAt:          studentRegistrationsTable.createdAt,
         _ingresanteDni:     ingresantesPagosTable.dni,
         apellidosNombres:   ingresantesPagosTable.apellidosNombres,
+        codigoEstudiante:   ingresantesPagosTable.codigoEstudiante,
         carreraIngresante:  ingresantesPagosTable.carrera,
         modalidadEstudio:   ingresantesPagosTable.modalidadEstudio,
         turno:              ingresantesPagosTable.turno,
         seccion:            ingresantesPagosTable.seccion,
         sede:               ingresantesPagosTable.sede,
+        celular:            ingresantesPagosTable.celular,
+        correo:             ingresantesPagosTable.correo,
       })
       .from(studentRegistrationsTable)
       .leftJoin(

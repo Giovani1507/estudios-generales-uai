@@ -10,6 +10,7 @@ type SubmitStatus = "idle" | "loading" | "success" | "error" | "duplicate";
 interface Ingresante {
   dni:              string;
   apellidosNombres: string;
+  codigoEstudiante: string | null;
   carrera:          string | null;
   sede:             string | null;
   modalidadIngreso: string | null;
@@ -193,9 +194,15 @@ export default function RegistroEstudiante() {
                     <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center shrink-0">
                       <User className="w-4 h-4 text-green-600" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-[10px] font-bold text-green-700 uppercase tracking-wide">Apellidos y Nombres</p>
                       <p className="text-sm font-bold text-gray-900 leading-tight">{ingresante.apellidosNombres}</p>
+                      {ingresante.codigoEstudiante && (
+                        <div className="mt-1.5 inline-flex items-center gap-1.5 bg-white border border-green-200 rounded-full px-2.5 py-0.5">
+                          <span className="text-[9px] font-bold text-green-700 uppercase tracking-wide">Cód. Estudiante</span>
+                          <span className="text-xs font-black text-green-800 tracking-wider">{ingresante.codigoEstudiante}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

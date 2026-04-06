@@ -14,6 +14,7 @@ interface StudentReg {
   createdAt: string;
   pagado: boolean;
   apellidosNombres: string | null;
+  codigoEstudiante: string | null;
   carreraIngresante: string | null;
   modalidadEstudio: string | null;
   turno: string | null;
@@ -251,19 +252,19 @@ export default function ReporteEstudiantes() {
 
     // Column widths  (col A is wider to hold the logo in the header)
     ws.columns = [
-      { key: "n",               width: 14 },
+      { key: "n",               width: 6  },
+      { key: "codigo",          width: 16 },
+      { key: "nombre",          width: 32 },
       { key: "dni",             width: 12 },
-      { key: "apellidos",       width: 24 },
-      { key: "nombres",         width: 22 },
-      { key: "telefono",        width: 14 },
-      { key: "carrera",         width: 28 },
-      { key: "ciclo",           width: 8  },
+      { key: "carrera",         width: 30 },
       { key: "pago",            width: 12 },
       { key: "modalidad",       width: 16 },
-      { key: "turno",           width: 14 },
+      { key: "turno",           width: 12 },
       { key: "seccion",         width: 10 },
+      { key: "sede",            width: 12 },
       { key: "horario",         width: 16 },
       { key: "fecha",           width: 18 },
+      { key: "telefono",        width: 14 },
     ];
 
     const TOTAL_COLS = 13;
@@ -362,7 +363,7 @@ export default function ReporteEstudiantes() {
     ws.getRow(7).height = 4;
 
     // ── Row 8: Column headers ─────────────────────────────────────────────
-    const HEADERS = ["N°", "DNI", "Apellidos y Nombres", "Sede", "Teléfono", "Carrera", "Ciclo", "Pago", "Modalidad", "Turno", "Sección", "Horario", "Fecha Registro"];
+    const HEADERS = ["N°", "Cód. Estudiante", "Apellidos y Nombres", "DNI", "Carrera", "Pago", "Modalidad", "Turno", "Sección", "Sede", "Horario", "Fecha Registro", "Teléfono"];
     const headerRow = ws.getRow(8);
     headerRow.height = 22;
     HEADERS.forEach((h, idx) => {
@@ -394,18 +395,18 @@ export default function ReporteEstudiantes() {
       const displayCarrera = s.carreraIngresante || s.carrera || "—";
       const values: (string | number)[] = [
         i + 1,
-        s.dni || "—",
+        s.codigoEstudiante || "—",
         displayName,
-        s.sede || "—",
-        s.telefono || "—",
+        s.dni || "—",
         displayCarrera,
-        s.ciclo ? `Ciclo ${s.ciclo}` : "—",
         s.pagado ? "✓ PAGADO" : "✗ SIN DATA",
         s.modalidadEstudio || "—",
         s.turno || "—",
         s.seccion || "—",
+        s.sede || "—",
         s.horarioAsignado ? "✓ ASIGNADO" : "⏳ PENDIENTE",
         new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" }),
+        s.telefono || "—",
       ];
 
       values.forEach((val, colIdx) => {
@@ -414,12 +415,12 @@ export default function ReporteEstudiantes() {
         cell.font = { name: "Calibri", size: 10, color: { argb: "FF" + DGRAY } };
         cell.alignment = { vertical: "middle", horizontal: colIdx === 0 || colIdx === 6 ? "center" : "left" };
 
-        if (colIdx === 7) {
+        if (colIdx === 5) {
           // Pago column
           cell.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FF" + (s.pagado ? PAGADOTX : NOPAGTX) } };
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + (s.pagado ? PAGADOBG : NOPAGBG) } };
           cell.alignment = { vertical: "middle", horizontal: "center" };
-        } else if (colIdx === 11) {
+        } else if (colIdx === 10) {
           // Horario column
           cell.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FF" + (s.horarioAsignado ? GREEN : REDTX) } };
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + (s.horarioAsignado ? GRNBG : REDBG) } };
@@ -627,9 +628,16 @@ export default function ReporteEstudiantes() {
                     <td className="px-3 py-3 font-mono text-xs font-bold text-gray-700 whitespace-nowrap">
                       {s.dni || <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-3 py-3 max-w-[200px]">
+                    <td className="px-3 py-3 max-w-[220px]">
                       {s.apellidosNombres ? (
-                        <p className="font-semibold text-gray-800 text-xs leading-snug">{s.apellidosNombres}</p>
+                        <>
+                          <p className="font-semibold text-gray-800 text-xs leading-snug">{s.apellidosNombres}</p>
+                          {s.codigoEstudiante && (
+                            <span className="inline-block mt-0.5 text-[10px] font-bold text-primary bg-primary/10 rounded px-1.5 py-px tracking-wider">
+                              {s.codigoEstudiante}
+                            </span>
+                          )}
+                        </>
                       ) : (
                         <>
                           <p className="font-semibold text-gray-800 text-xs">{s.apellidos}</p>

@@ -4,12 +4,15 @@ export const ingresantesPagosTable = pgTable("ingresantes_pagos", {
   id:               serial("id").primaryKey(),
   dni:              text("dni").notNull(),
   apellidosNombres: text("apellidos_nombres").notNull(),
+  codigoEstudiante: text("codigo_estudiante"),
   carrera:          text("carrera"),
   sede:             text("sede"),
   modalidadIngreso: text("modalidad_ingreso"),
   modalidadEstudio: text("modalidad_estudio"),
   turno:            text("turno"),
   seccion:          text("seccion"),
+  celular:          text("celular"),
+  correo:           text("correo"),
 });
 
 export type IngresantePago = typeof ingresantesPagosTable.$inferSelect;
