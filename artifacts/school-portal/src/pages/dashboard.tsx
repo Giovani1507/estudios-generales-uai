@@ -37,89 +37,95 @@ export default function Dashboard() {
       className="relative flex items-center justify-center"
       style={{ minHeight: "calc(100vh - 56px)", background: "#eef2f9" }}
     >
-      {/* Background image very faint */}
+      {/* Page background */}
       <img
         src={`${base}dashboard-bg.png`}
         alt=""
         aria-hidden
-        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
-        style={{ opacity: 0.07 }}
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+        style={{ opacity: 0.06 }}
       />
 
       {/* Card */}
       <div
-        className="relative z-10 bg-white rounded-2xl overflow-hidden shadow-lg"
+        className="relative z-10 bg-white rounded-2xl shadow-md overflow-hidden"
         style={{
-          width: 380,
+          width: 480,
           maxWidth: "92vw",
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0)" : "translateY(16px)",
           transition: "opacity 0.55s ease, transform 0.55s ease",
         }}
       >
-        {/* Cover banner */}
+        {/* Header — navy gradient with avatar inside */}
         <div
-          className="relative w-full overflow-hidden"
-          style={{ height: 140, background: "linear-gradient(135deg, #001F5F 0%, #1a3a6b 60%, #2f5aa6 100%)" }}
+          className="relative flex flex-col items-center justify-end pb-8 pt-10"
+          style={{
+            background: "linear-gradient(160deg, #001F5F 0%, #1d3d7a 60%, #2f5aa6 100%)",
+            minHeight: 220,
+          }}
         >
-          <img
-            src={`${base}dashboard-bg.png`}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-            style={{ opacity: 0.18, mixBlendMode: "luminosity" }}
-          />
-          {/* UAI Logo top-right */}
+          {/* UAI logo top-left */}
           <img
             src={`${base}logo.png`}
             alt="UAI"
-            className="absolute top-4 right-5 object-contain"
-            style={{ height: 36, opacity: 0.85 }}
+            className="absolute top-5 left-6 object-contain"
+            style={{ height: 32, opacity: 0.80, filter: "brightness(0) invert(1)" }}
           />
+
+          {/* Period badge top-right */}
+          <span
+            className="absolute top-5 right-5 text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+            style={{ background: "rgba(255,255,255,0.13)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.18)" }}
+          >
+            2026-1
+          </span>
+
+          {/* Square avatar — inside header */}
+          <div style={{ marginBottom: 0 }}>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={displayName}
+                className="object-cover shadow-2xl"
+                style={{
+                  width: 130, height: 130,
+                  borderRadius: 16,
+                  border: "3px solid rgba(255,255,255,0.35)",
+                }}
+              />
+            ) : (
+              <div
+                className="flex items-center justify-center font-extrabold text-white shadow-2xl"
+                style={{
+                  width: 130, height: 130,
+                  borderRadius: 16,
+                  fontSize: 46,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "3px solid rgba(255,255,255,0.30)",
+                  backdropFilter: "blur(6px)",
+                  letterSpacing: "-1px",
+                }}
+              >
+                {getInitials(displayName)}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Square avatar — overlaps banner */}
-        <div className="flex justify-center" style={{ marginTop: -60 }}>
-          {user?.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={displayName}
-              className="object-cover shadow-xl"
-              style={{
-                width: 120, height: 120,
-                borderRadius: 14,
-                border: "4px solid #fff",
-              }}
-            />
-          ) : (
-            <div
-              className="flex items-center justify-center shadow-xl font-bold text-white"
-              style={{
-                width: 120, height: 120,
-                borderRadius: 14,
-                border: "4px solid #fff",
-                fontSize: 38,
-                background: "linear-gradient(135deg, #2f5aa6 0%, #001F5F 100%)",
-              }}
-            >
-              {getInitials(displayName)}
-            </div>
-          )}
-        </div>
-
-        {/* Text content */}
-        <div className="flex flex-col items-center text-center px-8 pt-4 pb-8 gap-1.5">
+        {/* Body */}
+        <div className="flex flex-col items-center text-center px-10 pt-6 pb-8 gap-1.5">
           <p className="text-gray-400 text-sm">{greeting()},</p>
           <h1
-            className="font-bold text-gray-900"
-            style={{ fontSize: "1.4rem", lineHeight: 1.25 }}
+            className="font-bold text-gray-900 leading-snug"
+            style={{ fontSize: "1.5rem" }}
           >
             {displayName}
           </h1>
 
           {roleLabel && (
             <span
-              className="mt-1 px-4 py-1 rounded-full text-xs font-semibold text-white"
+              className="mt-2 px-5 py-1.5 rounded-full text-xs font-semibold text-white"
               style={{ background: "#2f5aa6" }}
             >
               {roleLabel}
@@ -127,12 +133,12 @@ export default function Dashboard() {
           )}
 
           {user?.cargo && (
-            <p className="text-gray-400 text-xs mt-0.5 leading-snug">{user.cargo}</p>
+            <p className="text-gray-400 text-xs mt-1 leading-snug max-w-xs">{user.cargo}</p>
           )}
 
-          <div className="w-12 h-px bg-gray-200 my-3" />
+          <div className="w-12 h-px bg-gray-200 my-4" />
 
-          <p className="text-gray-600 text-sm font-semibold">Universidad Autónoma de Ica</p>
+          <p className="text-gray-700 text-sm font-semibold">Universidad Autónoma de Ica</p>
           <p className="text-gray-400 text-xs">Período 2026-1</p>
         </div>
       </div>
