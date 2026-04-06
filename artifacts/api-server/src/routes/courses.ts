@@ -33,7 +33,7 @@ router.post("/", requireRole("administrador"), async (req, res) => {
 
 router.put("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { name, code, description, credits } = req.body;
     const [course] = await db.update(coursesTable).set({ name, code, description, credits }).where(eq(coursesTable.id, id)).returning();
     if (!course) {
@@ -48,7 +48,7 @@ router.put("/:id", requireRole("administrador"), async (req, res) => {
 
 router.delete("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(coursesTable).where(eq(coursesTable.id, id));
     res.json({ message: "Curso eliminado" });
   } catch {

@@ -52,7 +52,7 @@ router.post("/", requireRole("administrador"), async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const users = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
     if (!users[0]) {
       res.status(404).json({ error: "Usuario no encontrado" });
@@ -67,7 +67,7 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { username, fullName, email, password, role, isActive } = req.body;
     const updates: any = {};
     if (username !== undefined) updates.username = username;
@@ -94,7 +94,7 @@ router.put("/:id", requireRole("administrador"), async (req, res) => {
 
 router.delete("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(usersTable).where(eq(usersTable.id, id));
     res.json({ message: "Usuario eliminado" });
   } catch {

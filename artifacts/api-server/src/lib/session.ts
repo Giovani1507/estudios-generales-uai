@@ -11,11 +11,13 @@ export interface SessionUser {
   avatarUrl?: string | null;
 }
 
-declare module "express-serve-static-core" {
-  interface Request {
-    session?: {
-      userId?: number;
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      session?: {
+        userId?: number;
+      };
+    }
   }
 }
 

@@ -24,7 +24,8 @@ router.post("/send", async (req, res) => {
     };
 
     if (!to || !subject || !body) {
-      return res.status(400).json({ error: "Faltan campos: to, subject, body" });
+      res.status(400).json({ error: "Faltan campos: to, subject, body" });
+      return;
     }
 
     const mailOptions: nodemailer.SendMailOptions = {

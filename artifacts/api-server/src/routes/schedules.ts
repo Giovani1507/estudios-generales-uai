@@ -85,7 +85,7 @@ router.post("/", requireRole("administrador", "coordinador"), async (req, res) =
 
 router.put("/:id", requireRole("administrador", "coordinador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { teacherId, sectionId, courseId, dayOfWeek, startTime, endTime, classroom } = req.body;
     await db.update(schedulesTable).set({
       teacherId, sectionId, courseId, dayOfWeek, startTime, endTime, classroom
@@ -123,7 +123,7 @@ router.put("/:id", requireRole("administrador", "coordinador"), async (req, res)
 
 router.delete("/:id", requireRole("administrador", "coordinador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(schedulesTable).where(eq(schedulesTable.id, id));
     res.json({ message: "Horario eliminado" });
   } catch {

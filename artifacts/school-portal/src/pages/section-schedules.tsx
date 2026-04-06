@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListSections, useListSchedules } from "@workspace/api-client-react";
+import { useListSections, useListSchedules, getListSchedulesQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,9 +11,10 @@ export default function SectionSchedules() {
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   
   const { data: sections, isLoading: isLoadingSections } = useListSections();
+  const schedulesParams = { sectionId: selectedSectionId ? parseInt(selectedSectionId) : undefined };
   const { data: schedules, isLoading: isLoadingSchedules } = useListSchedules(
-    { sectionId: selectedSectionId ? parseInt(selectedSectionId) : undefined },
-    { query: { enabled: !!selectedSectionId } }
+    schedulesParams,
+    { query: { queryKey: getListSchedulesQueryKey(schedulesParams), enabled: !!selectedSectionId } }
   );
 
   const daysOrder = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];

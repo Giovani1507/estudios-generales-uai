@@ -33,7 +33,7 @@ router.post("/", requireRole("administrador", "coordinador"), async (req, res) =
 
 router.put("/:id", requireRole("administrador", "coordinador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { fullName, email, specialty, phone } = req.body;
     const [teacher] = await db.update(teachersTable).set({ fullName, email, specialty, phone }).where(eq(teachersTable.id, id)).returning();
     if (!teacher) {
@@ -48,7 +48,7 @@ router.put("/:id", requireRole("administrador", "coordinador"), async (req, res)
 
 router.delete("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(teachersTable).where(eq(teachersTable.id, id));
     res.json({ message: "Docente eliminado" });
   } catch {

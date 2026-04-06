@@ -49,7 +49,7 @@ router.post("/", requireRole("administrador", "coordinador"), async (req, res) =
 
 router.put("/:id", requireRole("administrador", "coordinador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { title, content, priority } = req.body;
     const [announcement] = await db.update(announcementsTable).set({ title, content, priority }).where(eq(announcementsTable.id, id)).returning();
     if (!announcement) {
@@ -64,7 +64,7 @@ router.put("/:id", requireRole("administrador", "coordinador"), async (req, res)
 
 router.delete("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(announcementsTable).where(eq(announcementsTable.id, id));
     res.json({ message: "Aviso eliminado" });
   } catch {

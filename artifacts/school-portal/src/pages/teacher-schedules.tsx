@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListTeachers, useListSchedules } from "@workspace/api-client-react";
+import { useListTeachers, useListSchedules, getListSchedulesQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,9 +11,10 @@ export default function TeacherSchedules() {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("");
   
   const { data: teachers, isLoading: isLoadingTeachers } = useListTeachers();
+  const schedulesParams = { teacherId: selectedTeacherId ? parseInt(selectedTeacherId) : undefined };
   const { data: schedules, isLoading: isLoadingSchedules } = useListSchedules(
-    { teacherId: selectedTeacherId ? parseInt(selectedTeacherId) : undefined },
-    { query: { enabled: !!selectedTeacherId } }
+    schedulesParams,
+    { query: { queryKey: getListSchedulesQueryKey(schedulesParams), enabled: !!selectedTeacherId } }
   );
 
   const daysOrder = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];

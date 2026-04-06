@@ -29,7 +29,7 @@ router.post("/", requireRole("administrador", "coordinador"), async (req, res) =
 
 router.put("/:id", requireRole("administrador", "coordinador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { name, grade, shift, capacity } = req.body;
     const [section] = await db.update(sectionsTable).set({ name, grade, shift, capacity }).where(eq(sectionsTable.id, id)).returning();
     if (!section) {
@@ -44,7 +44,7 @@ router.put("/:id", requireRole("administrador", "coordinador"), async (req, res)
 
 router.delete("/:id", requireRole("administrador"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await db.delete(sectionsTable).where(eq(sectionsTable.id, id));
     res.json({ message: "Sección eliminada" });
   } catch {

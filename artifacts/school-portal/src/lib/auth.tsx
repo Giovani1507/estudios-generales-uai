@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useGetMe, User } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, User } from "@workspace/api-client-react";
 
 const PUBLIC_ROUTES = ["/login", "/registroestudiantesinhorario"];
 
@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const { data: user, isLoading, isError, refetch } = useGetMe({
     query: {
+      queryKey: getGetMeQueryKey(),
       retry: false,
       refetchOnWindowFocus: false,
     }

@@ -29,6 +29,7 @@ interface DocAmbos {
 }
 
 interface VerifData {
+  generado?: string;
   totalEnPlan?: number;
   totalEnRegistro?: number;
   totalMatch?: number;
@@ -129,13 +130,14 @@ export default function VerificacionFICA() {
   }
 
   // Normaliza el JSON antiguo (resumen anidado) y el nuevo (campos en raíz)
-  const resumen = data.resumen ?? {
-    totalEnPlanificacion: data.totalEnPlan ?? 0,
-    totalEnRegistro:      data.totalEnRegistro ?? 0,
-    enAmbos:              typeof data.enAmbos === "number" ? data.enAmbos : (data.totalMatch ?? 0),
-    enPlanNoRegistro:     typeof data.enPlanNoRegistro === "number" ? data.enPlanNoRegistro : 0,
-    enRegistroSinPlan:    typeof data.enRegistroNoPlan === "number" ? data.enRegistroNoPlan
-                          : typeof data.enRegistroSinPlan === "number" ? data.enRegistroSinPlan : 0,
+  const rawResumen = data.resumen ?? {};
+  const resumen = {
+    totalEnPlanificacion: rawResumen.totalEnPlanificacion ?? data.totalEnPlan ?? 0,
+    totalEnRegistro:      rawResumen.totalEnRegistro ?? data.totalEnRegistro ?? 0,
+    enAmbos:              rawResumen.enAmbos ?? (typeof data.enAmbos === "number" ? data.enAmbos : (data.totalMatch ?? 0)),
+    enPlanNoRegistro:     rawResumen.enPlanNoRegistro ?? (typeof data.enPlanNoRegistro === "number" ? data.enPlanNoRegistro : 0),
+    enRegistroSinPlan:    rawResumen.enRegistroSinPlan ?? (typeof data.enRegistroNoPlan === "number" ? data.enRegistroNoPlan
+                            : typeof data.enRegistroSinPlan === "number" ? data.enRegistroSinPlan : 0),
   };
 
   const allOk = (resumen.enPlanNoRegistro ?? 0) === 0;
@@ -163,7 +165,7 @@ export default function VerificacionFICA() {
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Generado:</p>
           <p className="text-xs font-medium text-foreground">
-            {new Date(data.generado).toLocaleString("es-PE")}
+            {data.generado ? new Date(data.generado).toLocaleString("es-PE") : "—"}
           </p>
         </div>
       </div>
