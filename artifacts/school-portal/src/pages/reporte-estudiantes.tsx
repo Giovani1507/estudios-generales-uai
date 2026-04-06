@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock } from "lucide-react";
+import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer } from "lucide-react";
 import * as ExcelJS from "exceljs";
 
 interface StudentReg {
@@ -30,6 +30,118 @@ function QrImage({ url }: { url: string }) {
       style={{ width: 160, height: 160 }}
     />
   );
+}
+
+function printQR(url: string) {
+  const encoded   = encodeURIComponent(url);
+  const qrSrc     = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=20&data=${encoded}`;
+  const logoSrc   = `${window.location.origin}${(import.meta.env.BASE_URL || "").replace(/\/$/, "")}/escudo.png`;
+
+  const win = window.open("", "_blank", "width=680,height=900");
+  if (!win) return;
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>QR Registro Estudiantes – UAI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 30px;
+      color: #111;
+    }
+    .header {
+      background: #001F5F;
+      color: #fff;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 14px;
+      padding: 22px 30px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .header img { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+    .header-text h1 { font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .header-text p  { font-size: 11px; opacity: .75; margin-top: 3px; }
+    .title {
+      color: #C9A84C;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .qr-box {
+      border: 2px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 22px;
+      background: #f9fafb;
+      margin-bottom: 20px;
+    }
+    .qr-box img { display: block; }
+    .instructions {
+      font-size: 13px;
+      color: #374151;
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .url-box {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 10px;
+      color: #6b7280;
+      word-break: break-all;
+      text-align: center;
+      max-width: 440px;
+    }
+    .footer {
+      margin-top: 28px;
+      font-size: 10px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="${logoSrc}" alt="UAI" onerror="this.style.display='none'"/>
+    <div class="header-text">
+      <h1>UNIVERSIDAD AUTÓNOMA DE ICA</h1>
+      <p>Dirección Académica · Semestre 2026-1</p>
+      <p class="title">Registro de Estudiantes sin Horario Asignado</p>
+    </div>
+  </div>
+  <div class="qr-box">
+    <img src="${qrSrc}" width="280" height="280" alt="QR Registro"/>
+  </div>
+  <p class="instructions">
+    Escanea este código QR con tu dispositivo móvil para registrarte en el sistema de estudiantes sin horario asignado.
+  </p>
+  <div class="url-box">${url}</div>
+  <p class="footer">Portal Académico UAI · ${new Date().toLocaleDateString("es-PE", { dateStyle: "long" })}</p>
+  <script>
+    window.onload = function() { setTimeout(function() { window.print(); }, 600); };
+  </script>
+</body>
+</html>`);
+  win.document.close();
 }
 
 export default function ReporteEstudiantes() {
@@ -339,6 +451,13 @@ export default function ReporteEstudiantes() {
               {formUrl}
             </a>
           </div>
+          <button
+            onClick={() => printQR(formUrl)}
+            className="w-full flex items-center justify-center gap-2 h-9 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            Descargar / Imprimir QR
+          </button>
         </div>
 
         {/* Stats */}
