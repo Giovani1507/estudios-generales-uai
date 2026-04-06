@@ -167,6 +167,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       Icon: CalendarDays,
     },
     {
+      href: "/horarios/seccion",
+      label: "Horario por Carrera",
+      Icon: BookOpen,
+    },
+    {
       href: "/horarios/carrera",
       label: "Horario por Aula",
       Icon: School,
