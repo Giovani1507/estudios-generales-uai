@@ -103,35 +103,202 @@ export default function ReporteEstudiantes() {
   const totalCiclo2    = students.filter(s => s.ciclo === "2").length;
 
   async function downloadExcel() {
+    const NAV   = "001F5F";
+    const GOLD  = "C9A84C";
+    const WHITE = "FFFFFF";
+    const LGRAY = "F2F5FB";
+    const DGRAY = "4B5563";
+    const GREEN = "166534";
+    const GRNBG = "DCFCE7";
+    const REDBG = "FEE2E2";
+    const REDTX = "991B1B";
+
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet("Reporte Estudiantes");
+    wb.creator = "Portal Académico UAI";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Reporte Estudiantes", {
+      pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1 },
+    });
+
+    // Column widths
     ws.columns = [
-      { header: "N°",              key: "n",              width: 5  },
-      { header: "Apellidos",       key: "apellidos",      width: 24 },
-      { header: "Nombres",         key: "nombres",        width: 24 },
-      { header: "Teléfono",        key: "telefono",       width: 14 },
-      { header: "Carrera",         key: "carrera",        width: 32 },
-      { header: "Ciclo",           key: "ciclo",          width: 8  },
-      { header: "Horario Asignado", key: "horario",       width: 16 },
-      { header: "Fecha",           key: "createdAt",      width: 20 },
+      { key: "n",         width: 5  },
+      { key: "apellidos", width: 26 },
+      { key: "nombres",   width: 26 },
+      { key: "telefono",  width: 16 },
+      { key: "carrera",   width: 34 },
+      { key: "ciclo",     width: 10 },
+      { key: "horario",   width: 18 },
+      { key: "fecha",     width: 20 },
     ];
+
+    const TOTAL_COLS = 8;
+
+    // ── Try to embed logo ──────────────────────────────────────────────────
+    try {
+      const logoUrl = `${window.location.origin}${apiBase}/logo-uai.png`;
+      const resp = await fetch(logoUrl);
+      if (resp.ok) {
+        const arrayBuf = await resp.arrayBuffer();
+        const logoId = wb.addImage({ buffer: arrayBuf, extension: "png" });
+        ws.addImage(logoId, { tl: { col: 0, row: 0 }, br: { col: 1.6, row: 4 } } as any);
+      }
+    } catch { /* skip logo if unavailable */ }
+
+    // ── Row 1-4: Institution header block ─────────────────────────────────
+    const styleHeaderCell = (row: number, col: number, value: string, opts: {
+      size?: number; bold?: boolean; color?: string; italic?: boolean; align?: ExcelJS.Alignment["horizontal"];
+    } = {}) => {
+      const cell = ws.getCell(row, col);
+      cell.value = value;
+      cell.font = {
+        name: "Calibri", size: opts.size ?? 11,
+        bold: opts.bold ?? false, italic: opts.italic ?? false,
+        color: { argb: "FF" + (opts.color ?? WHITE) },
+      };
+      cell.alignment = { vertical: "middle", horizontal: opts.align ?? "center", wrapText: true };
+    };
+
+    // Merge cols 2-8 for header text (col 1 is logo)
+    ws.mergeCells(1, 1, 4, 1); // logo area
+    ws.mergeCells(1, 2, 1, TOTAL_COLS);
+    ws.mergeCells(2, 2, 2, TOTAL_COLS);
+    ws.mergeCells(3, 2, 3, TOTAL_COLS);
+    ws.mergeCells(4, 2, 4, TOTAL_COLS);
+
+    for (let r = 1; r <= 4; r++) {
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        ws.getCell(r, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      }
+      ws.getRow(r).height = r === 1 ? 28 : r === 2 ? 22 : 16;
+    }
+
+    styleHeaderCell(1, 2, "UNIVERSIDAD AUTÓNOMA DE ICA", { size: 16, bold: true, color: WHITE });
+    styleHeaderCell(2, 2, "Dirección Académica · Semestre 2026-1", { size: 11, color: "BBCFEE", italic: true });
+    styleHeaderCell(3, 2, "REPORTE DE ESTUDIANTES SIN HORARIO ASIGNADO", { size: 13, bold: true, color: GOLD });
+    const now = new Date();
+    styleHeaderCell(4, 2,
+      `Generado: ${now.toLocaleDateString("es-PE", { dateStyle: "long" })} · ${now.toLocaleTimeString("es-PE", { timeStyle: "short" })} · Total: ${filtered.length} registros`,
+      { size: 9, color: "BBCFEE" }
+    );
+
+    // ── Row 5: empty spacer ───────────────────────────────────────────────
+    ws.getRow(5).height = 6;
+
+    // ── Row 6: summary stats ──────────────────────────────────────────────
+    const asignados  = filtered.filter(s => s.horarioAsignado).length;
+    const pendientes = filtered.filter(s => !s.horarioAsignado).length;
+    const ciclo1     = filtered.filter(s => s.ciclo === "1").length;
+    const ciclo2     = filtered.filter(s => s.ciclo === "2").length;
+
+    const summaryPairs: [string, string | number][] = [
+      ["Total", filtered.length],
+      ["Con horario", asignados],
+      ["Pendientes", pendientes],
+      ["Ciclo 1", ciclo1],
+      ["Ciclo 2", ciclo2],
+    ];
+
+    ws.mergeCells(6, 1, 6, TOTAL_COLS);
+    const summaryRow = ws.getRow(6);
+    summaryRow.height = 18;
+
+    // Build a single merged summary cell string
+    const summaryText = summaryPairs.map(([k, v]) => `${k}: ${v}`).join("   |   ");
+    const summCell = ws.getCell(6, 1);
+    summCell.value = summaryText;
+    summCell.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FF" + NAV } };
+    summCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8EEF8" } };
+    summCell.alignment = { horizontal: "center", vertical: "middle" };
+    summCell.border = {
+      bottom: { style: "medium", color: { argb: "FF" + NAV } },
+    };
+
+    // ── Row 7: empty spacer ───────────────────────────────────────────────
+    ws.getRow(7).height = 4;
+
+    // ── Row 8: Column headers ─────────────────────────────────────────────
+    const HEADERS = ["N°", "Apellidos", "Nombres", "Teléfono", "Carrera", "Ciclo", "Horario", "Fecha Registro"];
+    const headerRow = ws.getRow(8);
+    headerRow.height = 22;
+    HEADERS.forEach((h, idx) => {
+      const cell = headerRow.getCell(idx + 1);
+      cell.value = h;
+      cell.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FF" + WHITE } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      cell.alignment = { horizontal: idx === 0 ? "center" : "left", vertical: "middle" };
+      cell.border = {
+        top:    { style: "thin", color: { argb: "FF" + GOLD } },
+        bottom: { style: "thin", color: { argb: "FF" + GOLD } },
+        left:   { style: "thin", color: { argb: "FF304B80" } },
+        right:  { style: "thin", color: { argb: "FF304B80" } },
+      };
+    });
+
+    // ── Data rows (starting row 9) ────────────────────────────────────────
     filtered.forEach((s, i) => {
-      ws.addRow({
-        n: i + 1,
-        apellidos: s.apellidos,
-        nombres: s.nombres,
-        telefono: s.telefono || "—",
-        carrera: s.carrera,
-        ciclo: s.ciclo || "—",
-        horario: s.horarioAsignado ? "SÍ" : "PENDIENTE",
-        createdAt: new Date(s.createdAt).toLocaleString("es-PE"),
+      const rowNum = 9 + i;
+      const dataRow = ws.getRow(rowNum);
+      dataRow.height = 16;
+      const isEven = i % 2 === 1;
+      const bgColor = isEven ? LGRAY : WHITE;
+
+      const values = [
+        i + 1,
+        s.apellidos,
+        s.nombres,
+        s.telefono || "—",
+        s.carrera,
+        s.ciclo ? `Ciclo ${s.ciclo}` : "—",
+        s.horarioAsignado ? "✓ ASIGNADO" : "⏳ PENDIENTE",
+        new Date(s.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" }),
+      ];
+
+      values.forEach((val, colIdx) => {
+        const cell = dataRow.getCell(colIdx + 1);
+        cell.value = val;
+        cell.font = { name: "Calibri", size: 10, color: { argb: "FF" + DGRAY } };
+        cell.alignment = { vertical: "middle", horizontal: colIdx === 0 || colIdx === 5 ? "center" : "left" };
+
+        // Horario column special coloring
+        if (colIdx === 6) {
+          cell.font = {
+            name: "Calibri", size: 9, bold: true,
+            color: { argb: "FF" + (s.horarioAsignado ? GREEN : REDTX) },
+          };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + (s.horarioAsignado ? GRNBG : REDBG) } };
+        } else {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + bgColor } };
+        }
+
+        cell.border = {
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left:   { style: "thin", color: { argb: "FFE2E8F0" } },
+          right:  { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
       });
     });
+
+    // ── Footer row ────────────────────────────────────────────────────────
+    const footerRowNum = 9 + filtered.length + 1;
+    ws.mergeCells(footerRowNum, 1, footerRowNum, TOTAL_COLS);
+    const footerCell = ws.getCell(footerRowNum, 1);
+    footerCell.value = "Documento generado por el Portal Académico de la Universidad Autónoma de Ica — Uso interno";
+    footerCell.font = { name: "Calibri", size: 8, italic: true, color: { argb: "FF9CA3AF" } };
+    footerCell.alignment = { horizontal: "center", vertical: "middle" };
+    footerCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFF" } };
+    ws.getRow(footerRowNum).height = 14;
+
+    // ── Freeze panes & generate ───────────────────────────────────────────
+    ws.views = [{ state: "frozen", xSplit: 0, ySplit: 8, activeCell: "A9" }];
+
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `reporte-estudiantes-${new Date().toISOString().slice(0,10)}.xlsx`;
+    const dateStr = now.toISOString().slice(0, 10);
+    a.download = `UAI-Reporte-Estudiantes-${dateStr}.xlsx`;
     a.click();
   }
 
