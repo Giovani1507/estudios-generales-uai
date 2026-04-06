@@ -98,6 +98,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Reporte de Estudiantes",
+    url: "/reporte-estudiantes",
+    icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,

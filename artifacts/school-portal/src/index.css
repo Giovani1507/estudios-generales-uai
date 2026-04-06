@@ -281,3 +281,12 @@
   }
 }
 
+/* Hide scrollbar in sidebar navigation */
+[data-sidebar="content"]::-webkit-scrollbar {
+  display: none;
+}
+[data-sidebar="content"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
