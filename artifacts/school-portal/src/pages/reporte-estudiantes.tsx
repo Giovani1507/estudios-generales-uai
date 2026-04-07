@@ -184,6 +184,7 @@ export default function ReporteEstudiantes() {
   const [importText,  setImportText]  = useState("");
   const [importing,   setImporting]   = useState(false);
   const [importResult,setImportResult]= useState<LookupResult | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [importTab,   setImportTab]   = useState<"found"|"notfound">("found");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +229,7 @@ export default function ReporteEstudiantes() {
     if (codigos.length === 0) return;
     setImporting(true);
     setImportResult(null);
+    setImportError(null);
     try {
       const res = await fetch(`${apiBase}/api/students/lookup-codes`, {
         method: "POST",
@@ -235,12 +237,17 @@ export default function ReporteEstudiantes() {
         credentials: "include",
         body: JSON.stringify({ codigos }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json() as LookupResult;
-        setImportResult(data);
-        setImportTab(data.found.length > 0 ? "found" : "notfound");
+        const result = data as LookupResult;
+        setImportResult(result);
+        setImportTab(result.found.length > 0 ? "found" : "notfound");
+      } else {
+        setImportError(`Error ${res.status}: ${data?.error ?? "Respuesta inesperada del servidor"}`);
       }
-    } catch {}
+    } catch (e) {
+      setImportError(`Error de conexión: ${String(e)}`);
+    }
     setImporting(false);
   }
 
@@ -901,7 +908,7 @@ export default function ReporteEstudiantes() {
                 </label>
                 <textarea
                   value={importText}
-                  onChange={e => { setImportText(e.target.value); setImportResult(null); }}
+                  onChange={e => { setImportText(e.target.value); setImportResult(null); setImportError(null); }}
                   placeholder={"2021100001\n2021100002\n2021100003\n…"}
                   rows={8}
                   className="w-full font-mono text-xs border border-gray-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 bg-gray-50 placeholder:text-gray-300"
@@ -964,17 +971,25 @@ export default function ReporteEstudiantes() {
             </div>
 
             {/* Action button */}
-            <button
-              onClick={runLookup}
-              disabled={importing || parseCodigos(importText).length === 0}
-              className="flex items-center gap-2 h-10 px-6 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {importing ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Verificando…</>
-              ) : (
-                <><FileSearch className="w-4 h-4" />Verificar en data</>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={runLookup}
+                disabled={importing || parseCodigos(importText).length === 0}
+                className="flex items-center gap-2 h-10 px-6 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {importing ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Verificando…</>
+                ) : (
+                  <><FileSearch className="w-4 h-4" />Verificar en data</>
+                )}
+              </button>
+              {importError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-xs text-red-700 font-semibold">
+                  <XCircle className="w-4 h-4 flex-shrink-0" />
+                  {importError}
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Results table */}
             {importResult && (

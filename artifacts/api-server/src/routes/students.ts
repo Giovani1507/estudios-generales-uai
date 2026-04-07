@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentRegistrationsTable, ingresantesPagosTable } from "@workspace/db/schema";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router = Router();
@@ -199,23 +199,29 @@ router.post("/lookup-codes", requireAuth, async (req, res) => {
       res.status(400).json({ error: "Se requiere un arreglo de códigos" });
       return;
     }
-    const codigos: string[] = raw
-      .map((c: unknown) => String(c).trim().toUpperCase())
-      .filter(Boolean)
+    const codigos: string[] = (raw as unknown[])
+      .map((c: unknown) => String(c ?? "").trim().toUpperCase())
+      .filter(s => s.length > 0)
       .slice(0, 2000);
 
+    if (codigos.length === 0) {
+      res.json({ found: [], notFound: [], totalInput: 0 });
+      return;
+    }
+
+    // Use ANY with a raw text array to avoid drizzle nullable-column type issues
     const rows = await db
       .select()
       .from(ingresantesPagosTable)
-      .where(inArray(ingresantesPagosTable.codigoEstudiante, codigos));
+      .where(sql`UPPER(${ingresantesPagosTable.codigoEstudiante}) = ANY(${sql.raw("ARRAY[" + codigos.map(c => `'${c.replace(/'/g, "''")}'`).join(",") + "]::text[]")})`);
 
-    const foundCodes = new Set(rows.map(r => r.codigoEstudiante?.toUpperCase()));
+    const foundCodes = new Set(rows.map(r => (r.codigoEstudiante ?? "").toUpperCase()));
     const notFound   = codigos.filter(c => !foundCodes.has(c));
 
     res.json({ found: rows, notFound, totalInput: codigos.length });
   } catch (err) {
     console.error("Lookup-codes error:", err);
-    res.status(500).json({ error: "Error interno" });
+    res.status(500).json({ error: String(err) });
   }
 });
 
