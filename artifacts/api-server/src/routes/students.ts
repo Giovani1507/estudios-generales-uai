@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentRegistrationsTable, ingresantesPagosTable, codigosVerificadosTable } from "@workspace/db/schema";
+import { studentRegistrationsTable, ingresantesPagosTable, codigosVerificadosTable, mapeoCambiosTable } from "@workspace/db/schema";
 import { desc, eq, inArray, sql, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 
@@ -411,6 +411,74 @@ router.delete("/codigos-verificados/:id", requireAuth, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("Codigos-verificados delete error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── Mapeo Cambios (registro de cambios de estudiantes) ─────────────────────────
+
+// GET /api/students/mapeo-cambios — list all
+router.get("/mapeo-cambios", requireAuth, async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(mapeoCambiosTable)
+      .orderBy(desc(mapeoCambiosTable.registradoEn));
+    res.json(rows);
+  } catch (err) {
+    console.error("Mapeo-cambios GET error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /api/students/mapeo-cambios — create new change record
+router.post("/mapeo-cambios", requireAuth, async (req: any, res) => {
+  try {
+    const {
+      codigoEstudiante, apellidosNombres, dni,
+      tipoCambio, campoModificado, valorAnterior, valorNuevo,
+      matriculadoPor, observaciones,
+    } = req.body as Record<string, string>;
+
+    if (!codigoEstudiante?.trim() || !tipoCambio?.trim()) {
+      res.status(400).json({ error: "Código de estudiante y tipo de cambio son requeridos" });
+      return;
+    }
+
+    const registradoPor = req.currentUser?.username ?? "sistema";
+
+    const [row] = await db
+      .insert(mapeoCambiosTable)
+      .values({
+        codigoEstudiante: codigoEstudiante.trim().toUpperCase(),
+        apellidosNombres: apellidosNombres?.trim() || null,
+        dni:              dni?.trim() || null,
+        tipoCambio:       tipoCambio.trim(),
+        campoModificado:  campoModificado?.trim() || null,
+        valorAnterior:    valorAnterior?.trim() || null,
+        valorNuevo:       valorNuevo?.trim() || null,
+        matriculadoPor:   matriculadoPor?.trim() || null,
+        observaciones:    observaciones?.trim() || null,
+        registradoPor,
+      })
+      .returning();
+
+    res.status(201).json(row);
+  } catch (err) {
+    console.error("Mapeo-cambios POST error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /api/students/mapeo-cambios/:id — delete one
+router.delete("/mapeo-cambios/:id", requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
+    await db.delete(mapeoCambiosTable).where(eq(mapeoCambiosTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Mapeo-cambios delete error:", err);
     res.status(500).json({ error: String(err) });
   }
 });

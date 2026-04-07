@@ -11,3 +11,4 @@ export * from "./student_registrations";
 export * from "./ingresantes_pagos";
 export * from "./sessions";
 export * from "./codigos_verificados";
+export * from "./mapeo_cambios";
