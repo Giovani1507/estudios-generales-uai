@@ -144,13 +144,20 @@ export default function RegistroEstudiante() {
 
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-6">
-          <div className="mb-4" style={{ width: 100, height: 52 }}>
-            <img
-              src={`${base}/uai-logo.png`}
-              alt="UAI"
-              className="w-full h-full object-contain"
-              style={{ filter: "brightness(0) invert(1)", imageRendering: "auto" }}
-            />
+          <div
+            className="mb-4 flex items-center justify-center"
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontWeight: 700,
+              fontSize: 56,
+              color: "#ffffff",
+              letterSpacing: "-2px",
+              lineHeight: 1,
+              textShadow: "0 2px 16px rgba(0,0,0,0.18)",
+              userSelect: "none",
+            }}
+          >
+            UAI
           </div>
           <h1 className="text-white text-2xl font-black tracking-tight text-center">
             Registro de Estudiante
