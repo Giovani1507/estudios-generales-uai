@@ -54,15 +54,7 @@ export async function seedDefaultUsers() {
 
 export async function seedIngresantes() {
   try {
-    const countResult = await db.execute(
-      sql`SELECT count(*)::int AS count FROM ingresantes_pagos`
-    );
-    const count = Number((countResult.rows?.[0] as any)?.count ?? (countResult as any)[0]?.count ?? 0);
-    if (count > 0) {
-      console.log(`[seed] ingresantes_pagos ya tiene ${count} registros. Omitiendo seed.`);
-      return;
-    }
-    console.log(`[seed] Insertando ${(ingresantesData as any[]).length} ingresantes...`);
+    console.log(`[seed] Sincronizando ${(ingresantesData as any[]).length} ingresantes...`);
     const BATCH = 100;
     const data = ingresantesData as {
       dni: string; apellidos_nombres: string; carrera: string | null;
@@ -84,9 +76,24 @@ export async function seedIngresantes() {
         celular:          r.celular,
         correo:           r.correo,
       }));
-      await db.insert(ingresantesPagosTable).values(batch).onConflictDoNothing();
+      await db.insert(ingresantesPagosTable).values(batch)
+        .onConflictDoUpdate({
+          target: ingresantesPagosTable.dni,
+          set: {
+            apellidosNombres: sql`excluded.apellidos_nombres`,
+            carrera:          sql`excluded.carrera`,
+            sede:             sql`excluded.sede`,
+            modalidadIngreso: sql`excluded.modalidad_ingreso`,
+            modalidadEstudio: sql`excluded.modalidad_estudio`,
+            turno:            sql`excluded.turno`,
+            seccion:          sql`excluded.seccion`,
+            codigoEstudiante: sql`excluded.codigo_estudiante`,
+            celular:          sql`excluded.celular`,
+            correo:           sql`excluded.correo`,
+          },
+        });
     }
-    console.log("[seed] ingresantes_pagos sembrado correctamente.");
+    console.log("[seed] ingresantes_pagos sincronizado correctamente.");
   } catch (err) {
     console.error("[seed] Error al sembrar ingresantes:", err);
   }
