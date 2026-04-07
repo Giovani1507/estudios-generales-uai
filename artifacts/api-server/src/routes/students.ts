@@ -354,6 +354,43 @@ router.patch("/codigos-verificados/:id/horario", requireAuth, async (req, res) =
   }
 });
 
+// GET /api/students/mapeo — all ingresantes cross-referenced with codigos_verificados and student_registrations
+router.get("/mapeo", requireAuth, async (_req, res) => {
+  try {
+    const rows = await db.execute(sql`
+      SELECT
+        ip.id,
+        ip.dni,
+        ip.apellidos_nombres,
+        ip.codigo_estudiante,
+        ip.carrera,
+        ip.sede,
+        ip.modalidad_ingreso,
+        ip.modalidad_estudio,
+        ip.turno,
+        ip.seccion,
+        ip.celular,
+        ip.correo,
+        cv.id          AS cv_id,
+        cv.tiene_horario,
+        cv.encontrado  AS cv_encontrado,
+        cv.verificado_en,
+        sr.id          AS sr_id,
+        sr.created_at  AS registrado_en
+      FROM ingresantes_pagos ip
+      LEFT JOIN codigos_verificados cv
+        ON UPPER(cv.codigo_estudiante) = UPPER(ip.codigo_estudiante)
+      LEFT JOIN student_registrations sr
+        ON sr.dni = ip.dni
+      ORDER BY ip.apellidos_nombres
+    `);
+    res.json(rows.rows);
+  } catch (err) {
+    console.error("Mapeo error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // DELETE /api/students/codigos-verificados/all — clears all rows
 router.delete("/codigos-verificados/all", requireAuth, async (_req, res) => {
   try {

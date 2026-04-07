@@ -38,6 +38,7 @@ import {
   GraduationCap,
   LayoutGrid,
   Clock,
+  Map,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -103,6 +104,12 @@ const menuItems: MenuItem[] = [
     title: "Reporte de Estudiantes",
     url: "/reporte-estudiantes",
     icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Mapeo Estudiantes",
+    url: "/mapeo-estudiantes",
+    icon: Map,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
