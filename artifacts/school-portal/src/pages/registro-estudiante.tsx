@@ -34,6 +34,11 @@ function Badge({ label, value, color }: { label: string; value: string | null; c
 export default function RegistroEstudiante() {
   const [dni, setDni]                 = useState("");
   const [lookupStatus, setLookupStatus] = useState<LookupStatus>("idle");
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
   const [ingresante, setIngresante]   = useState<Ingresante | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +170,15 @@ export default function RegistroEstudiante() {
           <p className="text-white/60 text-xs mt-1.5 text-center bg-white/10 rounded-full px-4 py-1">
             Estudiantes sin horario asignado · 2026-1
           </p>
+          <div className="mt-3 flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 border border-white/15">
+            <span className="text-white font-bold text-sm tabular-nums tracking-widest">
+              {now.toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+            </span>
+            <span className="w-px h-3 bg-white/30" />
+            <span className="text-white/60 text-xs font-medium uppercase tracking-wide">
+              {now.toLocaleDateString("es-PE", { timeZone: "America/Lima", weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+            </span>
+          </div>
         </div>
 
         {/* Card */}

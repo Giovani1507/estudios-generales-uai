@@ -150,6 +150,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [gridOpen, setGridOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const timeStr = now.toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const dateStr = now.toLocaleDateString("es-PE", { timeZone: "America/Lima", weekday: "short", day: "2-digit", month: "short" });
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
@@ -373,6 +381,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* Real-time clock */}
+              <div className="hidden sm:flex flex-col items-end leading-tight mr-1">
+                <span className="text-sm font-bold text-foreground tabular-nums tracking-tight">{timeStr}</span>
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{dateStr}</span>
+              </div>
+
               {/* Quick-access grid button */}
               <div ref={gridRef} className="relative">
                 <button
