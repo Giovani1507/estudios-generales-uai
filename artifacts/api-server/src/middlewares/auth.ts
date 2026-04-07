@@ -7,17 +7,20 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     res.status(401).json({ error: "No autenticado" });
     return;
   }
-  const user = getSession(token);
-  if (!user) {
-    res.status(401).json({ error: "Sesión inválida o expirada" });
-    return;
-  }
-  if (!user.isActive) {
-    res.status(401).json({ error: "Usuario desactivado" });
-    return;
-  }
-  (req as any).currentUser = user;
-  next();
+  getSession(token).then(user => {
+    if (!user) {
+      res.status(401).json({ error: "Sesión inválida o expirada" });
+      return;
+    }
+    if (!user.isActive) {
+      res.status(401).json({ error: "Usuario desactivado" });
+      return;
+    }
+    (req as any).currentUser = user;
+    next();
+  }).catch(() => {
+    res.status(500).json({ error: "Error interno al verificar sesión" });
+  });
 }
 
 export function requireRole(...roles: string[]) {

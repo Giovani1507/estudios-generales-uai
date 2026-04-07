@@ -57,7 +57,7 @@ router.post("/login", async (req, res) => {
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    createSession(token, {
+    await createSession(token, {
       id: user.id,
       username: user.username,
       fullName: user.fullName,
@@ -106,7 +106,7 @@ router.post("/login", async (req, res) => {
 router.post("/logout", async (req, res) => {
   const token = getTokenFromRequest(req);
   if (token) {
-    const session = getSession(token);
+    const session = await getSession(token);
     if (session) {
       await logActivity(req, {
         userId: session.id,
@@ -117,7 +117,7 @@ router.post("/logout", async (req, res) => {
         detail: "Cierre de sesión",
       });
     }
-    deleteSession(token);
+    await deleteSession(token);
   }
   res.clearCookie("session_token");
   res.json({ message: "Sesión cerrada" });
