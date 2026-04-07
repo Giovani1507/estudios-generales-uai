@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer, Upload, CheckCircle2, XCircle, FileSearch } from "lucide-react";
+import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer, Upload, CheckCircle2, XCircle, FileSearch, LogIn } from "lucide-react";
 import * as ExcelJS from "exceljs";
+import { useAuth } from "@/lib/auth";
 
 interface StudentReg {
   id: number;
@@ -155,6 +156,7 @@ function printQR(url: string) {
 }
 
 export default function ReporteEstudiantes() {
+  const { refetchUser } = useAuth();
   const [students, setStudents] = useState<StudentReg[]>([]);
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
@@ -242,6 +244,9 @@ export default function ReporteEstudiantes() {
         const result = data as LookupResult;
         setImportResult(result);
         setImportTab(result.found.length > 0 ? "found" : "notfound");
+      } else if (res.status === 401) {
+        setImportError("Sesión expirada. Redirigiendo al login...");
+        setTimeout(() => refetchUser(), 800);
       } else {
         setImportError(`Error ${res.status}: ${data?.error ?? "Respuesta inesperada del servidor"}`);
       }
