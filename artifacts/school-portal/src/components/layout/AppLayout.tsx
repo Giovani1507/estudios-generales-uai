@@ -37,6 +37,7 @@ import {
   Activity,
   GraduationCap,
   LayoutGrid,
+  Clock,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -149,14 +150,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
   const [gridOpen, setGridOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [clockOpen, setClockOpen] = useState(false);
+  const clockRef = useRef<HTMLDivElement>(null);
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  const timeStr = now.toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  const dateStr = now.toLocaleDateString("es-PE", { timeZone: "America/Lima", weekday: "short", day: "2-digit", month: "short" });
+  // Peru = UTC-5 (no DST). Use Etc/GMT+5 for guaranteed accuracy.
+  const TZ = "Etc/GMT+5";
+  const timeStr = now.toLocaleTimeString("es-PE", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const dateStr = now.toLocaleDateString("es-PE", { timeZone: TZ, weekday: "short", day: "2-digit", month: "short" });
+  const peruHour = Number(now.toLocaleTimeString("es-PE", { timeZone: TZ, hour: "2-digit", hour12: false }));
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (clockRef.current && !clockRef.current.contains(e.target as Node)) {
+        setClockOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -381,11 +397,62 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Real-time clock */}
-              <div className="hidden sm:flex flex-col items-end leading-tight mr-1">
-                <span className="text-sm font-bold text-foreground tabular-nums tracking-tight">{timeStr}</span>
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{dateStr}</span>
-              </div>
+              {/* Real-time clock with schedule popup */}
+              {(() => {
+                const slots = [
+                  { label: "Mañana",    range: "07:00 – 12:59", start: 7,  end: 13, color: "bg-sky-500",    light: "bg-sky-50 border-sky-200 text-sky-700",    dot: "bg-sky-500" },
+                  { label: "Tarde",     range: "13:00 – 18:59", start: 13, end: 19, color: "bg-emerald-500", light: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" },
+                  { label: "Noche",     range: "19:00 – 22:59", start: 19, end: 23, color: "bg-violet-500",  light: "bg-violet-50 border-violet-200 text-violet-700",  dot: "bg-violet-500" },
+                  { label: "Madrugada",range: "23:00 – 06:59", start: 23, end: 7,  color: "bg-slate-400",   light: "bg-slate-50 border-slate-200 text-slate-500",    dot: "bg-slate-400" },
+                ];
+                const active = slots.find(s =>
+                  s.start < s.end
+                    ? peruHour >= s.start && peruHour < s.end
+                    : peruHour >= s.start || peruHour < s.end
+                ) ?? slots[3];
+                return (
+                  <div ref={clockRef} className="relative hidden sm:block">
+                    <button
+                      onClick={() => setClockOpen(o => !o)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${clockOpen ? "bg-primary/10 border-primary/30 text-primary" : "border-border hover:bg-muted text-foreground hover:border-primary/20"}`}
+                    >
+                      <Clock size={13} className={clockOpen ? "text-primary" : "text-muted-foreground"} />
+                      <div className="flex flex-col items-end leading-tight">
+                        <span className="text-sm font-bold tabular-nums tracking-tight">{timeStr}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{dateStr}</span>
+                      </div>
+                    </button>
+
+                    {clockOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-border z-50 overflow-hidden">
+                        <div className={`${active.color} px-4 py-3`}>
+                          <p className="text-white text-xs font-semibold uppercase tracking-widest opacity-80">Turno actual</p>
+                          <p className="text-white text-xl font-black tracking-tight">{active.label}</p>
+                          <p className="text-white/70 text-xs font-mono mt-0.5">{active.range}</p>
+                        </div>
+                        <div className="p-3 space-y-2">
+                          {slots.slice(0, 3).map(s => {
+                            const isCurrent = s.label === active.label;
+                            return (
+                              <div key={s.label} className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-all ${isCurrent ? s.light + " font-semibold" : "bg-muted/40 border-transparent text-muted-foreground"}`}>
+                                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm">{s.label}</span>
+                                  <span className="text-xs ml-2 font-mono opacity-70">{s.range}</span>
+                                </div>
+                                {isCurrent && <span className="text-[10px] font-bold uppercase tracking-wide">← Ahora</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="px-4 pb-3 -mt-1">
+                          <div className="text-center text-xs text-muted-foreground font-mono bg-muted rounded-lg py-1.5 tabular-nums">{timeStr} · Hora Perú (UTC -5)</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Quick-access grid button */}
               <div ref={gridRef} className="relative">
