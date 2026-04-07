@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   CheckCircle2, AlertCircle, CreditCard, GraduationCap,
-  Search, Loader2, BookOpen, Clock, LayoutGrid, User
+  Search, Loader2, BookOpen, Clock, LayoutGrid, User, Phone
 } from "lucide-react";
 
 type LookupStatus = "idle" | "loading" | "found" | "notfound" | "error";
@@ -17,6 +17,7 @@ interface Ingresante {
   modalidadEstudio: string | null;
   turno:            string | null;
   seccion:          string | null;
+  celular:          string | null;
 }
 
 const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -114,6 +115,11 @@ export default function RegistroEstudiante() {
               <p className="text-xs text-blue-500">{ingresante.carrera}</p>
               {ingresante.turno && ingresante.seccion && (
                 <p className="text-xs text-blue-400 mt-0.5">Turno {ingresante.turno} · Sección {ingresante.seccion}</p>
+              )}
+              {ingresante.celular && (
+                <p className="text-xs text-blue-400 mt-0.5 flex items-center gap-1">
+                  <Phone className="w-3 h-3" /> {ingresante.celular}
+                </p>
               )}
             </div>
           )}
@@ -242,6 +248,15 @@ export default function RegistroEstudiante() {
                       </div>
                     </div>
                   </div>
+                  {ingresante.celular && (
+                    <div className="flex items-center gap-2 border-t border-green-100 pt-3">
+                      <Phone className="w-4 h-4 text-green-600 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Nro. Celular</p>
+                        <p className="text-xs font-semibold text-gray-800">{ingresante.celular}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
