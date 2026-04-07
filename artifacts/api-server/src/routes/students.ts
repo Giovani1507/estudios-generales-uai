@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentRegistrationsTable, ingresantesPagosTable } from "@workspace/db/schema";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { studentRegistrationsTable, ingresantesPagosTable, codigosVerificadosTable } from "@workspace/db/schema";
+import { desc, eq, inArray, sql, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router = Router();
@@ -221,6 +221,143 @@ router.post("/lookup-codes", requireAuth, async (req, res) => {
     res.json({ found: rows, notFound, totalInput: codigos.length });
   } catch (err) {
     console.error("Lookup-codes error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── Códigos Verificados (persistentes) ────────────────────────────────────────
+
+// GET /api/students/codigos-verificados — returns all saved verification rows
+router.get("/codigos-verificados", requireAuth, async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(codigosVerificadosTable)
+      .orderBy(asc(codigosVerificadosTable.id));
+    res.json(rows);
+  } catch (err) {
+    console.error("Codigos-verificados get error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /api/students/codigos-verificados/merge — upserts found + not-found rows
+router.post("/codigos-verificados/merge", requireAuth, async (req, res) => {
+  try {
+    const { found, notFound } = req.body as {
+      found: Array<{
+        codigoEstudiante?: string | null;
+        apellidosNombres?: string | null;
+        dni?: string | null;
+        carrera?: string | null;
+        sede?: string | null;
+        modalidadEstudio?: string | null;
+        turno?: string | null;
+        seccion?: string | null;
+        celular?: string | null;
+      }>;
+      notFound: string[];
+    };
+
+    const toUpsert: typeof codigosVerificadosTable.$inferInsert[] = [];
+
+    for (const r of (found ?? [])) {
+      if (!r.codigoEstudiante) continue;
+      toUpsert.push({
+        codigoEstudiante: r.codigoEstudiante.toUpperCase(),
+        apellidosNombres: r.apellidosNombres ?? null,
+        dni:              r.dni ?? null,
+        carrera:          r.carrera ?? null,
+        sede:             r.sede ?? null,
+        modalidadEstudio: r.modalidadEstudio ?? null,
+        turno:            r.turno ?? null,
+        seccion:          r.seccion ?? null,
+        celular:          r.celular ?? null,
+        encontrado:       true,
+      });
+    }
+
+    for (const code of (notFound ?? [])) {
+      if (!code) continue;
+      toUpsert.push({
+        codigoEstudiante: code.toUpperCase(),
+        encontrado:       false,
+      });
+    }
+
+    if (toUpsert.length > 0) {
+      await db
+        .insert(codigosVerificadosTable)
+        .values(toUpsert)
+        .onConflictDoUpdate({
+          target: codigosVerificadosTable.codigoEstudiante,
+          set: {
+            apellidosNombres: sql`EXCLUDED.apellidos_nombres`,
+            dni:              sql`EXCLUDED.dni`,
+            carrera:          sql`EXCLUDED.carrera`,
+            sede:             sql`EXCLUDED.sede`,
+            modalidadEstudio: sql`EXCLUDED.modalidad_estudio`,
+            turno:            sql`EXCLUDED.turno`,
+            seccion:          sql`EXCLUDED.seccion`,
+            celular:          sql`EXCLUDED.celular`,
+            encontrado:       sql`EXCLUDED.encontrado`,
+            verificadoEn:     sql`now()`,
+          },
+        });
+    }
+
+    const all = await db
+      .select()
+      .from(codigosVerificadosTable)
+      .orderBy(asc(codigosVerificadosTable.id));
+    res.json(all);
+  } catch (err) {
+    console.error("Codigos-verificados merge error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// PATCH /api/students/codigos-verificados/:id/horario — toggle tieneHorario
+router.patch("/codigos-verificados/:id/horario", requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
+    const { tieneHorario } = req.body;
+    if (typeof tieneHorario !== "boolean") {
+      res.status(400).json({ error: "tieneHorario debe ser boolean" });
+      return;
+    }
+    await db
+      .update(codigosVerificadosTable)
+      .set({ tieneHorario })
+      .where(eq(codigosVerificadosTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Codigos-verificados horario error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /api/students/codigos-verificados/all — clears all rows
+router.delete("/codigos-verificados/all", requireAuth, async (_req, res) => {
+  try {
+    await db.delete(codigosVerificadosTable);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Codigos-verificados delete-all error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /api/students/codigos-verificados/:id — deletes one row
+router.delete("/codigos-verificados/:id", requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
+    await db.delete(codigosVerificadosTable).where(eq(codigosVerificadosTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Codigos-verificados delete error:", err);
     res.status(500).json({ error: String(err) });
   }
 });
