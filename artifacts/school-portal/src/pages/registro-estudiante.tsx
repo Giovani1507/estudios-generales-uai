@@ -144,11 +144,13 @@ export default function RegistroEstudiante() {
 
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-6">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.3)" }}
-          >
-            <GraduationCap className="w-8 h-8 text-white" />
+          <div className="mb-4 shadow-xl rounded-xl overflow-hidden" style={{ width: 72, height: 72 }}>
+            <img
+              src={`${base}/uai-logo.png`}
+              alt="UAI"
+              className="w-full h-full object-cover"
+              style={{ imageRendering: "crisp-edges" }}
+            />
           </div>
           <h1 className="text-white text-2xl font-black tracking-tight text-center">
             Registro de Estudiante
