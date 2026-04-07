@@ -199,10 +199,14 @@ router.post("/lookup-codes", requireAuth, async (req, res) => {
       res.status(400).json({ error: "Se requiere un arreglo de códigos" });
       return;
     }
-    const codigos: string[] = (raw as unknown[])
+    const rawCodigos: string[] = (raw as unknown[])
       .map((c: unknown) => String(c ?? "").trim().toUpperCase())
       .filter(s => s.length > 0)
       .slice(0, 2000);
+
+    const totalInput = rawCodigos.length;
+    // Deduplicate keeping order (first occurrence wins)
+    const codigos = [...new Set(rawCodigos)];
 
     if (codigos.length === 0) {
       res.json({ found: [], notFound: [], totalInput: 0 });
@@ -218,7 +222,7 @@ router.post("/lookup-codes", requireAuth, async (req, res) => {
     const foundCodes = new Set(rows.map(r => (r.codigoEstudiante ?? "").toUpperCase()));
     const notFound   = codigos.filter(c => !foundCodes.has(c));
 
-    res.json({ found: rows, notFound, totalInput: codigos.length });
+    res.json({ found: rows, notFound, totalInput });
   } catch (err) {
     console.error("Lookup-codes error:", err);
     res.status(500).json({ error: String(err) });
@@ -285,10 +289,22 @@ router.post("/codigos-verificados/merge", requireAuth, async (req, res) => {
       });
     }
 
-    if (toUpsert.length > 0) {
+    // Deduplicate by codigoEstudiante — found rows take priority over notFound
+    // (found rows were pushed first, so we iterate in order and last write wins;
+    //  reverse so found rows overwrite notFound entries for the same code)
+    const seen = new Map<string, typeof codigosVerificadosTable.$inferInsert>();
+    for (const row of toUpsert) {
+      const key = row.codigoEstudiante!;
+      if (!seen.has(key) || row.encontrado) {
+        seen.set(key, row);
+      }
+    }
+    const uniqueToUpsert = Array.from(seen.values());
+
+    if (uniqueToUpsert.length > 0) {
       await db
         .insert(codigosVerificadosTable)
-        .values(toUpsert)
+        .values(uniqueToUpsert)
         .onConflictDoUpdate({
           target: codigosVerificadosTable.codigoEstudiante,
           set: {
