@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentRegistrationsTable, ingresantesPagosTable } from "@workspace/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router = Router();
@@ -187,6 +187,34 @@ router.delete("/register/:id", requireAuth, requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("Delete student error:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// POST /api/students/lookup-codes — auth required, cross-checks codes against ingresantes_pagos
+router.post("/lookup-codes", requireAuth, async (req, res) => {
+  try {
+    const raw: unknown = req.body.codigos;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      res.status(400).json({ error: "Se requiere un arreglo de códigos" });
+      return;
+    }
+    const codigos: string[] = raw
+      .map((c: unknown) => String(c).trim().toUpperCase())
+      .filter(Boolean)
+      .slice(0, 2000);
+
+    const rows = await db
+      .select()
+      .from(ingresantesPagosTable)
+      .where(inArray(ingresantesPagosTable.codigoEstudiante, codigos));
+
+    const foundCodes = new Set(rows.map(r => r.codigoEstudiante?.toUpperCase()));
+    const notFound   = codigos.filter(c => !foundCodes.has(c));
+
+    res.json({ found: rows, notFound, totalInput: codigos.length });
+  } catch (err) {
+    console.error("Lookup-codes error:", err);
     res.status(500).json({ error: "Error interno" });
   }
 });

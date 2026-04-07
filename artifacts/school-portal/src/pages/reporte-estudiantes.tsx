@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer, Upload, CheckCircle2, XCircle, FileSearch } from "lucide-react";
 import * as ExcelJS from "exceljs";
 
 interface StudentReg {
@@ -165,6 +165,126 @@ export default function ReporteEstudiantes() {
   const [deleting, setDeleting] = useState<number | null>(null);
 
   const formUrl = getFormUrl();
+
+  // ── Import Codes state ────────────────────────────────────────────────────
+  interface IngresanteRow {
+    codigoEstudiante: string | null;
+    apellidosNombres: string | null;
+    dni: string | null;
+    carrera: string | null;
+    sede: string | null;
+    modalidadEstudio: string | null;
+    turno: string | null;
+    seccion: string | null;
+    celular: string | null;
+  }
+  interface LookupResult { found: IngresanteRow[]; notFound: string[]; totalInput: number; }
+
+  const [importOpen,  setImportOpen]  = useState(false);
+  const [importText,  setImportText]  = useState("");
+  const [importing,   setImporting]   = useState(false);
+  const [importResult,setImportResult]= useState<LookupResult | null>(null);
+  const [importTab,   setImportTab]   = useState<"found"|"notfound">("found");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function parseCodigos(raw: string): string[] {
+    return raw
+      .split(/[\n\r,;|\t]+/)
+      .map(s => s.trim().toUpperCase())
+      .filter(s => s.length > 0);
+  }
+
+  async function readCodesFromFile(file: File): Promise<string[]> {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+      const buf = await file.arrayBuffer();
+      const wb  = new ExcelJS.Workbook();
+      await wb.xlsx.load(buf);
+      const codes: string[] = [];
+      wb.eachSheet(ws => {
+        ws.eachRow(row => {
+          (Array.isArray(row.values) ? row.values : []).forEach((cell: unknown) => {
+            const v = cell == null ? "" : String((cell as any)?.result ?? (cell as any)?.text ?? cell).trim().toUpperCase();
+            if (v) codes.push(v);
+          });
+        });
+      });
+      return codes.filter(Boolean);
+    }
+    const text = await file.text();
+    return parseCodigos(text);
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const codes = await readCodesFromFile(file);
+    setImportText(codes.join("\n"));
+    e.target.value = "";
+  }
+
+  async function runLookup() {
+    const codigos = parseCodigos(importText);
+    if (codigos.length === 0) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const res = await fetch(`${apiBase}/api/students/lookup-codes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ codigos }),
+      });
+      if (res.ok) {
+        const data = await res.json() as LookupResult;
+        setImportResult(data);
+        setImportTab(data.found.length > 0 ? "found" : "notfound");
+      }
+    } catch {}
+    setImporting(false);
+  }
+
+  async function exportLookupExcel() {
+    if (!importResult) return;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Portal Académico UAI";
+    const ws = wb.addWorksheet("Verificación Códigos");
+    ws.columns = [
+      { key: "estado",  width: 14 },
+      { key: "codigo",  width: 18 },
+      { key: "nombre",  width: 34 },
+      { key: "dni",     width: 12 },
+      { key: "carrera", width: 32 },
+      { key: "turno",   width: 12 },
+      { key: "seccion", width: 10 },
+      { key: "sede",    width: 14 },
+      { key: "celular", width: 14 },
+    ];
+    const hdr = ws.addRow(["Estado", "Código", "Apellidos y Nombres", "DNI", "Carrera", "Turno", "Sección", "Sede", "Celular"]);
+    hdr.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+    });
+    hdr.height = 20;
+    importResult.found.forEach(r => {
+      const row = ws.addRow(["ENCONTRADO", r.codigoEstudiante||"", r.apellidosNombres||"", r.dni||"", r.carrera||"", r.turno||"", r.seccion||"", r.sede||"", r.celular||""]);
+      row.getCell(1).fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
+      row.getCell(1).font  = { bold: true, color: { argb: "FF065F46" } };
+    });
+    importResult.notFound.forEach(c => {
+      const row = ws.addRow(["NO ENCONTRADO", c, "", "", "", "", "", "", ""]);
+      row.getCell(1).fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+      row.getCell(1).font  = { bold: true, color: { argb: "FF991B1B" } };
+    });
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a    = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `UAI-Verificacion-Codigos-${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.click();
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   async function load() {
     setLoading(true);
@@ -748,6 +868,202 @@ export default function ReporteEstudiantes() {
         {filtered.length > 0 && (
           <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
             Mostrando {filtered.length} de {students.length} registros
+          </div>
+        )}
+      </div>
+
+      {/* ── Import & Verify Codes Panel ─────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Panel header — always visible */}
+        <button
+          onClick={() => setImportOpen(o => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <FileSearch className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-gray-800">Importar Códigos de Estudiante</p>
+              <p className="text-xs text-gray-400">Verifica qué códigos se encuentran en la data con pagos</p>
+            </div>
+          </div>
+          <span className={`text-xs font-semibold transition-transform ${importOpen ? "rotate-180" : ""} text-gray-400`}>▼</span>
+        </button>
+
+        {importOpen && (
+          <div className="border-t border-gray-100 px-6 py-5 space-y-4">
+            {/* Input area */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  Pegar códigos (uno por línea o separados por coma)
+                </label>
+                <textarea
+                  value={importText}
+                  onChange={e => { setImportText(e.target.value); setImportResult(null); }}
+                  placeholder={"2021100001\n2021100002\n2021100003\n…"}
+                  rows={8}
+                  className="w-full font-mono text-xs border border-gray-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 bg-gray-50 placeholder:text-gray-300"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt,.csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Importar archivo (.txt / .csv / .xlsx)
+                  </button>
+                  {importText && (
+                    <span className="text-xs text-gray-400">
+                      {parseCodigos(importText).length} código{parseCodigos(importText).length !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary card or placeholder */}
+              <div className="flex flex-col justify-start gap-3">
+                {importResult ? (
+                  <>
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Resultado</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: "Ingresados",    value: importResult.totalInput, color: "bg-gray-100 text-gray-700" },
+                        { label: "Encontrados",   value: importResult.found.length, color: "bg-green-50 text-green-700 border border-green-200" },
+                        { label: "No en data",    value: importResult.notFound.length, color: "bg-red-50 text-red-700 border border-red-200" },
+                      ].map(s => (
+                        <div key={s.label} className={`rounded-xl px-3 py-3 ${s.color}`}>
+                          <p className="text-xl font-extrabold leading-none">{s.value}</p>
+                          <p className="text-[10px] font-semibold mt-0.5 opacity-80">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={exportLookupExcel}
+                      className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition w-fit"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Exportar resultado a Excel
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-8 text-gray-300">
+                    <FileSearch className="w-10 h-10 mb-2" />
+                    <p className="text-xs text-center">Pega los códigos y presiona<br/>"Verificar en data"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action button */}
+            <button
+              onClick={runLookup}
+              disabled={importing || parseCodigos(importText).length === 0}
+              className="flex items-center gap-2 h-10 px-6 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {importing ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Verificando…</>
+              ) : (
+                <><FileSearch className="w-4 h-4" />Verificar en data</>
+              )}
+            </button>
+
+            {/* Results table */}
+            {importResult && (
+              <div className="border border-gray-100 rounded-xl overflow-hidden">
+                {/* Tabs */}
+                <div className="flex border-b border-gray-100 bg-gray-50">
+                  {([
+                    { key: "found",    label: `✓ Encontrados (${importResult.found.length})`,   cls: "text-green-700 border-green-500" },
+                    { key: "notfound", label: `✗ No en data (${importResult.notFound.length})`,  cls: "text-red-700 border-red-500" },
+                  ] as const).map(t => (
+                    <button
+                      key={t.key}
+                      onClick={() => setImportTab(t.key)}
+                      className={`px-5 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+                        importTab === t.key ? t.cls + " bg-white" : "border-transparent text-gray-400 hover:text-gray-600"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {importTab === "found" ? (
+                  importResult.found.length === 0 ? (
+                    <div className="py-8 text-center text-gray-400 text-sm">Ningún código encontrado en la data</div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-80">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-white border-b border-gray-100">
+                          <tr>
+                            {["#","Código","Apellidos y Nombres","DNI","Carrera","Turno","Sección","Sede","Celular"].map(h => (
+                              <th key={h} className="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importResult.found.map((r, i) => (
+                            <tr key={i} className={`border-b border-gray-50 ${i % 2 === 0 ? "bg-green-50/30" : ""}`}>
+                              <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                              <td className="px-3 py-2">
+                                <span className="inline-block font-bold text-green-700 bg-green-100 rounded px-1.5 py-px font-mono tracking-wider">
+                                  <CheckCircle2 className="inline w-3 h-3 mr-1 text-green-600" />{r.codigoEstudiante || "—"}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 font-semibold text-gray-800 whitespace-nowrap">{r.apellidosNombres || "—"}</td>
+                              <td className="px-3 py-2 font-mono text-gray-500">{r.dni || "—"}</td>
+                              <td className="px-3 py-2 text-gray-600 max-w-[180px] truncate">{r.carrera || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500">{r.turno || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500">{r.seccion || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500">{r.sede || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500">{r.celular || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                ) : (
+                  importResult.notFound.length === 0 ? (
+                    <div className="py-8 text-center text-gray-400 text-sm">¡Todos los códigos fueron encontrados!</div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-80">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-white border-b border-gray-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wide">#</th>
+                            <th className="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wide">Código ingresado</th>
+                            <th className="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wide">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importResult.notFound.map((c, i) => (
+                            <tr key={i} className={`border-b border-gray-50 ${i % 2 === 0 ? "bg-red-50/30" : ""}`}>
+                              <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                              <td className="px-3 py-2 font-mono font-bold text-red-700">{c}</td>
+                              <td className="px-3 py-2">
+                                <span className="inline-flex items-center gap-1 text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                                  <XCircle className="w-3 h-3" />No encontrado en data
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
