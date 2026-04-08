@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "1heFR6mVKhcXWuoBR3H9t"
+uri = "file://qr-rectificacion.png"
+type = "image"
+title = "QR - Registro de Rectificación de Matrícula"
