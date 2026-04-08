@@ -18,6 +18,7 @@ export default function RegistroRectificacion() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   function handleFoto(file: File) {
     if (!file.type.startsWith("image/")) { setErrorMsg("Solo se aceptan imágenes"); return; }
@@ -164,8 +165,18 @@ export default function RegistroRectificacion() {
           <label className="text-xs font-bold uppercase tracking-widest" style={{ color: NAVY }}>
             Foto del comprobante de pago <span className="text-red-500">*</span>
           </label>
+
+          {/* Input galería (sin capture) */}
           <input
             ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFoto(f); e.target.value = ""; }}
+          />
+          {/* Input cámara */}
+          <input
+            ref={cameraRef}
             type="file"
             accept="image/*"
             capture="environment"
@@ -174,33 +185,54 @@ export default function RegistroRectificacion() {
           />
 
           {fotoPreview ? (
-            <div className="relative rounded-2xl overflow-hidden border-2 border-green-200 bg-green-50">
-              <img src={fotoPreview} alt="Comprobante" className="w-full max-h-48 object-contain" />
-              <button
-                type="button"
-                onClick={() => { setFoto(null); setFotoPreview(null); }}
-                className="absolute top-2 right-2 bg-white/90 rounded-full p-1 shadow-md hover:bg-red-50 transition-colors"
-              >
-                <X className="w-4 h-4 text-red-500" />
-              </button>
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span className="text-xs font-semibold text-green-700">Foto adjuntada · toca para cambiar</span>
+            <div className="rounded-2xl overflow-hidden border-2 border-green-200 bg-green-50">
+              <img src={fotoPreview} alt="Comprobante" className="w-full max-h-52 object-contain" />
+              <div className="flex items-center justify-between px-3 py-2 bg-green-100">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span className="text-xs font-semibold text-green-700">Foto adjuntada</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraRef.current?.click()}
+                    className="text-xs text-blue-600 font-semibold hover:underline"
+                  >Cambiar</button>
+                  <button
+                    type="button"
+                    onClick={() => { setFoto(null); setFotoPreview(null); }}
+                    className="text-xs text-red-500 font-semibold hover:underline"
+                  >Quitar</button>
+                </div>
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-blue-300 hover:bg-blue-50/30 transition-all"
-            >
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                <Camera className="w-6 h-6 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-500">Tomar foto o seleccionar imagen</p>
-              <p className="text-xs text-gray-400">JPG, PNG · máx. 5 MB</p>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Cámara */}
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-blue-300 hover:bg-blue-50/30 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-xs font-semibold text-gray-500 text-center leading-tight">Tomar foto</p>
+              </button>
+              {/* Galería */}
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-blue-300 hover:bg-blue-50/30 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Upload className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-xs font-semibold text-gray-500 text-center leading-tight">Subir desde galería</p>
+              </button>
+            </div>
           )}
+          <p className="text-[10px] text-gray-400 text-center">JPG, PNG · máx. 5 MB</p>
         </div>
 
         {/* Error */}
