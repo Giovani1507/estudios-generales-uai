@@ -32,6 +32,8 @@ import RegistroEstudiante from "@/pages/registro-estudiante";
 import ReporteEstudiantes from "@/pages/reporte-estudiantes";
 import MapeoEstudiantes from "@/pages/mapeo-estudiantes";
 import VerificacionData from "@/pages/verificacion-data";
+import RegistroRectificacion from "@/pages/registro-rectificacion";
+import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 
 const queryClient = new QueryClient();
 
@@ -149,6 +151,14 @@ function AppRouter() {
       <Route
         path="/verificacion-data"
         component={() => <ProtectedRoute component={VerificacionData} />}
+      />
+      <Route
+        path="/registro-rectificacion"
+        component={RegistroRectificacion}
+      />
+      <Route
+        path="/rectificaciones"
+        component={() => <ProtectedRoute component={RectificacionesAdmin} />}
       />
       {/* 404 */}
       <Route component={NotFound} />

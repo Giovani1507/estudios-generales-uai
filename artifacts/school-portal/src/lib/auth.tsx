@@ -2,7 +2,7 @@ import { createContext, useContext, ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, getGetMeQueryKey, User } from "@workspace/api-client-react";
 
-const PUBLIC_ROUTES = ["/login", "/registroestudiantesinhorario"];
+const PUBLIC_ROUTES = ["/login", "/registroestudiantesinhorario", "/registro-rectificacion"];
 
 interface AuthContextType {
   user: User | null;

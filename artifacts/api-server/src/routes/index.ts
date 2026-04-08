@@ -11,6 +11,7 @@ import reportsRouter from "./reports.js";
 import emailRouter from "./email.js";
 import activityRouter from "./activity.js";
 import studentsRouter from "./students.js";
+import rectificacionesRouter from "./rectificaciones.js";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/reports", reportsRouter);
 router.use("/email", emailRouter);
 router.use("/activity", activityRouter);
 router.use("/students", studentsRouter);
+router.use("/rectificaciones", rectificacionesRouter);
 
 export default router;
