@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   ClipboardList, Download, RefreshCw, Search, X, Trash2,
-  Eye, CheckCircle2, Users, User,
+  Eye, CheckCircle2, Users, User, QrCode, Link2, Copy, Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,8 @@ function formatDate(iso: string) {
   });
 }
 
+const REGISTRO_URL = `${window.location.origin}${(import.meta.env.BASE_URL || "").replace(/\/$/, "")}/registro-rectificacion`;
+
 export default function RectificacionesAdmin() {
   const { toast } = useToast();
   const [data, setData]       = useState<Rectificacion[]>([]);
@@ -42,6 +45,39 @@ export default function RectificacionesAdmin() {
   const [filterAt, setFilterAt] = useState<string>("Todos");
   const [fotoModal, setFotoModal] = useState<string | null>(null);
   const [deleting, setDeleting]   = useState<number | null>(null);
+  const [copied, setCopied]       = useState(false);
+  const qrRef = useRef<SVGSVGElement>(null);
+
+  function copyLink() {
+    navigator.clipboard.writeText(REGISTRO_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function downloadQR() {
+    const svg = qrRef.current;
+    if (!svg) return;
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const img = new Image();
+    const blob = new Blob([svgStr], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      canvas.width = 600; canvas.height = 600;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, 600, 600);
+      ctx.drawImage(img, 0, 0, 600, 600);
+      URL.revokeObjectURL(url);
+      const a = document.createElement("a");
+      a.download = "qr-rectificacion-matricula.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = url;
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -257,15 +293,70 @@ export default function RectificacionesAdmin() {
         </div>
       )}
 
-      {/* QR hint */}
-      <Card className="rounded-xl border-dashed border-2" style={{ borderColor: GOLD + "60" }}>
-        <CardContent className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: NAVY + "15" }}>📲</div>
-          <div className="text-sm">
-            <p className="font-semibold" style={{ color: NAVY }}>Página pública de registro via QR</p>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              Los estudiantes acceden a: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">/registro-rectificacion</code> — el formulario funciona sin iniciar sesión.
-            </p>
+      {/* QR Card */}
+      <Card className="rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b flex items-center gap-2" style={{ background: NAVY }}>
+          <QrCode className="w-5 h-5 text-white" />
+          <span className="text-white font-bold text-sm">QR y Enlace — Registro de Rectificación de Matrícula</span>
+        </div>
+        <CardContent className="p-5">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+
+            {/* QR code */}
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <div className="p-3 bg-white rounded-2xl border-2 shadow-md" style={{ borderColor: GOLD + "50" }}>
+                <QRCodeSVG
+                  ref={qrRef as any}
+                  value={REGISTRO_URL}
+                  size={180}
+                  fgColor={NAVY}
+                  bgColor="#FFFFFF"
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+              <button
+                onClick={downloadQR}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition-colors"
+                style={{ borderColor: NAVY + "40", color: NAVY }}
+              >
+                <Download className="w-3.5 h-3.5" /> Descargar QR
+              </button>
+            </div>
+
+            {/* Link + info */}
+            <div className="flex-1 w-full space-y-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: NAVY }}>
+                  Enlace directo para compartir
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 min-w-0">
+                    <Link2 className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="text-xs font-mono text-gray-700 truncate">{REGISTRO_URL}</span>
+                  </div>
+                  <button
+                    onClick={copyLink}
+                    className="flex items-center gap-1.5 shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all"
+                    style={{
+                      background: copied ? "#16a34a" : NAVY,
+                      color: "#fff",
+                    }}
+                  >
+                    {copied ? <><Check className="w-3.5 h-3.5" /> Copiado</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50/60 rounded-xl p-3.5 space-y-1.5">
+                <p className="text-xs font-semibold" style={{ color: NAVY }}>¿Cómo funciona?</p>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  <li className="flex items-start gap-1.5"><span style={{ color: GOLD }}>▸</span> El estudiante escanea el QR con su celular o abre el enlace.</li>
+                  <li className="flex items-start gap-1.5"><span style={{ color: GOLD }}>▸</span> Llena su nombre, celular, quien lo atendió y adjunta foto del pago.</li>
+                  <li className="flex items-start gap-1.5"><span style={{ color: GOLD }}>▸</span> El registro aparece aquí automáticamente en tiempo real.</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
