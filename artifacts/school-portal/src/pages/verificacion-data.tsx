@@ -49,13 +49,19 @@ function normStr(s: string | null | undefined) {
 function detectCols(headers: string[]) {
   const n = normStr;
   const codeKw  = ["codigo", "code", "cod", "estudiante", "alumno", "usuario", "matricula"];
-  const modalKw = ["modalidad", "modal", "estudio"];
   const turnoKw = ["turno", "turn", "horario", "jornada"];
-  return {
-    codeCol:  headers.find(h => codeKw.some(k  => n(h).includes(k))) ?? headers[0] ?? "",
-    modalCol: headers.find(h => modalKw.some(k => n(h).includes(k))) ?? headers[1] ?? "",
-    turnoCol: headers.find(h => turnoKw.some(k => n(h).includes(k))) ?? headers[2] ?? "",
-  };
+
+  const codeCol  = headers.find(h => codeKw.some(k  => n(h).includes(k)))  ?? headers[0] ?? "";
+  const turnoCol = headers.find(h => turnoKw.some(k => n(h).includes(k)))  ?? "";
+
+  // Prefer "modalidad de estudio" / "modalidad estudio" over "modalidad de ingreso"
+  const modalCol =
+    headers.find(h => n(h).includes("modalidad") && n(h).includes("estudio")) ??
+    headers.find(h => n(h).includes("modalidad") && !n(h).includes("ingreso")) ??
+    headers.find(h => n(h).includes("modalidad")) ??
+    "";
+
+  return { codeCol, modalCol, turnoCol };
 }
 
 export default function VerificacionData() {
