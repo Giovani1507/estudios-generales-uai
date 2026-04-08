@@ -39,6 +39,7 @@ import {
   LayoutGrid,
   Clock,
   Map,
+  DatabaseZap,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -473,6 +474,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-border bg-white shadow-lg p-2">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">Acceso rápido</p>
                     {[
+                      { href: "/verificacion-data",   label: "Verificación de Data",   icon: DatabaseZap },
                       { href: "/reporte-estudiantes", label: "Reporte de Estudiantes", icon: ClipboardList },
                       { href: "/reportes",            label: "Reportes",               icon: BarChart3 },
                       { href: "/usuarios",            label: "Usuarios",               icon: Users },

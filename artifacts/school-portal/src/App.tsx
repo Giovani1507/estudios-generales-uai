@@ -31,6 +31,7 @@ import HorarioSeccion from "@/pages/horario-seccion";
 import RegistroEstudiante from "@/pages/registro-estudiante";
 import ReporteEstudiantes from "@/pages/reporte-estudiantes";
 import MapeoEstudiantes from "@/pages/mapeo-estudiantes";
+import VerificacionData from "@/pages/verificacion-data";
 
 const queryClient = new QueryClient();
 
@@ -144,6 +145,10 @@ function AppRouter() {
       <Route
         path="/mapeo-estudiantes"
         component={() => <ProtectedRoute component={MapeoEstudiantes} />}
+      />
+      <Route
+        path="/verificacion-data"
+        component={() => <ProtectedRoute component={VerificacionData} />}
       />
       {/* 404 */}
       <Route component={NotFound} />
