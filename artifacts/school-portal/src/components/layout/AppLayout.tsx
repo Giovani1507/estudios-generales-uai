@@ -114,6 +114,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Verificación de Data",
+    url: "/verificacion-data",
+    icon: DatabaseZap,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import {
   Upload,
   Download,
-  RefreshCw,
   FileSpreadsheet,
   CheckCircle2,
   XCircle,
@@ -15,197 +14,300 @@ import {
   Search,
   X,
   ArrowRight,
+  RefreshCw,
+  Merge,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 const NAVY = "#001F5F";
 
-type ExcelRow  = { codigo: string; modalidad: string; turno: string };
-type SysRow    = {
-  codigoEstudiante: string | null;
-  apellidosNombres: string;
-  dni: string;
-  carrera: string | null;
-  sede: string | null;
-  modalidadEstudio: string | null;
-  turno: string | null;
-  seccion: string | null;
-  celular: string | null;
-  correo: string | null;
-};
+type AnyRow = Record<string, string>;
 
-type ResultRow = ExcelRow & {
-  found: boolean;
-  sys: SysRow | null;
-  modalidadMatch: boolean | null;
-  turnoMatch: boolean | null;
-};
-
-function normStr(s: string | null | undefined) {
+/* ── helpers ─────────────────────────────────────────────── */
+function norm(s: string | null | undefined) {
   return (s ?? "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+function str(v: unknown) { return String(v ?? "").trim(); }
 
-function detectCols(headers: string[]) {
-  const n = normStr;
-  const codeKw  = ["codigo", "code", "cod", "estudiante", "alumno", "usuario", "matricula"];
-  const turnoKw = ["turno", "turn", "horario", "jornada"];
-
-  const codeCol  = headers.find(h => codeKw.some(k  => n(h).includes(k)))  ?? headers[0] ?? "";
-  const turnoCol = headers.find(h => turnoKw.some(k => n(h).includes(k)))  ?? "";
-
-  // Prefer "modalidad de estudio" / "modalidad estudio" over "modalidad de ingreso"
-  const modalCol =
-    headers.find(h => n(h).includes("modalidad") && n(h).includes("estudio")) ??
-    headers.find(h => n(h).includes("modalidad") && !n(h).includes("ingreso")) ??
-    headers.find(h => n(h).includes("modalidad")) ??
-    "";
-
-  return { codeCol, modalCol, turnoCol };
+function detectKey(headers: string[]): string {
+  const kw = ["codigo", "code", "cod", "matricula"];
+  return headers.find(h => kw.some(k => norm(h).includes(k))) ?? headers[0] ?? "";
 }
 
-export default function VerificacionData() {
-  const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
+function detectCol(headers: string[], keywords: string[]): string {
+  return headers.find(h => keywords.some(k => norm(h).includes(k))) ?? "";
+}
 
-  const [dragging, setDragging]     = useState(false);
-  const [fileName, setFileName]     = useState("");
-  const [allHeaders, setAllHeaders] = useState<string[]>([]);
-  const [codeCol, setCodeCol]       = useState("");
-  const [modalCol, setModalCol]     = useState("");
-  const [turnoCol, setTurnoCol]     = useState("");
-  const [rawJson, setRawJson]       = useState<Record<string, string>[]>([]);
-  const [excelRows, setExcelRows]   = useState<ExcelRow[]>([]);
-  const [loading, setLoading]       = useState(false);
-  const [results, setResults]       = useState<ResultRow[] | null>(null);
-  const [search, setSearch]         = useState("");
-  const [filter, setFilter]         = useState<"all"|"match"|"diff"|"notfound">("all");
-
-  /* ── Parse uploaded Excel ─────────────────────────────────── */
-  function buildRows(json: Record<string,string>[], cc: string, mc: string, tc: string): ExcelRow[] {
-    return json.map(r => ({
-      codigo:   String(r[cc] ?? "").trim().toUpperCase(),
-      modalidad: String(r[mc] ?? "").trim(),
-      turno:    String(r[tc] ?? "").trim(),
-    })).filter(r => r.codigo);
-  }
-
-  function parseExcel(file: File) {
+function readExcel(file: File): Promise<AnyRow[]> {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Error leyendo archivo"));
     reader.onload = (e) => {
       try {
-        const wb   = XLSX.read(new Uint8Array(e.target!.result as ArrayBuffer), { type: "array" });
-        const ws   = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: "" });
-        if (!json.length) { toast({ title: "Archivo vacío", variant: "destructive" }); return; }
-
-        const headers = Object.keys(json[0]);
-        const { codeCol: cc, modalCol: mc, turnoCol: tc } = detectCols(headers);
-        const rows = buildRows(json, cc, mc, tc);
-
-        setAllHeaders(headers); setCodeCol(cc); setModalCol(mc); setTurnoCol(tc);
-        setRawJson(json); setExcelRows(rows);
-        setFileName(file.name); setResults(null);
-        toast({ title: `Excel cargado — ${rows.length} códigos listos para verificar` });
-      } catch (err) {
-        toast({ title: "Error al leer Excel", description: String(err), variant: "destructive" });
-      }
+        const wb = XLSX.read(new Uint8Array(e.target!.result as ArrayBuffer), { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json<AnyRow>(ws, { defval: "" });
+        resolve(json.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, str(v)]))));
+      } catch (err) { reject(err); }
     };
     reader.readAsArrayBuffer(file);
-  }
+  });
+}
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); setDragging(false);
-    const f = e.dataTransfer.files[0]; if (f) parseExcel(f);
-  }, []);
+/* ── Column selector ─────────────────────────────────────── */
+type ColSelectorProps = {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+};
+function ColSelector({ label, value, options, onChange }: ColSelectorProps) {
+  return (
+    <div className="space-y-0.5">
+      <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
+      <select
+        className="w-full border rounded-md px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+        value={value} onChange={e => onChange(e.target.value)}
+      >
+        <option value="">— ninguna —</option>
+        {options.map(h => <option key={h} value={h}>{h}</option>)}
+      </select>
+    </div>
+  );
+}
 
-  function remapCols(cc: string, mc: string, tc: string) {
-    setCodeCol(cc); setModalCol(mc); setTurnoCol(tc);
-    setExcelRows(buildRows(rawJson, cc, mc, tc));
-    setResults(null);
-  }
+/* ── Upload card ─────────────────────────────────────────── */
+type FileState = {
+  name: string;
+  headers: string[];
+  rows: AnyRow[];
+  keyCol: string;
+};
+type UploadCardProps = {
+  id: "a" | "b";
+  badge: string;
+  hint: string;
+  fileState: FileState | null;
+  onLoad: (s: FileState) => void;
+  onClear: () => void;
+  onChange: (partial: Partial<FileState>) => void;
+};
+function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: UploadCardProps) {
+  const [drag, setDrag] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
 
-  /* ── Verify against system ────────────────────────────────── */
-  async function verify() {
-    if (!excelRows.length) return;
-    setLoading(true);
+  async function handleFile(file: File) {
     try {
-      const codigos = [...new Set(excelRows.map(r => r.codigo))];
-      const r = await fetch(`${apiBase}/api/students/lookup-codes`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigos }),
+      const rows = await readExcel(file);
+      if (!rows.length) return;
+      const headers = Object.keys(rows[0]);
+      onLoad({
+        name: file.name,
+        headers,
+        rows,
+        keyCol: detectKey(headers),
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
-      const { found }: { found: SysRow[] } = await r.json();
-      const sysMap = new Map(found.map(s => [(s.codigoEstudiante ?? "").toUpperCase(), s]));
-
-      const out: ResultRow[] = excelRows.map(row => {
-        const sys = sysMap.get(row.codigo) ?? null;
-        return {
-          ...row,
-          found: sys !== null,
-          sys,
-          modalidadMatch: sys ? normStr(row.modalidad) === normStr(sys.modalidadEstudio) : null,
-          turnoMatch:     sys ? normStr(row.turno)     === normStr(sys.turno)            : null,
-        };
-      });
-
-      setResults(out); setFilter("all");
-      const ok  = out.filter(r => r.found && r.modalidadMatch !== false && r.turnoMatch !== false).length;
-      const diff = out.filter(r => r.found && (r.modalidadMatch === false || r.turnoMatch === false)).length;
-      const nf  = out.filter(r => !r.found).length;
-      toast({ title: `Verificación completa`, description: `${ok} coinciden · ${diff} difieren · ${nf} no encontrados` });
-    } catch (err) {
-      toast({ title: "Error al verificar", description: String(err), variant: "destructive" });
-    } finally {
-      setLoading(false);
+    } catch {
+      alert("Error leyendo el archivo Excel.");
     }
   }
 
-  /* ── Filtered display ─────────────────────────────────────── */
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDrag(false);
+    const f = e.dataTransfer.files[0]; if (f) handleFile(f);
+  }, []);
+
+  const color = id === "a" ? "#1d4ed8" : "#7c3aed";
+
+  return (
+    <Card className="rounded-xl shadow-sm">
+      <CardHeader className="py-3 px-4 pb-2">
+        <CardTitle className="text-xs font-bold flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded-full text-white text-[10px] font-bold" style={{ background: color }}>
+            {badge}
+          </span>
+          {hint}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 space-y-3">
+        <div
+          onDragOver={e => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={onDrop}
+          onClick={() => ref.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+            drag ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+          }`}
+        >
+          <input ref={ref} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
+          <FileSpreadsheet className="w-7 h-7 mx-auto mb-1.5 text-gray-300" />
+          {fileState ? (
+            <>
+              <p className="text-xs font-semibold" style={{ color }}>{fileState.name}</p>
+              <p className="text-[11px] text-muted-foreground">{fileState.rows.length} filas · haz clic para cambiar</p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">Arrastra tu Excel aquí o haz clic</p>
+          )}
+        </div>
+
+        {fileState && (
+          <>
+            <div className="grid grid-cols-1 gap-2">
+              <ColSelector
+                label="Columna clave (CÓDIGO)"
+                value={fileState.keyCol}
+                options={fileState.headers}
+                onChange={v => onChange({ keyCol: v })}
+              />
+            </div>
+            <div className="bg-gray-50 rounded-lg text-[10px] overflow-hidden border">
+              <div className="px-3 py-1.5 bg-gray-100 font-semibold text-gray-500 flex gap-3">
+                <span className="w-28">Clave (código)</span>
+                <span>Otras columnas…</span>
+              </div>
+              {fileState.rows.slice(0, 4).map((r, i) => (
+                <div key={i} className="px-3 py-1.5 border-t border-gray-100 font-mono flex gap-3 items-start">
+                  <span className="w-28 text-blue-700 font-bold">{r[fileState.keyCol] || "—"}</span>
+                  <span className="text-gray-500 truncate max-w-[200px]">
+                    {fileState.headers.filter(h => h !== fileState.keyCol).slice(0, 3).map(h => `${h}: ${r[h]}`).join(" · ")}
+                  </span>
+                </div>
+              ))}
+              {fileState.rows.length > 4 && (
+                <div className="px-3 py-1 border-t text-gray-400">…{fileState.rows.length - 4} más</div>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClear}>
+              <X className="w-3 h-3 mr-1" /> Quitar archivo
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ── Result row ──────────────────────────────────────────── */
+type ResultRow = {
+  codigo: string;
+  inA: boolean;
+  inB: boolean;
+  dataA: AnyRow | null;
+  dataB: AnyRow | null;
+};
+
+/* ── Column picker for display ───────────────────────────── */
+function pickCols(headers: string[], exclude: string, keywords: string[][]): string[] {
+  const out: string[] = [];
+  for (const kwGroup of keywords) {
+    const col = headers.find(h => h !== exclude && kwGroup.some(k => norm(h).includes(k)));
+    if (col) out.push(col);
+  }
+  // add rest up to 6 total
+  for (const h of headers) {
+    if (h !== exclude && !out.includes(h) && out.length < 6) out.push(h);
+  }
+  return out.slice(0, 6);
+}
+
+/* ── Main page ───────────────────────────────────────────── */
+export default function VerificacionData() {
+  const { toast } = useToast();
+
+  const [fileA, setFileA] = useState<FileState | null>(null);
+  const [fileB, setFileB] = useState<FileState | null>(null);
+  const [results, setResults] = useState<ResultRow[] | null>(null);
+  const [filter, setFilter] = useState<"all" | "both" | "onlyA" | "onlyB">("all");
+  const [search, setSearch] = useState("");
+
+  /* ── Merge ────────────────────────────────────────────── */
+  function merge() {
+    if (!fileA || !fileB) return;
+    const setA = new Map<string, AnyRow>();
+    fileA.rows.forEach(r => {
+      const k = (r[fileA.keyCol] || "").toUpperCase().trim();
+      if (k) setA.set(k, r);
+    });
+    const setB = new Map<string, AnyRow>();
+    fileB.rows.forEach(r => {
+      const k = (r[fileB.keyCol] || "").toUpperCase().trim();
+      if (k) setB.set(k, r);
+    });
+
+    const allKeys = new Set([...setA.keys(), ...setB.keys()]);
+    const out: ResultRow[] = [];
+    allKeys.forEach(codigo => {
+      out.push({
+        codigo,
+        inA: setA.has(codigo),
+        inB: setB.has(codigo),
+        dataA: setA.get(codigo) ?? null,
+        dataB: setB.get(codigo) ?? null,
+      });
+    });
+    out.sort((a, b) => {
+      // Both first, then only A, then only B
+      const score = (r: ResultRow) => r.inA && r.inB ? 0 : r.inA ? 1 : 2;
+      return score(a) - score(b) || a.codigo.localeCompare(b.codigo);
+    });
+    setResults(out); setFilter("both");
+    const both = out.filter(r => r.inA && r.inB).length;
+    const onlyA = out.filter(r => r.inA && !r.inB).length;
+    const onlyB = out.filter(r => !r.inA && r.inB).length;
+    toast({ title: `Cruce completado`, description: `${both} coinciden · ${onlyA} solo en Archivo A · ${onlyB} solo en Archivo B` });
+  }
+
+  /* ── Filtered results ─────────────────────────────────── */
   const base = results ?? [];
   const filtered = base.filter(r => {
-    const q = search.trim().toLowerCase();
-    if (q && !r.codigo.toLowerCase().includes(q)
-          && !(r.sys?.apellidosNombres ?? "").toLowerCase().includes(q)
-          && !(r.sys?.dni ?? "").includes(q)) return false;
-    if (filter === "match"    && !(r.found && r.modalidadMatch !== false && r.turnoMatch !== false)) return false;
-    if (filter === "diff"     && !(r.found && (r.modalidadMatch === false || r.turnoMatch === false))) return false;
-    if (filter === "notfound" && r.found) return false;
-    return true;
+    if (filter === "both"  && !(r.inA && r.inB))   return false;
+    if (filter === "onlyA" && !(r.inA && !r.inB))  return false;
+    if (filter === "onlyB" && !(!r.inA && r.inB))  return false;
+    const q = search.trim().toUpperCase();
+    if (!q) return true;
+    if (r.codigo.includes(q)) return true;
+    const nameA = Object.values(r.dataA ?? {}).join(" ").toUpperCase();
+    const nameB = Object.values(r.dataB ?? {}).join(" ").toUpperCase();
+    return nameA.includes(q) || nameB.includes(q);
   });
 
   const stats = results ? {
-    total:    results.length,
-    match:    results.filter(r => r.found && r.modalidadMatch !== false && r.turnoMatch !== false).length,
-    diff:     results.filter(r => r.found && (r.modalidadMatch === false || r.turnoMatch === false)).length,
-    notFound: results.filter(r => !r.found).length,
+    total: base.length,
+    both:  base.filter(r => r.inA && r.inB).length,
+    onlyA: base.filter(r => r.inA && !r.inB).length,
+    onlyB: base.filter(r => !r.inA && r.inB).length,
   } : null;
 
-  /* ── Export ───────────────────────────────────────────────── */
+  /* ── Columns to show ─────────────────────────────────── */
+  const colsA = fileA ? pickCols(fileA.headers, fileA.keyCol, [
+    ["apellido", "nombre"], ["dni", "documento"], ["programa", "carrera"], ["sede", "filial"], ["modalidad", "estudio"], ["turno"]
+  ]) : [];
+  const colsB = fileB ? pickCols(fileB.headers, fileB.keyCol, [
+    ["apellido", "nombre"], ["dni", "documento"], ["programa", "carrera"], ["pago", "matricula"], ["condicion", "resultado"], ["modalidad"]
+  ]) : [];
+
+  /* ── Export ─────────────────────────────────────────── */
   function exportXlsx() {
-    const src = results ?? excelRows.map(r => ({ ...r, found: false, sys: null, modalidadMatch: null, turnoMatch: null }));
-    const hdr = ["Código", "Modalidad (Excel)", "Turno (Excel)",
-                 "Apellidos y Nombres", "DNI", "Carrera", "Sede",
-                 "Modalidad (Sistema)", "Turno (Sistema)", "Sección", "Estado"];
+    if (!results) return;
+    const src = filter === "all" ? base : filtered;
+    const hdrA = colsA.map(c => `A: ${c}`);
+    const hdrB = colsB.map(c => `B: ${c}`);
+    const hdr = ["Código", "En Archivo A", "En Archivo B", ...hdrA, ...hdrB, "Estado"];
     const rows = src.map(r => [
-      r.codigo, r.modalidad, r.turno,
-      r.sys?.apellidosNombres ?? "",
-      r.sys?.dni ?? "",
-      r.sys?.carrera ?? "",
-      r.sys?.sede ?? "",
-      r.sys?.modalidadEstudio ?? "",
-      r.sys?.turno ?? "",
-      r.sys?.seccion ?? "",
-      !r.found ? "NO ENCONTRADO"
-        : (r.modalidadMatch !== false && r.turnoMatch !== false) ? "COINCIDE" : "DIFIERE",
+      r.codigo,
+      r.inA ? "SÍ" : "NO",
+      r.inB ? "SÍ" : "NO",
+      ...colsA.map(c => r.dataA?.[c] ?? ""),
+      ...colsB.map(c => r.dataB?.[c] ?? ""),
+      r.inA && r.inB ? "AMBOS" : r.inA ? "SOLO A" : "SOLO B",
     ]);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([hdr, ...rows]);
     ws["!cols"] = hdr.map(() => ({ wch: 22 }));
-    XLSX.utils.book_append_sheet(wb, ws, "Verificación");
-    XLSX.writeFile(wb, `verificacion-${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Cruce");
+    XLSX.writeFile(wb, `cruce-data-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   return (
@@ -216,135 +318,75 @@ export default function VerificacionData() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: NAVY }}>Verificación de Data</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Sube tu Excel con códigos de estudiante · modalidad · turno y verifica contra el sistema
+            Sube dos Excels · el sistema cruza los códigos y muestra cuáles se repiten en ambos archivos
           </p>
         </div>
         {results && (
           <Button size="sm" onClick={exportXlsx} style={{ background: NAVY, color: "#fff" }}>
-            <Download className="w-4 h-4 mr-1.5" /> Descargar Excel
+            <Download className="w-4 h-4 mr-1.5" /> Exportar Excel
           </Button>
         )}
       </div>
 
-      {/* Upload Card */}
-      <Card className="rounded-xl shadow-sm">
-        <CardHeader className="pb-2 pt-4 px-5">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: NAVY }}>
-            <Upload className="w-4 h-4" /> Subir Excel
-            <span className="text-xs font-normal text-muted-foreground">
-              — columnas requeridas: Código de estudiante · Modalidad de estudio · Turno
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 pb-5 space-y-4">
+      {/* Upload area */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <UploadCard
+          id="a"
+          badge="Archivo A"
+          hint="DATA principal · columnas: código, modalidad, turno, sede…"
+          fileState={fileA}
+          onLoad={setFileA}
+          onClear={() => { setFileA(null); setResults(null); }}
+          onChange={p => setFileA(prev => prev ? { ...prev, ...p } : prev)}
+        />
+        <UploadCard
+          id="b"
+          badge="Archivo B"
+          hint="Resultado / referencia · columnas: código, pago, carrera, condición…"
+          fileState={fileB}
+          onLoad={setFileB}
+          onClear={() => { setFileB(null); setResults(null); }}
+          onChange={p => setFileB(prev => prev ? { ...prev, ...p } : prev)}
+        />
+      </div>
 
-          {/* Drop zone */}
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-              dragging ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"
-            }`}
-          >
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) parseExcel(f); e.target.value = ""; }} />
-            <FileSpreadsheet className="w-9 h-9 mx-auto mb-2 text-gray-300" />
-            {fileName ? (
-              <div>
-                <p className="font-semibold text-sm" style={{ color: NAVY }}>{fileName}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {excelRows.length} filas cargadas · haz clic para cambiar archivo
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Arrastra tu Excel aquí o haz clic para seleccionar</p>
-            )}
-          </div>
-
-          {/* Column mapping */}
-          {excelRows.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Columna → Código estudiante", val: codeCol,  set: (v: string) => remapCols(v, modalCol, turnoCol) },
-                { label: "Columna → Modalidad estudio", val: modalCol, set: (v: string) => remapCols(codeCol, v, turnoCol) },
-                { label: "Columna → Turno",             val: turnoCol, set: (v: string) => remapCols(codeCol, modalCol, v) },
-              ].map(({ label, val, set }) => (
-                <div key={label} className="space-y-1">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
-                  <select
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    value={val} onChange={e => set(e.target.value)}
-                  >
-                    {allHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
+      {/* Action */}
+      {fileA && fileB && (
+        <div className="flex items-center gap-3">
+          <Button onClick={merge} style={{ background: NAVY, color: "#fff" }} className="gap-2">
+            <Merge className="w-4 h-4" />
+            Cruzar Archivos ({fileA.rows.length} + {fileB.rows.length} registros)
+          </Button>
+          {results && (
+            <Button variant="outline" size="sm" onClick={() => { setResults(null); setSearch(""); }}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Nuevo cruce
+            </Button>
           )}
-
-          {/* Preview */}
-          {excelRows.length > 0 && (
-            <div className="bg-gray-50 rounded-lg overflow-hidden border text-xs">
-              <div className="grid grid-cols-3 bg-gray-200 px-3 py-1.5 font-semibold text-gray-600">
-                <span>Código</span><span>Modalidad</span><span>Turno</span>
-              </div>
-              {excelRows.slice(0, 5).map((r, i) => (
-                <div key={i} className="grid grid-cols-3 px-3 py-1.5 border-t border-gray-100 font-mono">
-                  <span>{r.codigo || <span className="text-red-400">—vacío—</span>}</span>
-                  <span>{r.modalidad || "—"}</span>
-                  <span>{r.turno || "—"}</span>
-                </div>
-              ))}
-              {excelRows.length > 5 && (
-                <p className="px-3 py-1.5 text-muted-foreground border-t">
-                  … y {excelRows.length - 5} filas más
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Action */}
-          {excelRows.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Button onClick={verify} disabled={loading} style={{ background: NAVY, color: "#fff" }}>
-                {loading
-                  ? <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
-                  : <ArrowRight className="w-4 h-4 mr-1.5" />}
-                {loading ? "Verificando..." : `Verificar ${excelRows.length} estudiantes`}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => {
-                setExcelRows([]); setRawJson([]); setFileName(""); setResults(null);
-                setAllHeaders([]); setCodeCol(""); setModalCol(""); setTurnoCol("");
-              }}>
-                <X className="w-3.5 h-3.5 mr-1" /> Limpiar
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { key: "all"      as const, label: "Total verificados",  value: stats.total,    color: NAVY,      bg: "bg-blue-50/40",  Icon: FileSpreadsheet },
-            { key: "match"    as const, label: "Coinciden",          value: stats.match,    color: "#16a34a", bg: "bg-green-50",    Icon: CheckCircle2 },
-            { key: "diff"     as const, label: "Difieren",           value: stats.diff,     color: "#dc2626", bg: "bg-red-50",      Icon: AlertCircle },
-            { key: "notfound" as const, label: "No encontrados",     value: stats.notFound, color: "#92400e", bg: "bg-amber-50",    Icon: XCircle },
-          ].map(({ key, label, value, color, bg, Icon }) => (
-            <Card key={key}
-              className={`rounded-xl shadow-sm cursor-pointer transition-all ${filter === key ? "ring-2" : "hover:shadow-md"}`}
-              style={filter === key ? { ringColor: color } : {}}
-              onClick={() => setFilter(key)}>
+            { key: "all"   as const, label: "Total códigos únicos",  value: stats.total,  color: NAVY,      Icon: FileSpreadsheet, bg: "bg-blue-50/40" },
+            { key: "both"  as const, label: "Se repiten (en ambos)", value: stats.both,   color: "#16a34a", Icon: CheckCircle2,    bg: "bg-green-50" },
+            { key: "onlyA" as const, label: "Solo en Archivo A",     value: stats.onlyA,  color: "#2563eb", Icon: AlertCircle,    bg: "bg-blue-50" },
+            { key: "onlyB" as const, label: "Solo en Archivo B",     value: stats.onlyB,  color: "#7c3aed", Icon: XCircle,        bg: "bg-purple-50" },
+          ].map(({ key, label, value, color, Icon, bg }) => (
+            <Card
+              key={key}
+              className={`rounded-xl shadow-sm cursor-pointer transition-all ${filter === key ? "ring-2 ring-offset-1" : "hover:shadow-md"}`}
+              style={filter === key ? { outline: `2px solid ${color}` } : {}}
+              onClick={() => setFilter(key)}
+            >
               <CardContent className="flex items-center gap-3 p-4">
                 <div className={`rounded-full p-2.5 ${bg}`}>
                   <Icon className="w-5 h-5" style={{ color }} />
                 </div>
                 <div>
                   <p className="text-xl font-bold" style={{ color }}>{value}</p>
-                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground leading-tight">{label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -355,86 +397,93 @@ export default function VerificacionData() {
       {/* Results table */}
       {results && (
         <Card className="rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-3 border-b bg-gray-50/50 flex-wrap">
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-gray-50/60 flex-wrap">
             <div className="relative max-w-xs flex-1">
-              <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Buscar por código, nombre o DNI..."
+              <Search className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Buscar por código o nombre…"
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="pl-8 h-8 text-sm" />
+                className="pl-8 h-8 text-xs" />
             </div>
-            {search && <Button variant="ghost" size="sm" className="h-7" onClick={() => setSearch("")}><X className="w-3 h-3" /></Button>}
-            <p className="text-xs text-muted-foreground ml-auto">
-              {filtered.length} de {results.length} registros
-            </p>
-            <Button size="sm" variant="outline" onClick={exportXlsx}>
-              <Download className="w-3.5 h-3.5 mr-1" /> Exportar
+            {search && <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSearch("")}><X className="w-3 h-3" /></Button>}
+            <p className="text-xs text-muted-foreground ml-auto">{filtered.length} de {base.length} registros</p>
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={exportXlsx}>
+              <Download className="w-3.5 h-3.5" /> Exportar
             </Button>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs min-w-[900px]">
               <thead>
-                <tr style={{ background: NAVY }} className="text-white">
-                  <th className="px-3 py-3 text-left font-semibold w-6">#</th>
-                  <th className="px-3 py-3 text-left font-semibold">Código</th>
-                  <th className="px-3 py-3 text-left font-semibold">Apellidos y Nombres</th>
-                  <th className="px-3 py-3 text-left font-semibold">DNI</th>
-                  <th className="px-3 py-3 text-left font-semibold">Carrera</th>
-                  <th className="px-3 py-3 text-left font-semibold">Sede</th>
-                  <th className="px-3 py-3 text-left font-semibold" style={{ background: "#1e3a8a" }}>Modalidad Excel</th>
-                  <th className="px-3 py-3 text-left font-semibold" style={{ background: "#1e3a8a" }}>Modalidad Sistema</th>
-                  <th className="px-3 py-3 text-left font-semibold" style={{ background: "#1e3a8a" }}>Turno Excel</th>
-                  <th className="px-3 py-3 text-left font-semibold" style={{ background: "#1e3a8a" }}>Turno Sistema</th>
-                  <th className="px-3 py-3 text-center font-semibold">Estado</th>
+                <tr style={{ background: NAVY }} className="text-white text-left">
+                  <th className="px-3 py-3 font-semibold w-6">#</th>
+                  <th className="px-3 py-3 font-semibold">Código</th>
+                  <th className="px-3 py-3 font-semibold text-center">En A</th>
+                  <th className="px-3 py-3 font-semibold text-center">En B</th>
+                  {colsA.map(c => (
+                    <th key={`a-${c}`} className="px-3 py-3 font-semibold whitespace-nowrap" style={{ background: "#1e3a8a" }}>
+                      <span className="text-blue-200 text-[9px] mr-0.5 font-normal">A·</span>{c}
+                    </th>
+                  ))}
+                  {colsB.map(c => (
+                    <th key={`b-${c}`} className="px-3 py-3 font-semibold whitespace-nowrap" style={{ background: "#4c1d95" }}>
+                      <span className="text-purple-200 text-[9px] mr-0.5 font-normal">B·</span>{c}
+                    </th>
+                  ))}
+                  <th className="px-3 py-3 font-semibold text-center">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={11} className="text-center py-10 text-muted-foreground">Sin resultados</td></tr>
+                  <tr>
+                    <td colSpan={4 + colsA.length + colsB.length + 1} className="text-center py-12 text-muted-foreground">
+                      Sin resultados para este filtro
+                    </td>
+                  </tr>
                 ) : filtered.map((r, i) => {
-                  const rowBg = !r.found ? "bg-amber-50/40"
-                    : (r.modalidadMatch === false || r.turnoMatch === false) ? "bg-red-50/40"
-                    : "bg-green-50/20";
+                  const rowBg = r.inA && r.inB  ? "bg-green-50/30"
+                    : r.inA                     ? "bg-blue-50/20"
+                                                : "bg-purple-50/20";
                   return (
-                    <tr key={i} className={`border-b border-gray-100 ${rowBg} hover:opacity-80 transition-opacity`}>
+                    <tr key={r.codigo} className={`border-b border-gray-100 ${rowBg} hover:brightness-95 transition-all`}>
                       <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
-                      <td className="px-3 py-2.5 font-mono font-semibold" style={{ color: NAVY }}>{r.codigo}</td>
-                      <td className="px-3 py-2.5 font-medium max-w-[180px] truncate" title={r.sys?.apellidosNombres ?? ""}>
-                        {r.sys?.apellidosNombres ?? <span className="text-muted-foreground italic">No encontrado</span>}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono">{r.sys?.dni ?? "—"}</td>
-                      <td className="px-3 py-2.5 max-w-[160px] truncate" title={r.sys?.carrera ?? ""}>{r.sys?.carrera ?? "—"}</td>
-                      <td className="px-3 py-2.5">{r.sys?.sede ?? "—"}</td>
-                      {/* Modalidad comparison */}
-                      <td className="px-3 py-2.5">
-                        <span className={r.modalidadMatch === false ? "text-red-600 font-semibold" : ""}>{r.modalidad || "—"}</span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {r.sys
-                          ? <span className={r.modalidadMatch === false ? "text-red-600 font-semibold" : "text-green-700"}>{r.sys.modalidadEstudio ?? "—"}</span>
-                          : <span className="text-gray-300">—</span>}
-                      </td>
-                      {/* Turno comparison */}
-                      <td className="px-3 py-2.5">
-                        <span className={r.turnoMatch === false ? "text-red-600 font-semibold" : ""}>{r.turno || "—"}</span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {r.sys
-                          ? <span className={r.turnoMatch === false ? "text-red-600 font-semibold" : "text-green-700"}>{r.sys.turno ?? "—"}</span>
-                          : <span className="text-gray-300">—</span>}
+                      <td className="px-3 py-2.5 font-mono font-bold" style={{ color: NAVY }}>{r.codigo}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        {r.inA ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" /> : <XCircle className="w-4 h-4 text-gray-300 inline" />}
                       </td>
                       <td className="px-3 py-2.5 text-center">
-                        {!r.found ? (
-                          <Badge className="text-[10px] px-1.5 bg-amber-100 text-amber-700 border border-amber-200">
-                            <XCircle className="w-3 h-3 mr-0.5" /> No hallado
+                        {r.inB ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" /> : <XCircle className="w-4 h-4 text-gray-300 inline" />}
+                      </td>
+                      {colsA.map(c => (
+                        <td key={`a-${c}`} className="px-3 py-2.5 max-w-[160px] truncate" title={r.dataA?.[c] ?? ""}>
+                          {r.dataA?.[c] || <span className="text-gray-300">—</span>}
+                        </td>
+                      ))}
+                      {colsB.map(c => {
+                        const val = r.dataB?.[c] ?? "";
+                        const isPago = norm(c).includes("pago");
+                        const isPagado = isPago && val && val !== "0" && val !== "NO" && val.trim() !== "";
+                        return (
+                          <td key={`b-${c}`} className="px-3 py-2.5 max-w-[160px] truncate" title={val}>
+                            {isPago ? (
+                              isPagado
+                                ? <span className="text-green-700 font-semibold">{val || "—"}</span>
+                                : <span className="text-red-500 font-semibold">{val || "NO"}</span>
+                            ) : val || <span className="text-gray-300">—</span>}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2.5 text-center">
+                        {r.inA && r.inB ? (
+                          <Badge className="text-[10px] px-1.5 bg-green-100 text-green-700 border border-green-300">
+                            <CheckCircle2 className="w-3 h-3 mr-0.5" /> Ambos
                           </Badge>
-                        ) : r.modalidadMatch !== false && r.turnoMatch !== false ? (
-                          <Badge className="text-[10px] px-1.5 bg-green-100 text-green-700 border border-green-200">
-                            <CheckCircle2 className="w-3 h-3 mr-0.5" /> Coincide
+                        ) : r.inA ? (
+                          <Badge className="text-[10px] px-1.5 bg-blue-100 text-blue-700 border border-blue-200">
+                            Solo A
                           </Badge>
                         ) : (
-                          <Badge className="text-[10px] px-1.5 bg-red-100 text-red-600 border border-red-200">
-                            <AlertCircle className="w-3 h-3 mr-0.5" /> Difiere
+                          <Badge className="text-[10px] px-1.5 bg-purple-100 text-purple-700 border border-purple-200">
+                            Solo B
                           </Badge>
                         )}
                       </td>
@@ -445,6 +494,19 @@ export default function VerificacionData() {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* Empty state */}
+      {!fileA && !fileB && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Merge className="w-14 h-14 text-gray-200 mb-3" />
+          <p className="text-base font-semibold text-muted-foreground">Sube dos Excels para cruzarlos</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            <strong>Archivo A</strong>: tu data principal (ej. DATA.1 con turno + modalidad)<br />
+            <strong>Archivo B</strong>: resultado o referencia (ej. examen con pago + carrera)<br />
+            El sistema identifica qué códigos <strong>se repiten</strong> en ambos
+          </p>
+        </div>
       )}
     </div>
   );
