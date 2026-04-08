@@ -14,6 +14,20 @@ function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
+// GET /api/students/ingresantes — auth required, returns all ingresantes_pagos (data principal)
+router.get("/ingresantes", requireAuth, async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(ingresantesPagosTable)
+      .orderBy(asc(ingresantesPagosTable.apellidosNombres));
+    res.json(rows);
+  } catch (err) {
+    console.error("Ingresantes list error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // GET /api/students/lookup?dni=XXXXXXXX — public, looks up ingresantes_pagos by DNI
 router.get("/lookup", async (req, res) => {
   try {
