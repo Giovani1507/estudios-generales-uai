@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   ClipboardList, Download, RefreshCw, Search, X, Trash2,
-  Eye, CheckCircle2, Users, User, QrCode, Link2, Copy, Check,
+  Eye, CheckCircle2, Users, User, QrCode, Link2, Copy, Check, Printer,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,6 +77,147 @@ export default function RectificacionesAdmin() {
       a.click();
     };
     img.src = url;
+  }
+
+  function printQR() {
+    const svg = qrRef.current;
+    if (!svg) return;
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const svgB64 = btoa(unescape(encodeURIComponent(svgStr)));
+    const imgSrc = `data:image/svg+xml;base64,${svgB64}`;
+
+    const win = window.open("", "_blank", "width=700,height=900");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Rectificación de Matrícula UAI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      width: 480px;
+      border: 3px solid #001F5F;
+      border-radius: 20px;
+      overflow: hidden;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,31,95,0.15);
+    }
+    .header {
+      background: #001F5F;
+      padding: 22px 20px 18px;
+    }
+    .header .uni {
+      color: #C9A84C;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .header .sub {
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .gold-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #C9A84C, #e8c76a, #C9A84C);
+    }
+    .body {
+      padding: 28px 20px 24px;
+      background: #fff;
+    }
+    .qr-wrap {
+      display: inline-block;
+      border: 2px solid rgba(201,168,76,0.4);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+      margin-bottom: 20px;
+    }
+    .qr-wrap img {
+      width: 220px;
+      height: 220px;
+      display: block;
+    }
+    .instruction {
+      font-size: 15px;
+      color: #001F5F;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .steps {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.8;
+      margin-bottom: 18px;
+    }
+    .url-box {
+      background: #f0f4ff;
+      border: 1px solid #c7d4f0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #001F5F;
+      word-break: break-all;
+      margin-bottom: 18px;
+    }
+    .footer {
+      background: #001F5F;
+      color: rgba(255,255,255,0.5);
+      font-size: 10px;
+      padding: 10px;
+      letter-spacing: 0.5px;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="uni">Universidad Autónoma de Ica</div>
+      <h1>Rectificación de Matrícula UAI</h1>
+      <div class="sub">Escanea el QR para registrar tu solicitud</div>
+    </div>
+    <div class="gold-bar"></div>
+    <div class="body">
+      <div class="qr-wrap">
+        <img src="${imgSrc}" alt="QR Rectificación"/>
+      </div>
+      <div class="instruction">📲 ¿Cómo registrarte?</div>
+      <div class="steps">
+        1. Apunta la cámara de tu celular al código QR<br/>
+        2. Completa el formulario con tus datos<br/>
+        3. Adjunta la foto de tu comprobante de pago<br/>
+        4. Toca <strong>Enviar Registro</strong>
+      </div>
+      <div class="url-box">${REGISTRO_URL}</div>
+    </div>
+    <div class="footer">Portal Académico UAI · Estudios Generales 2026</div>
+  </div>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`);
+    win.document.close();
   }
 
   const fetchData = useCallback(async () => {
@@ -315,13 +456,22 @@ export default function RectificacionesAdmin() {
                   includeMargin={false}
                 />
               </div>
-              <button
-                onClick={downloadQR}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition-colors"
-                style={{ borderColor: NAVY + "40", color: NAVY }}
-              >
-                <Download className="w-3.5 h-3.5" /> Descargar QR
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={downloadQR}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition-colors"
+                  style={{ borderColor: NAVY + "40", color: NAVY }}
+                >
+                  <Download className="w-3.5 h-3.5" /> Descargar
+                </button>
+                <button
+                  onClick={printQR}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-colors"
+                  style={{ background: NAVY }}
+                >
+                  <Printer className="w-3.5 h-3.5" /> Imprimir
+                </button>
+              </div>
             </div>
 
             {/* Link + info */}
