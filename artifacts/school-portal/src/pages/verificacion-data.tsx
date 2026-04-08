@@ -5,21 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Upload,
   Download,
   FileSpreadsheet,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   Search,
   X,
-  ArrowRight,
   RefreshCw,
   Merge,
+  Users,
+  UserX,
+  UserCheck,
+  Filter,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const NAVY = "#001F5F";
+const GOLD = "#C9A84C";
 
 type AnyRow = Record<string, string>;
 
@@ -29,13 +31,8 @@ function norm(s: string | null | undefined) {
 }
 function str(v: unknown) { return String(v ?? "").trim(); }
 
-function detectKey(headers: string[]): string {
-  const kw = ["codigo", "code", "cod", "matricula"];
-  return headers.find(h => kw.some(k => norm(h).includes(k))) ?? headers[0] ?? "";
-}
-
-function detectCol(headers: string[], keywords: string[]): string {
-  return headers.find(h => keywords.some(k => norm(h).includes(k))) ?? "";
+function findCol(headers: string[], kws: string[]): string {
+  return headers.find(h => kws.some(k => norm(h).includes(k))) ?? "";
 }
 
 function readExcel(file: File): Promise<AnyRow[]> {
@@ -54,62 +51,134 @@ function readExcel(file: File): Promise<AnyRow[]> {
   });
 }
 
-/* ── Column selector ─────────────────────────────────────── */
-type ColSelectorProps = {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
+/* ── Detect columns ──────────────────────────────────────── */
+type ColMap = {
+  keyCol: string;
+  apellidosCol: string;
+  nombresCol: string;
+  dniCol: string;
+  programaCol: string;
+  asistenciaCol: string;
+  pagoCol: string;
+  condicionCol: string;
+  modalidadCol: string;
+  turnoCol: string;
+  sedeCol: string;
 };
-function ColSelector({ label, value, options, onChange }: ColSelectorProps) {
-  return (
-    <div className="space-y-0.5">
-      <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
-      <select
-        className="w-full border rounded-md px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-        value={value} onChange={e => onChange(e.target.value)}
-      >
-        <option value="">— ninguna —</option>
-        {options.map(h => <option key={h} value={h}>{h}</option>)}
-      </select>
-    </div>
-  );
+
+function detectColsA(headers: string[]): Partial<ColMap> {
+  const keyCol = findCol(headers, ["codigo", "cod", "matricula"]);
+  return {
+    keyCol,
+    apellidosCol: findCol(headers, ["apellido"]),
+    nombresCol:   headers.find(h => norm(h).includes("nombre") && !norm(h).includes("apellido")) ?? "",
+    dniCol:       findCol(headers, ["dni", "documento"]),
+    modalidadCol: headers.find(h => norm(h).includes("modalidad") && norm(h).includes("estudio"))
+                  ?? headers.find(h => norm(h).includes("modalidad") && !norm(h).includes("ingreso"))
+                  ?? "",
+    turnoCol:     findCol(headers, ["turno"]),
+    sedeCol:      findCol(headers, ["sede", "filial", "local"]),
+  };
 }
 
-/* ── Upload card ─────────────────────────────────────────── */
+function detectColsB(headers: string[]): Partial<ColMap> {
+  const keyCol = findCol(headers, ["codigo", "cod", "matricula"]);
+  return {
+    keyCol,
+    apellidosCol:  findCol(headers, ["apellido"]),
+    nombresCol:    headers.find(h => norm(h).includes("nombre") && !norm(h).includes("apellido")) ?? "",
+    dniCol:        findCol(headers, ["dni", "documento"]),
+    programaCol:   findCol(headers, ["programa", "carrera", "area"]),
+    asistenciaCol: findCol(headers, ["asistencia", "asistio", "asistió"]),
+    pagoCol:       findCol(headers, ["pago", "matricula", "monto"]),
+    condicionCol:  findCol(headers, ["condicion", "condición", "resultado", "ingreso"]),
+    modalidadCol:  headers.find(h => norm(h).includes("modalidad") && norm(h).includes("estudio"))
+                   ?? headers.find(h => norm(h).includes("modalidad") && !norm(h).includes("ingreso"))
+                   ?? "",
+    turnoCol:      findCol(headers, ["turno"]),
+    sedeCol:       findCol(headers, ["sede", "filial", "local"]),
+  };
+}
+
+/* ── File state ──────────────────────────────────────────── */
 type FileState = {
   name: string;
   headers: string[];
   rows: AnyRow[];
-  keyCol: string;
+  cols: Partial<ColMap>;
 };
-type UploadCardProps = {
+
+/* ── Result row ──────────────────────────────────────────── */
+type ResultRow = {
+  codigo: string;
+  inA: boolean;
+  inB: boolean;
+  apellidosNombres: string;
+  dni: string;
+  programa: string;
+  asistencia: string;
+  pago: string;
+  pagado: boolean;
+  condicion: string;
+  modalidad: string;
+  turno: string;
+  sede: string;
+  dataA: AnyRow | null;
+  dataB: AnyRow | null;
+};
+
+function buildRow(codigo: string, dataA: AnyRow | null, dataB: AnyRow | null,
+                  colsA: Partial<ColMap>, colsB: Partial<ColMap>): ResultRow {
+  // Name: prefer B (has full nombres/apellidos), fallback A
+  const get = (row: AnyRow | null, col?: string) => col && row ? (row[col] ?? "") : "";
+  const apellidos = get(dataB, colsB.apellidosCol) || get(dataA, colsA.apellidosCol);
+  const nombres   = get(dataB, colsB.nombresCol)   || get(dataA, colsA.nombresCol);
+  const apellidosNombres = apellidos && nombres ? `${apellidos} ${nombres}` : apellidos || nombres;
+
+  const pago      = get(dataB, colsB.pagoCol);
+  const pagoNum   = parseFloat(pago.replace(/[^0-9.]/g, "")) || 0;
+  const pagado    = pago !== "" && pago.toUpperCase() !== "NO" && pagoNum > 0;
+
+  return {
+    codigo,
+    inA: dataA !== null,
+    inB: dataB !== null,
+    apellidosNombres,
+    dni:        get(dataB, colsB.dniCol)        || get(dataA, colsA.dniCol),
+    programa:   get(dataB, colsB.programaCol),
+    asistencia: get(dataB, colsB.asistenciaCol),
+    pago,
+    pagado,
+    condicion:  get(dataB, colsB.condicionCol),
+    modalidad:  get(dataB, colsB.modalidadCol)  || get(dataA, colsA.modalidadCol),
+    turno:      get(dataA, colsA.turnoCol)       || get(dataB, colsB.turnoCol),
+    sede:       get(dataA, colsA.sedeCol)        || get(dataB, colsB.sedeCol),
+    dataA,
+    dataB,
+  };
+}
+
+/* ── Upload card ─────────────────────────────────────────── */
+function UploadCard({ id, badge, hint, fileState, onLoad, onClear }: {
   id: "a" | "b";
   badge: string;
   hint: string;
   fileState: FileState | null;
   onLoad: (s: FileState) => void;
   onClear: () => void;
-  onChange: (partial: Partial<FileState>) => void;
-};
-function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: UploadCardProps) {
+}) {
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
+  const color = id === "a" ? "#1d4ed8" : "#7c3aed";
 
   async function handleFile(file: File) {
     try {
       const rows = await readExcel(file);
       if (!rows.length) return;
       const headers = Object.keys(rows[0]);
-      onLoad({
-        name: file.name,
-        headers,
-        rows,
-        keyCol: detectKey(headers),
-      });
-    } catch {
-      alert("Error leyendo el archivo Excel.");
-    }
+      const cols = id === "a" ? detectColsA(headers) : detectColsB(headers);
+      onLoad({ name: file.name, headers, rows, cols });
+    } catch { alert("Error leyendo el archivo Excel."); }
   }
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -117,16 +186,12 @@ function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: U
     const f = e.dataTransfer.files[0]; if (f) handleFile(f);
   }, []);
 
-  const color = id === "a" ? "#1d4ed8" : "#7c3aed";
-
   return (
     <Card className="rounded-xl shadow-sm">
       <CardHeader className="py-3 px-4 pb-2">
         <CardTitle className="text-xs font-bold flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full text-white text-[10px] font-bold" style={{ background: color }}>
-            {badge}
-          </span>
-          {hint}
+          <span className="px-2 py-0.5 rounded-full text-white text-[10px] font-bold" style={{ background: color }}>{badge}</span>
+          <span className="text-muted-foreground font-normal">{hint}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-3">
@@ -135,9 +200,7 @@ function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: U
           onDragLeave={() => setDrag(false)}
           onDrop={onDrop}
           onClick={() => ref.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
-            drag ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-          }`}
+          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${drag ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"}`}
         >
           <input ref={ref} type="file" accept=".xlsx,.xls,.csv" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
@@ -154,30 +217,19 @@ function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: U
 
         {fileState && (
           <>
-            <div className="grid grid-cols-1 gap-2">
-              <ColSelector
-                label="Columna clave (CÓDIGO)"
-                value={fileState.keyCol}
-                options={fileState.headers}
-                onChange={v => onChange({ keyCol: v })}
-              />
-            </div>
-            <div className="bg-gray-50 rounded-lg text-[10px] overflow-hidden border">
-              <div className="px-3 py-1.5 bg-gray-100 font-semibold text-gray-500 flex gap-3">
-                <span className="w-28">Clave (código)</span>
-                <span>Otras columnas…</span>
+            <div className="bg-gray-50 rounded-lg text-[10px] border overflow-hidden">
+              <div className="px-3 py-1.5 bg-gray-100 font-semibold text-gray-500 grid grid-cols-2 gap-2">
+                <span>Columnas detectadas</span><span>Columna Excel</span>
               </div>
-              {fileState.rows.slice(0, 4).map((r, i) => (
-                <div key={i} className="px-3 py-1.5 border-t border-gray-100 font-mono flex gap-3 items-start">
-                  <span className="w-28 text-blue-700 font-bold">{r[fileState.keyCol] || "—"}</span>
-                  <span className="text-gray-500 truncate max-w-[200px]">
-                    {fileState.headers.filter(h => h !== fileState.keyCol).slice(0, 3).map(h => `${h}: ${r[h]}`).join(" · ")}
-                  </span>
+              {Object.entries(id === "a"
+                ? { Código: fileState.cols.keyCol, Modalidad: fileState.cols.modalidadCol, Turno: fileState.cols.turnoCol, Sede: fileState.cols.sedeCol }
+                : { Código: fileState.cols.keyCol, Apellidos: fileState.cols.apellidosCol, Nombres: fileState.cols.nombresCol, Programa: fileState.cols.programaCol, Asistencia: fileState.cols.asistenciaCol, Pago: fileState.cols.pagoCol, Condición: fileState.cols.condicionCol }
+              ).map(([label, col]) => (
+                <div key={label} className="px-3 py-1 border-t border-gray-100 grid grid-cols-2 gap-2">
+                  <span className="text-gray-500">{label}</span>
+                  <span className={`font-semibold font-mono ${col ? "text-blue-700" : "text-red-400"}`}>{col || "—no detectado—"}</span>
                 </div>
               ))}
-              {fileState.rows.length > 4 && (
-                <div className="px-3 py-1 border-t text-gray-400">…{fileState.rows.length - 4} más</div>
-              )}
             </div>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClear}>
               <X className="w-3 h-3 mr-1" /> Quitar archivo
@@ -189,29 +241,6 @@ function UploadCard({ id, badge, hint, fileState, onLoad, onClear, onChange }: U
   );
 }
 
-/* ── Result row ──────────────────────────────────────────── */
-type ResultRow = {
-  codigo: string;
-  inA: boolean;
-  inB: boolean;
-  dataA: AnyRow | null;
-  dataB: AnyRow | null;
-};
-
-/* ── Column picker for display ───────────────────────────── */
-function pickCols(headers: string[], exclude: string, keywords: string[][]): string[] {
-  const out: string[] = [];
-  for (const kwGroup of keywords) {
-    const col = headers.find(h => h !== exclude && kwGroup.some(k => norm(h).includes(k)));
-    if (col) out.push(col);
-  }
-  // add rest up to 6 total
-  for (const h of headers) {
-    if (h !== exclude && !out.includes(h) && out.length < 6) out.push(h);
-  }
-  return out.slice(0, 6);
-}
-
 /* ── Main page ───────────────────────────────────────────── */
 export default function VerificacionData() {
   const { toast } = useToast();
@@ -219,58 +248,49 @@ export default function VerificacionData() {
   const [fileA, setFileA] = useState<FileState | null>(null);
   const [fileB, setFileB] = useState<FileState | null>(null);
   const [results, setResults] = useState<ResultRow[] | null>(null);
-  const [filter, setFilter] = useState<"all" | "both" | "onlyA" | "onlyB">("all");
+  const [filterMatch, setFilterMatch] = useState<"all" | "both" | "onlyA" | "onlyB">("both");
+  const [filterAsist, setFilterAsist] = useState<"all" | "asistio" | "no_asistio">("all");
+  const [filterPago, setFilterPago] = useState<"all" | "pago" | "no_pago">("all");
   const [search, setSearch] = useState("");
 
-  /* ── Merge ────────────────────────────────────────────── */
+  /* ── Merge ──────────────────────────────────────────── */
   function merge() {
     if (!fileA || !fileB) return;
-    const setA = new Map<string, AnyRow>();
-    fileA.rows.forEach(r => {
-      const k = (r[fileA.keyCol] || "").toUpperCase().trim();
-      if (k) setA.set(k, r);
-    });
-    const setB = new Map<string, AnyRow>();
-    fileB.rows.forEach(r => {
-      const k = (r[fileB.keyCol] || "").toUpperCase().trim();
-      if (k) setB.set(k, r);
-    });
+    const mapA = new Map<string, AnyRow>();
+    fileA.rows.forEach(r => { const k = (r[fileA.cols.keyCol!] || "").toUpperCase().trim(); if (k) mapA.set(k, r); });
+    const mapB = new Map<string, AnyRow>();
+    fileB.rows.forEach(r => { const k = (r[fileB.cols.keyCol!] || "").toUpperCase().trim(); if (k) mapB.set(k, r); });
 
-    const allKeys = new Set([...setA.keys(), ...setB.keys()]);
+    const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
     const out: ResultRow[] = [];
     allKeys.forEach(codigo => {
-      out.push({
-        codigo,
-        inA: setA.has(codigo),
-        inB: setB.has(codigo),
-        dataA: setA.get(codigo) ?? null,
-        dataB: setB.get(codigo) ?? null,
-      });
+      out.push(buildRow(codigo, mapA.get(codigo) ?? null, mapB.get(codigo) ?? null, fileA.cols, fileB.cols));
     });
     out.sort((a, b) => {
-      // Both first, then only A, then only B
-      const score = (r: ResultRow) => r.inA && r.inB ? 0 : r.inA ? 1 : 2;
-      return score(a) - score(b) || a.codigo.localeCompare(b.codigo);
+      const s = (r: ResultRow) => r.inA && r.inB ? 0 : r.inA ? 1 : 2;
+      return s(a) - s(b) || a.apellidosNombres.localeCompare(b.apellidosNombres);
     });
-    setResults(out); setFilter("both");
+    setResults(out);
+    setFilterMatch("both");
+    setFilterAsist("all");
+    setFilterPago("all");
     const both = out.filter(r => r.inA && r.inB).length;
-    const onlyA = out.filter(r => r.inA && !r.inB).length;
-    const onlyB = out.filter(r => !r.inA && r.inB).length;
-    toast({ title: `Cruce completado`, description: `${both} coinciden · ${onlyA} solo en Archivo A · ${onlyB} solo en Archivo B` });
+    toast({ title: "Cruce completado", description: `${both} códigos coinciden en ambos archivos` });
   }
 
-  /* ── Filtered results ─────────────────────────────────── */
+  /* ── Filtered ────────────────────────────────────────── */
   const base = results ?? [];
   const filtered = base.filter(r => {
-    if (filter === "both"  && !(r.inA && r.inB))   return false;
-    if (filter === "onlyA" && !(r.inA && !r.inB))  return false;
-    if (filter === "onlyB" && !(!r.inA && r.inB))  return false;
+    if (filterMatch === "both"  && !(r.inA && r.inB))  return false;
+    if (filterMatch === "onlyA" && !(r.inA && !r.inB)) return false;
+    if (filterMatch === "onlyB" && !(!r.inA && r.inB)) return false;
+    if (filterAsist === "asistio"    && norm(r.asistencia) !== "asistio" && norm(r.asistencia) !== "asistió") return false;
+    if (filterAsist === "no_asistio" && norm(r.asistencia) !== "no asistio" && norm(r.asistencia) !== "no asistió") return false;
+    if (filterPago === "pago"    && !r.pagado)  return false;
+    if (filterPago === "no_pago" && r.pagado)   return false;
     const q = search.trim().toUpperCase();
     if (!q) return true;
-    if (r.codigo.includes(q)) return true;
-    const nameA = Object.values(r.dataA ?? {}).join(" ").toUpperCase();
-    const nameB = Object.values(r.dataB ?? {}).join(" ").toUpperCase();
-    return nameA.includes(q) || nameB.includes(q);
+    return r.codigo.includes(q) || r.apellidosNombres.toUpperCase().includes(q) || r.dni.includes(q) || r.programa.toUpperCase().includes(q);
   });
 
   const stats = results ? {
@@ -278,38 +298,208 @@ export default function VerificacionData() {
     both:  base.filter(r => r.inA && r.inB).length,
     onlyA: base.filter(r => r.inA && !r.inB).length,
     onlyB: base.filter(r => !r.inA && r.inB).length,
+    asistio:   base.filter(r => r.inB && (norm(r.asistencia) === "asistio" || norm(r.asistencia) === "asistió")).length,
+    noAsistio: base.filter(r => r.inB && (norm(r.asistencia) === "no asistio" || norm(r.asistencia) === "no asistió")).length,
+    pago:    base.filter(r => r.pagado).length,
+    noPago:  base.filter(r => r.inB && !r.pagado).length,
   } : null;
 
-  /* ── Columns to show ─────────────────────────────────── */
-  const colsA = fileA ? pickCols(fileA.headers, fileA.keyCol, [
-    ["apellido", "nombre"], ["dni", "documento"], ["programa", "carrera"], ["sede", "filial"], ["modalidad", "estudio"], ["turno"]
-  ]) : [];
-  const colsB = fileB ? pickCols(fileB.headers, fileB.keyCol, [
-    ["apellido", "nombre"], ["dni", "documento"], ["programa", "carrera"], ["pago", "matricula"], ["condicion", "resultado"], ["modalidad"]
-  ]) : [];
+  /* ── Export Excel con encabezado UAI ────────────────── */
+  async function exportXlsx() {
+    const src = filtered;
+    if (!src.length) return;
 
-  /* ── Export ─────────────────────────────────────────── */
-  function exportXlsx() {
-    if (!results) return;
-    const src = filter === "all" ? base : filtered;
-    const hdrA = colsA.map(c => `A: ${c}`);
-    const hdrB = colsB.map(c => `B: ${c}`);
-    const hdr = ["Código", "En Archivo A", "En Archivo B", ...hdrA, ...hdrB, "Estado"];
-    const rows = src.map(r => [
-      r.codigo,
-      r.inA ? "SÍ" : "NO",
-      r.inB ? "SÍ" : "NO",
-      ...colsA.map(c => r.dataA?.[c] ?? ""),
-      ...colsB.map(c => r.dataB?.[c] ?? ""),
-      r.inA && r.inB ? "AMBOS" : r.inA ? "SOLO A" : "SOLO B",
+    // Load logo as base64
+    let logoBase64 = "";
+    try {
+      const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      const res = await fetch(`${base}/logo-uai.png`);
+      const blob = await res.blob();
+      logoBase64 = await new Promise<string>(resolve => {
+        const r = new FileReader();
+        r.onload = () => resolve((r.result as string).split(",")[1] ?? "");
+        r.readAsDataURL(blob);
+      });
+    } catch { /* skip logo if not found */ }
+
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Portal Académico UAI";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Verificación de Data");
+    ws.properties.defaultRowHeight = 16;
+
+    // ── Column widths ────────────────────────────────
+    ws.columns = [
+      { width: 5  },   // N°
+      { width: 14 },   // Código
+      { width: 36 },   // Apellidos y Nombres
+      { width: 13 },   // DNI
+      { width: 30 },   // Programa/Carrera
+      { width: 13 },   // Asistencia
+      { width: 18 },   // Pago de Matrícula
+      { width: 12 },   // ¿Pagó?
+      { width: 18 },   // Condición
+      { width: 18 },   // Modalidad de Estudio
+      { width: 10 },   // Turno
+      { width: 20 },   // Sede/Filial
+    ];
+
+    // ── Logo + header rows ───────────────────────────
+    // Row 1: logo (tall row)
+    ws.addRow([]);
+    ws.getRow(1).height = 55;
+
+    if (logoBase64) {
+      const imgId = wb.addImage({ base64: logoBase64, extension: "png" });
+      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 130, height: 65 } });
+    }
+
+    // Row 2: University name
+    const r2 = ws.addRow(["UNIVERSIDAD AUTÓNOMA DE ICA"]);
+    ws.mergeCells("A2:L2");
+    const c2 = ws.getCell("A2");
+    c2.font = { bold: true, size: 14, color: { argb: "FF001F5F" } };
+    c2.alignment = { horizontal: "center", vertical: "middle" };
+    ws.getRow(2).height = 22;
+
+    // Row 3: Subtitle
+    const r3 = ws.addRow(["VERIFICACIÓN DE DATA — Resultado de Examen de Admisión"]);
+    ws.mergeCells("A3:L3");
+    const c3 = ws.getCell("A3");
+    c3.font = { bold: true, size: 11, color: { argb: "FFC9A84C" } };
+    c3.alignment = { horizontal: "center", vertical: "middle" };
+    ws.getRow(3).height = 18;
+
+    // Row 4: Date + filter info
+    const dateStr = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+    const asistText = filterAsist === "asistio" ? "Solo Asistió" : filterAsist === "no_asistio" ? "Solo No Asistió" : "Todos";
+    const pagoText  = filterPago  === "pago"    ? "Solo Pagaron"  : filterPago  === "no_pago"   ? "Solo No Pagaron"  : "Todos";
+    const r4 = ws.addRow([`Fecha de exportación: ${dateStr}   |   Filtro asistencia: ${asistText}   |   Filtro pago: ${pagoText}   |   Total registros: ${src.length}`]);
+    ws.mergeCells("A4:L4");
+    const c4 = ws.getCell("A4");
+    c4.font = { size: 9, italic: true, color: { argb: "FF555555" } };
+    c4.alignment = { horizontal: "center" };
+    ws.getRow(4).height = 14;
+
+    // Row 5: empty separator
+    ws.addRow([]);
+    ws.getRow(5).height = 6;
+
+    // Row 6: Column headers
+    const headers = ["N°", "Código Estudiante", "Apellidos y Nombres", "DNI",
+      "Programa / Carrera", "Asistencia", "Pago de Matrícula", "¿Pagó?",
+      "Condición", "Modalidad de Estudio", "Turno", "Sede / Filial"];
+    const headerRow = ws.addRow(headers);
+    headerRow.height = 20;
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.border = {
+        top:    { style: "thin", color: { argb: "FFFFFFFF" } },
+        bottom: { style: "thin", color: { argb: "FFFFFFFF" } },
+        left:   { style: "thin", color: { argb: "FF001F5F" } },
+        right:  { style: "thin", color: { argb: "FF001F5F" } },
+      };
+    });
+
+    // ── Data rows ────────────────────────────────────
+    src.forEach((r, i) => {
+      const pagoDisplay = r.pago ? (r.pagado ? `S/ ${r.pago}` : r.pago) : "—";
+      const row = ws.addRow([
+        i + 1,
+        r.codigo,
+        r.apellidosNombres,
+        r.dni,
+        r.programa,
+        r.asistencia,
+        pagoDisplay,
+        r.pagado ? "SÍ" : (r.pago === "" ? "—" : "NO"),
+        r.condicion,
+        r.modalidad,
+        r.turno,
+        r.sede,
+      ]);
+      row.height = 15;
+
+      const isOdd = i % 2 === 0;
+      const baseFill = isOdd ? "FFF0F4FF" : "FFFFFFFF";
+
+      row.eachCell((cell, colNum) => {
+        cell.font = { size: 9 };
+        cell.alignment = { vertical: "middle", wrapText: false };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: baseFill } };
+        cell.border = {
+          top:    { style: "hair", color: { argb: "FFD0D8E8" } },
+          bottom: { style: "hair", color: { argb: "FFD0D8E8" } },
+          left:   { style: "hair", color: { argb: "FFD0D8E8" } },
+          right:  { style: "hair", color: { argb: "FFD0D8E8" } },
+        };
+
+        // Asistencia coloring (col 6)
+        if (colNum === 6) {
+          const v = norm(r.asistencia);
+          if (v === "asistio" || v === "asistió") {
+            cell.font = { size: 9, bold: true, color: { argb: "FF166534" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
+          } else if (v === "no asistio" || v === "no asistió") {
+            cell.font = { size: 9, bold: true, color: { argb: "FF991B1B" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+          }
+        }
+        // Pagó coloring (col 8)
+        if (colNum === 8) {
+          if (r.pagado) {
+            cell.font = { size: 9, bold: true, color: { argb: "FF166534" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
+          } else if (r.pago !== "") {
+            cell.font = { size: 9, bold: true, color: { argb: "FF991B1B" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+          }
+        }
+        // Center N°, código, DNI, asistencia, pagó, turno
+        if ([1, 2, 4, 6, 8, 11].includes(colNum)) {
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+        }
+      });
+    });
+
+    // ── Summary row ──────────────────────────────────
+    ws.addRow([]);
+    const sumRow = ws.addRow([
+      "", "", "", "", "",
+      `Asistió: ${src.filter(r => norm(r.asistencia) === "asistio" || norm(r.asistencia) === "asistió").length}`,
+      "", `Pagaron: ${src.filter(r => r.pagado).length}  /  No pagaron: ${src.filter(r => r.inB && !r.pagado).length}`,
     ]);
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([hdr, ...rows]);
-    ws["!cols"] = hdr.map(() => ({ wch: 22 }));
-    XLSX.utils.book_append_sheet(wb, ws, "Cruce");
-    XLSX.writeFile(wb, `cruce-data-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    sumRow.height = 16;
+    sumRow.eachCell(cell => {
+      cell.font = { bold: true, size: 9, color: { argb: "FF001F5F" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEEF2FF" } };
+    });
+
+    // ── Footer ───────────────────────────────────────
+    ws.addRow([]);
+    const footRow = ws.addRow(["Portal Académico · Universidad Autónoma de Ica · 2026"]);
+    ws.mergeCells(`A${footRow.number}:L${footRow.number}`);
+    const fc = ws.getCell(`A${footRow.number}`);
+    fc.font = { size: 8, italic: true, color: { argb: "FF888888" } };
+    fc.alignment = { horizontal: "center" };
+
+    // ── Write file ───────────────────────────────────
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `UAI-Verificacion-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Excel exportado con éxito" });
   }
 
+  /* ── UI ──────────────────────────────────────────── */
   return (
     <div className="flex flex-col gap-5 p-6">
 
@@ -318,36 +508,26 @@ export default function VerificacionData() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: NAVY }}>Verificación de Data</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Sube dos Excels · el sistema cruza los códigos y muestra cuáles se repiten en ambos archivos
+            Cruza dos Excels por código de estudiante · detecta cuáles se repiten · filtra por asistencia y pago
           </p>
         </div>
-        {results && (
+        {results && filtered.length > 0 && (
           <Button size="sm" onClick={exportXlsx} style={{ background: NAVY, color: "#fff" }}>
-            <Download className="w-4 h-4 mr-1.5" /> Exportar Excel
+            <Download className="w-4 h-4 mr-1.5" /> Exportar Excel UAI
           </Button>
         )}
       </div>
 
-      {/* Upload area */}
+      {/* Upload */}
       <div className="grid md:grid-cols-2 gap-4">
-        <UploadCard
-          id="a"
-          badge="Archivo A"
-          hint="DATA principal · columnas: código, modalidad, turno, sede…"
+        <UploadCard id="a" badge="Archivo A" hint="DATA · con turno, modalidad, sede…"
           fileState={fileA}
           onLoad={setFileA}
-          onClear={() => { setFileA(null); setResults(null); }}
-          onChange={p => setFileA(prev => prev ? { ...prev, ...p } : prev)}
-        />
-        <UploadCard
-          id="b"
-          badge="Archivo B"
-          hint="Resultado / referencia · columnas: código, pago, carrera, condición…"
+          onClear={() => { setFileA(null); setResults(null); }} />
+        <UploadCard id="b" badge="Archivo B" hint="Resultado examen · con pago, carrera, asistencia…"
           fileState={fileB}
           onLoad={setFileB}
-          onClear={() => { setFileB(null); setResults(null); }}
-          onChange={p => setFileB(prev => prev ? { ...prev, ...p } : prev)}
-        />
+          onClear={() => { setFileB(null); setResults(null); }} />
       </div>
 
       {/* Action */}
@@ -355,7 +535,7 @@ export default function VerificacionData() {
         <div className="flex items-center gap-3">
           <Button onClick={merge} style={{ background: NAVY, color: "#fff" }} className="gap-2">
             <Merge className="w-4 h-4" />
-            Cruzar Archivos ({fileA.rows.length} + {fileB.rows.length} registros)
+            Cruzar Archivos ({fileA.rows.length} + {fileB.rows.length})
           </Button>
           {results && (
             <Button variant="outline" size="sm" onClick={() => { setResults(null); setSearch(""); }}>
@@ -367,23 +547,18 @@ export default function VerificacionData() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { key: "all"   as const, label: "Total códigos únicos",  value: stats.total,  color: NAVY,      Icon: FileSpreadsheet, bg: "bg-blue-50/40" },
-            { key: "both"  as const, label: "Se repiten (en ambos)", value: stats.both,   color: "#16a34a", Icon: CheckCircle2,    bg: "bg-green-50" },
-            { key: "onlyA" as const, label: "Solo en Archivo A",     value: stats.onlyA,  color: "#2563eb", Icon: AlertCircle,    bg: "bg-blue-50" },
-            { key: "onlyB" as const, label: "Solo en Archivo B",     value: stats.onlyB,  color: "#7c3aed", Icon: XCircle,        bg: "bg-purple-50" },
-          ].map(({ key, label, value, color, Icon, bg }) => (
-            <Card
-              key={key}
-              className={`rounded-xl shadow-sm cursor-pointer transition-all ${filter === key ? "ring-2 ring-offset-1" : "hover:shadow-md"}`}
-              style={filter === key ? { outline: `2px solid ${color}` } : {}}
-              onClick={() => setFilter(key)}
-            >
+            { key: "both" as const,  label: "Se repiten (ambos)",   value: stats.both,      color: "#16a34a", bg: "bg-green-50",    Icon: CheckCircle2 },
+            { key: "onlyA" as const, label: "Solo en Archivo A",    value: stats.onlyA,     color: "#2563eb", bg: "bg-blue-50",     Icon: FileSpreadsheet },
+            { key: "onlyB" as const, label: "Solo en Archivo B",    value: stats.onlyB,     color: "#7c3aed", bg: "bg-purple-50",   Icon: FileSpreadsheet },
+            { key: "all" as const,   label: "Total códigos únicos", value: stats.total,     color: NAVY,      bg: "bg-slate-50",    Icon: Users },
+          ].map(({ key, label, value, color, bg, Icon }) => (
+            <Card key={key} className={`rounded-xl shadow-sm cursor-pointer transition-all ${filterMatch === key ? "ring-2 ring-offset-1" : "hover:shadow-md"}`}
+              style={filterMatch === key ? { outline: `2px solid ${color}` } : {}}
+              onClick={() => setFilterMatch(key)}>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className={`rounded-full p-2.5 ${bg}`}>
-                  <Icon className="w-5 h-5" style={{ color }} />
-                </div>
+                <div className={`rounded-full p-2.5 ${bg}`}><Icon className="w-5 h-5" style={{ color }} /></div>
                 <div>
                   <p className="text-xl font-bold" style={{ color }}>{value}</p>
                   <p className="text-xs text-muted-foreground leading-tight">{label}</p>
@@ -394,105 +569,142 @@ export default function VerificacionData() {
         </div>
       )}
 
-      {/* Results table */}
+      {/* Filters */}
       {results && (
-        <Card className="rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-gray-50/60 flex-wrap">
-            <div className="relative max-w-xs flex-1">
-              <Search className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Buscar por código o nombre…"
-                value={search} onChange={e => setSearch(e.target.value)}
-                className="pl-8 h-8 text-xs" />
-            </div>
-            {search && <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSearch("")}><X className="w-3 h-3" /></Button>}
-            <p className="text-xs text-muted-foreground ml-auto">{filtered.length} de {base.length} registros</p>
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={exportXlsx}>
-              <Download className="w-3.5 h-3.5" /> Exportar
-            </Button>
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Asistencia filter */}
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground mr-1">Asistencia:</span>
+            {([
+              { key: "all"       as const, label: "Todos",       count: stats!.asistio + stats!.noAsistio, Icon: Users,      color: "gray" },
+              { key: "asistio"   as const, label: "Asistió",     count: stats!.asistio,                    Icon: UserCheck,  color: "green" },
+              { key: "no_asistio"as const, label: "No Asistió",  count: stats!.noAsistio,                  Icon: UserX,      color: "red" },
+            ] as const).map(({ key, label, count, Icon, color }) => (
+              <button key={key} onClick={() => setFilterAsist(key)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                  filterAsist === key
+                    ? color === "green" ? "bg-green-600 text-white border-green-600"
+                    : color === "red"   ? "bg-red-600 text-white border-red-600"
+                    :                    "text-white border-gray-700" : "bg-white border-gray-200 hover:border-gray-400 text-gray-600"
+                }`}
+                style={filterAsist === key && color === "gray" ? { background: NAVY, borderColor: NAVY } : {}}
+              >
+                <Icon className="w-3 h-3" /> {label} <span className="opacity-70">({count})</span>
+              </button>
+            ))}
           </div>
 
+          {/* Pago filter */}
+          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l">
+            <span className="text-xs font-semibold text-muted-foreground mr-1">Pago:</span>
+            {([
+              { key: "all"    as const, label: "Todos",       count: stats!.pago + stats!.noPago, color: "gray" },
+              { key: "pago"   as const, label: "Sí pagó",     count: stats!.pago,                 color: "green" },
+              { key: "no_pago"as const, label: "No pagó",     count: stats!.noPago,               color: "red" },
+            ] as const).map(({ key, label, count, color }) => (
+              <button key={key} onClick={() => setFilterPago(key)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                  filterPago === key
+                    ? color === "green" ? "bg-green-600 text-white border-green-600"
+                    : color === "red"   ? "bg-red-600 text-white border-red-600"
+                    :                    "text-white border-gray-700"
+                    : "bg-white border-gray-200 hover:border-gray-400 text-gray-600"
+                }`}
+                style={filterPago === key && color === "gray" ? { background: NAVY, borderColor: NAVY } : {}}
+              >
+                {label} <span className="opacity-70">({count})</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative ml-auto">
+            <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input placeholder="Buscar código, nombre, DNI, carrera…"
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="pl-8 h-8 text-xs w-64" />
+            {search && <button className="absolute right-2 top-2" onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-gray-400" /></button>}
+          </div>
+          <span className="text-xs text-muted-foreground">{filtered.length} registros</span>
+        </div>
+      )}
+
+      {/* Table */}
+      {results && (
+        <Card className="rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs min-w-[900px]">
               <thead>
                 <tr style={{ background: NAVY }} className="text-white text-left">
-                  <th className="px-3 py-3 font-semibold w-6">#</th>
-                  <th className="px-3 py-3 font-semibold">Código</th>
-                  <th className="px-3 py-3 font-semibold text-center">En A</th>
-                  <th className="px-3 py-3 font-semibold text-center">En B</th>
-                  {colsA.map(c => (
-                    <th key={`a-${c}`} className="px-3 py-3 font-semibold whitespace-nowrap" style={{ background: "#1e3a8a" }}>
-                      <span className="text-blue-200 text-[9px] mr-0.5 font-normal">A·</span>{c}
-                    </th>
+                  {[
+                    "#", "Código Estudiante", "Apellidos y Nombres", "DNI",
+                    "Programa / Carrera", "Asistencia", "Pago Matrícula",
+                    "¿Pagó?", "Condición", "Modalidad", "Turno", "Sede"
+                  ].map((h, i) => (
+                    <th key={i} className="px-3 py-3 font-semibold whitespace-nowrap">{h}</th>
                   ))}
-                  {colsB.map(c => (
-                    <th key={`b-${c}`} className="px-3 py-3 font-semibold whitespace-nowrap" style={{ background: "#4c1d95" }}>
-                      <span className="text-purple-200 text-[9px] mr-0.5 font-normal">B·</span>{c}
-                    </th>
-                  ))}
-                  <th className="px-3 py-3 font-semibold text-center">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={4 + colsA.length + colsB.length + 1} className="text-center py-12 text-muted-foreground">
-                      Sin resultados para este filtro
-                    </td>
+                    <td colSpan={12} className="text-center py-12 text-muted-foreground">Sin resultados con los filtros actuales</td>
                   </tr>
                 ) : filtered.map((r, i) => {
-                  const rowBg = r.inA && r.inB  ? "bg-green-50/30"
-                    : r.inA                     ? "bg-blue-50/20"
-                                                : "bg-purple-50/20";
+                  const isAsistio   = norm(r.asistencia) === "asistio" || norm(r.asistencia) === "asistió";
+                  const isNoAsistio = norm(r.asistencia) === "no asistio" || norm(r.asistencia) === "no asistió";
+                  const rowBg = i % 2 === 0 ? "bg-gray-50/40" : "bg-white";
                   return (
-                    <tr key={r.codigo} className={`border-b border-gray-100 ${rowBg} hover:brightness-95 transition-all`}>
-                      <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
-                      <td className="px-3 py-2.5 font-mono font-bold" style={{ color: NAVY }}>{r.codigo}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        {r.inA ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" /> : <XCircle className="w-4 h-4 text-gray-300 inline" />}
+                    <tr key={`${r.codigo}-${i}`} className={`border-b border-gray-100 ${rowBg} hover:bg-blue-50/30`}>
+                      <td className="px-3 py-2.5 text-muted-foreground text-center">{i + 1}</td>
+                      <td className="px-3 py-2.5 font-mono font-bold text-center" style={{ color: NAVY }}>{r.codigo}</td>
+                      <td className="px-3 py-2.5 font-medium max-w-[200px]">
+                        <span title={r.apellidosNombres}>{r.apellidosNombres || <span className="text-gray-300 italic">—</span>}</span>
                       </td>
+                      <td className="px-3 py-2.5 font-mono text-center">{r.dni || "—"}</td>
+                      <td className="px-3 py-2.5 max-w-[180px]" title={r.programa}>{r.programa || "—"}</td>
                       <td className="px-3 py-2.5 text-center">
-                        {r.inB ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" /> : <XCircle className="w-4 h-4 text-gray-300 inline" />}
-                      </td>
-                      {colsA.map(c => (
-                        <td key={`a-${c}`} className="px-3 py-2.5 max-w-[160px] truncate" title={r.dataA?.[c] ?? ""}>
-                          {r.dataA?.[c] || <span className="text-gray-300">—</span>}
-                        </td>
-                      ))}
-                      {colsB.map(c => {
-                        const val = r.dataB?.[c] ?? "";
-                        const isPago = norm(c).includes("pago");
-                        const isPagado = isPago && val && val !== "0" && val !== "NO" && val.trim() !== "";
-                        return (
-                          <td key={`b-${c}`} className="px-3 py-2.5 max-w-[160px] truncate" title={val}>
-                            {isPago ? (
-                              isPagado
-                                ? <span className="text-green-700 font-semibold">{val || "—"}</span>
-                                : <span className="text-red-500 font-semibold">{val || "NO"}</span>
-                            ) : val || <span className="text-gray-300">—</span>}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2.5 text-center">
-                        {r.inA && r.inB ? (
-                          <Badge className="text-[10px] px-1.5 bg-green-100 text-green-700 border border-green-300">
-                            <CheckCircle2 className="w-3 h-3 mr-0.5" /> Ambos
+                        {isAsistio ? (
+                          <Badge className="text-[10px] px-1.5 bg-green-100 text-green-700 border border-green-200">
+                            <UserCheck className="w-2.5 h-2.5 mr-0.5" /> Asistió
                           </Badge>
-                        ) : r.inA ? (
-                          <Badge className="text-[10px] px-1.5 bg-blue-100 text-blue-700 border border-blue-200">
-                            Solo A
+                        ) : isNoAsistio ? (
+                          <Badge className="text-[10px] px-1.5 bg-red-100 text-red-600 border border-red-200">
+                            <UserX className="w-2.5 h-2.5 mr-0.5" /> No Asistió
                           </Badge>
                         ) : (
-                          <Badge className="text-[10px] px-1.5 bg-purple-100 text-purple-700 border border-purple-200">
-                            Solo B
-                          </Badge>
+                          <span className="text-gray-300">—</span>
                         )}
                       </td>
+                      <td className="px-3 py-2.5 text-center font-mono">
+                        {r.pago ? (r.pagado ? <span className="text-green-700 font-bold">S/ {r.pago}</span> : <span className="text-gray-400">{r.pago}</span>) : "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {r.pago === "" ? <span className="text-gray-300">—</span>
+                          : r.pagado
+                          ? <Badge className="text-[10px] px-1.5 bg-green-100 text-green-700 border border-green-200"><CheckCircle2 className="w-2.5 h-2.5 mr-0.5" /> SÍ</Badge>
+                          : <Badge className="text-[10px] px-1.5 bg-red-100 text-red-600 border border-red-200"><XCircle className="w-2.5 h-2.5 mr-0.5" /> NO</Badge>}
+                      </td>
+                      <td className="px-3 py-2.5">{r.condicion || "—"}</td>
+                      <td className="px-3 py-2.5">{r.modalidad || "—"}</td>
+                      <td className="px-3 py-2.5 text-center">{r.turno || "—"}</td>
+                      <td className="px-3 py-2.5">{r.sede || "—"}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-2.5 border-t bg-gray-50 text-xs text-muted-foreground">
+              <span>{filtered.filter(r => norm(r.asistencia) === "asistio" || norm(r.asistencia) === "asistió").length} asistieron · {filtered.filter(r => norm(r.asistencia) === "no asistio" || norm(r.asistencia) === "no asistió").length} no asistieron</span>
+              <span>{filtered.filter(r => r.pagado).length} pagaron · {filtered.filter(r => r.inB && !r.pagado).length} no pagaron</span>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={exportXlsx}>
+                <Download className="w-3.5 h-3.5" /> Exportar ({filtered.length})
+              </Button>
+            </div>
+          )}
         </Card>
       )}
 
@@ -501,10 +713,10 @@ export default function VerificacionData() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Merge className="w-14 h-14 text-gray-200 mb-3" />
           <p className="text-base font-semibold text-muted-foreground">Sube dos Excels para cruzarlos</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            <strong>Archivo A</strong>: tu data principal (ej. DATA.1 con turno + modalidad)<br />
-            <strong>Archivo B</strong>: resultado o referencia (ej. examen con pago + carrera)<br />
-            El sistema identifica qué códigos <strong>se repiten</strong> en ambos
+          <p className="text-sm text-muted-foreground mt-1 max-w-md">
+            <strong>Archivo A</strong>: DATA (con turno, modalidad, sede)<br />
+            <strong>Archivo B</strong>: resultado examen (con pago, carrera, asistencia, condición)<br />
+            Filtra por <strong>Asistió / No Asistió</strong> y por <strong>Si pagó / No pagó</strong>
           </p>
         </div>
       )}
