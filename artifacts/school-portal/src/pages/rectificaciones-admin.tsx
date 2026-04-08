@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import * as XLSX from "xlsx";
 import { QRCodeSVG } from "qrcode.react";
+import { exportExcelWithLogo } from "@/lib/excel-export";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -261,17 +261,30 @@ export default function RectificacionesAdmin() {
     valery:   data.filter(r => r.atendidoPor === "VALERY").length,
   };
 
-  function exportXlsx() {
-    const hdr = ["#", "Apellidos y Nombres", "Celular", "Atendido Por", "Tiene Foto", "Fecha y Hora"];
-    const rows = filtered.map((r, i) => [
-      i + 1, r.apellidosNombres, r.celular, r.atendidoPor,
-      r.fotoPago ? "SÍ" : "NO", formatDate(r.registradoEn),
-    ]);
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([hdr, ...rows]);
-    ws["!cols"] = [{ wch: 4 }, { wch: 36 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 22 }];
-    XLSX.utils.book_append_sheet(wb, ws, "Rectificaciones");
-    XLSX.writeFile(wb, `rectificaciones-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  async function exportXlsx() {
+    const fecha = new Date().toISOString().slice(0, 10);
+    await exportExcelWithLogo({
+      sheetTitle: "Registros de Rectificación de Matrícula",
+      institution: "Universidad Autónoma de Ica",
+      subtitle: `Estudios Generales 2026  ·  ${filterAt !== "Todos" ? `Atendido por: ${filterAt}` : "Todos los registros"}`,
+      fileName: `rectificaciones-UAI-${fecha}`,
+      columns: [
+        { header: "N°",                  key: "nro",             width: 5,  align: "center" },
+        { header: "APELLIDOS Y NOMBRES", key: "apellidosNombres", width: 38, align: "left"   },
+        { header: "CELULAR",             key: "celular",          width: 14, align: "center" },
+        { header: "ATENDIDO POR",        key: "atendidoPor",      width: 16, align: "center" },
+        { header: "FOTO DE PAGO",        key: "tieneFoto",        width: 12, align: "center" },
+        { header: "FECHA Y HORA",        key: "fecha",            width: 24, align: "center" },
+      ],
+      rows: filtered.map((r, i) => ({
+        nro:             i + 1,
+        apellidosNombres: r.apellidosNombres,
+        celular:         r.celular,
+        atendidoPor:     r.atendidoPor,
+        tieneFoto:       r.fotoPago ? "SÍ" : "NO",
+        fecha:           formatDate(r.registradoEn),
+      })),
+    });
   }
 
   return (
