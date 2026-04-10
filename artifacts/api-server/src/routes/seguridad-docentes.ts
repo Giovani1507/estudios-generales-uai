@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { seguridadDocentesTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.get("/", async (req, res) => {
     const rows = await db
       .select()
       .from(seguridadDocentesTable)
-      .orderBy(seguridadDocentesTable.registradoEn);
+      .orderBy(desc(seguridadDocentesTable.registradoEn));
     res.json(rows);
   } catch (err) {
     console.error("[seguridad-docentes] GET error:", err);
@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { nombre, tipo, observacion, registradoPor } = req.body;
+  const { nombre, tipo, estado, prioridad, observacion, registradoPor } = req.body;
   if (!nombre?.trim() || !tipo?.trim()) {
     return res.status(400).json({ error: "nombre y tipo son requeridos" });
   }
@@ -27,9 +27,11 @@ router.post("/", async (req, res) => {
     const [row] = await db
       .insert(seguridadDocentesTable)
       .values({
-        nombre: nombre.trim().toUpperCase(),
-        tipo: tipo.trim(),
-        observacion: observacion?.trim() || null,
+        nombre:       nombre.trim().toUpperCase(),
+        tipo:         tipo.trim(),
+        estado:       estado?.trim() || "PENDIENTE",
+        prioridad:    prioridad?.trim() || "NORMAL",
+        observacion:  observacion?.trim() || null,
         registradoPor: registradoPor?.trim() || null,
       })
       .returning();
@@ -42,14 +44,21 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { observacion, tipo } = req.body;
+  const { observacion, tipo, estado, prioridad, resolucion, resueltaPor } = req.body;
   try {
+    const updates: Record<string, unknown> = {};
+    if (tipo !== undefined)         updates.tipo        = tipo.trim();
+    if (estado !== undefined)       updates.estado      = estado.trim();
+    if (prioridad !== undefined)    updates.prioridad   = prioridad.trim();
+    if (observacion !== undefined)  updates.observacion = observacion?.trim() || null;
+    if (resolucion !== undefined)   updates.resolucion  = resolucion?.trim() || null;
+    if (estado === "RESUELTO") {
+      updates.resueltaEn  = new Date();
+      updates.resueltaPor = resueltaPor?.trim() || null;
+    }
     const [row] = await db
       .update(seguridadDocentesTable)
-      .set({
-        ...(tipo ? { tipo: tipo.trim() } : {}),
-        ...(observacion !== undefined ? { observacion: observacion?.trim() || null } : {}),
-      })
+      .set(updates)
       .where(eq(seguridadDocentesTable.id, id))
       .returning();
     if (!row) return res.status(404).json({ error: "No encontrado" });

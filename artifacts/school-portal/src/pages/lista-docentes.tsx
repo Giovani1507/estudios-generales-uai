@@ -257,7 +257,7 @@ async function exportExcel(
   URL.revokeObjectURL(url);
 }
 
-type SeguridadFlag = { id: number; nombre: string; tipo: string; observacion: string | null };
+type SeguridadFlag = { id: number; nombre: string; tipo: string; estado: string; observacion: string | null };
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -289,7 +289,9 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
 
   const flagMap = useMemo(() => {
     const m = new Map<string, SeguridadFlag>();
-    flags.forEach(f => m.set(f.nombre.trim().toUpperCase(), f));
+    flags
+      .filter(f => f.estado !== "RESUELTO")
+      .forEach(f => m.set(f.nombre.trim().toUpperCase(), f));
     return m;
   }, [flags]);
 
