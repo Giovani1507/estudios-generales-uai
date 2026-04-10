@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   ShieldAlert, Plus, Trash2, RefreshCw, Search, X,
   UserX, UserMinus, AlertTriangle, FileWarning, Info,
@@ -86,6 +85,8 @@ function formatDate(iso: string) {
   });
 }
 
+type PlanRow = { docente: string; [k: string]: unknown };
+
 export default function Seguridad() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -97,13 +98,40 @@ export default function Seguridad() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editObs, setEditObs] = useState("");
 
+  // All known teachers from JSON planificacion
+  const [allDocentes, setAllDocentes] = useState<string[]>([]);
+
   // New record form
   const [showForm, setShowForm] = useState(false);
   const [newNombre, setNewNombre] = useState("");
+  const [docenteQuery, setDocenteQuery] = useState("");
+  const [docenteOpen, setDocenteOpen] = useState(false);
+  const docenteRef = useRef<HTMLDivElement>(null);
   const [newTipo, setNewTipo] = useState<TipoFlag>("RENUNCIO_CARGA");
   const [newObs, setNewObs] = useState("");
   const [saving, setSaving] = useState(false);
   const [tipoOpen, setTipoOpen] = useState(false);
+
+  // Names already registered (to warn about duplicates)
+  const registeredNames = useMemo(() => new Set(data.map(d => d.nombre.trim().toUpperCase())), [data]);
+
+  // Filtered suggestions for combobox
+  const docenteSuggestions = useMemo(() => {
+    const q = docenteQuery.trim().toUpperCase();
+    if (!q) return allDocentes.slice(0, 50);
+    return allDocentes.filter(n => n.includes(q)).slice(0, 50);
+  }, [allDocentes, docenteQuery]);
+
+  // Close combobox on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (docenteRef.current && !docenteRef.current.contains(e.target as Node)) {
+        setDocenteOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -118,8 +146,29 @@ export default function Seguridad() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Load teacher names from both FICA and FCS JSON files
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL;
+    Promise.all([
+      fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.ok ? r.json() : []),
+      fetch(`${base}planificacion-fcs-2026-1.json`).then(r => r.ok ? r.json() : []),
+    ]).then(([fica, fcs]: [PlanRow[], PlanRow[]]) => {
+      const names = new Set<string>();
+      [...fica, ...fcs].forEach(row => {
+        if (row.docente && typeof row.docente === "string") {
+          names.add(row.docente.trim().toUpperCase());
+        }
+      });
+      setAllDocentes([...names].sort());
+    }).catch(() => {});
+  }, []);
+
   async function handleSave() {
-    if (!newNombre.trim()) { toast({ title: "Ingresa el nombre del docente", variant: "destructive" }); return; }
+    if (!newNombre.trim()) { toast({ title: "Selecciona un docente de la lista", variant: "destructive" }); return; }
+    if (!allDocentes.includes(newNombre.trim().toUpperCase())) {
+      toast({ title: "Docente no encontrado", description: "Solo puedes registrar docentes que ya existen en el sistema.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const r = await fetch(`${apiBase}/api/seguridad-docentes`, {
@@ -136,7 +185,7 @@ export default function Seguridad() {
       if (!r.ok) throw new Error((await r.json()).error || `${r.status}`);
       const nuevo = await r.json();
       setData(prev => [...prev, nuevo]);
-      setNewNombre(""); setNewTipo("RENUNCIO_CARGA"); setNewObs(""); setShowForm(false);
+      setNewNombre(""); setDocenteQuery(""); setNewTipo("RENUNCIO_CARGA"); setNewObs(""); setShowForm(false);
       toast({ title: "Registro guardado" });
     } catch (err) {
       toast({ title: "Error al guardar", description: String(err), variant: "destructive" });
@@ -240,16 +289,80 @@ export default function Seguridad() {
           <CardContent className="p-5 space-y-4">
             <p className="text-sm font-bold" style={{ color: NAVY }}>Nuevo Registro de Seguridad</p>
 
-            {/* Nombre */}
+            {/* Nombre — combobox de docentes del sistema */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Apellidos y Nombres del Docente *</label>
-              <Input
-                placeholder="Ej: RECUAY SALAZAR CARLOS ALBERTO"
-                value={newNombre}
-                onChange={e => setNewNombre(e.target.value.toUpperCase())}
-                className="font-medium"
-              />
-              <p className="text-[10px] text-gray-400">Escríbelo exactamente como aparece en el sistema (en mayúsculas)</p>
+              <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Docente *</label>
+              <div ref={docenteRef} className="relative">
+                {/* Selected value display / search input */}
+                <div
+                  className={`flex items-center gap-2 w-full border-2 rounded-xl px-3 py-2.5 cursor-text transition-all ${
+                    docenteOpen ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
+                  } bg-white`}
+                  onClick={() => { setDocenteOpen(true); }}
+                >
+                  <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <input
+                    type="text"
+                    className="flex-1 text-sm font-medium bg-transparent outline-none placeholder:text-gray-400"
+                    placeholder={allDocentes.length === 0 ? "Cargando docentes…" : "Buscar docente…"}
+                    value={newNombre ? newNombre : docenteQuery}
+                    onChange={e => {
+                      setNewNombre("");
+                      setDocenteQuery(e.target.value.toUpperCase());
+                      setDocenteOpen(true);
+                    }}
+                    onFocus={() => setDocenteOpen(true)}
+                  />
+                  {newNombre && (
+                    <button type="button" onClick={() => { setNewNombre(""); setDocenteQuery(""); }} className="shrink-0">
+                      <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                    </button>
+                  )}
+                  {!newNombre && <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
+                </div>
+
+                {/* Dropdown list */}
+                {docenteOpen && (
+                  <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
+                    <div className="max-h-56 overflow-y-auto">
+                      {docenteSuggestions.length === 0 ? (
+                        <p className="px-4 py-3 text-sm text-gray-400 italic">Sin coincidencias</p>
+                      ) : docenteSuggestions.map(nombre => {
+                        const yaRegistrado = registeredNames.has(nombre);
+                        const isSelected = newNombre === nombre;
+                        return (
+                          <button
+                            key={nombre}
+                            type="button"
+                            disabled={yaRegistrado}
+                            onClick={() => {
+                              setNewNombre(nombre);
+                              setDocenteQuery("");
+                              setDocenteOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm border-b last:border-0 transition-colors
+                              ${isSelected ? "bg-blue-50 text-blue-800 font-semibold" : ""}
+                              ${yaRegistrado ? "opacity-40 cursor-not-allowed bg-gray-50" : "hover:bg-primary/5 text-foreground"}
+                            `}
+                          >
+                            <span className="flex-1 font-medium">{nombre}</span>
+                            {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
+                            {yaRegistrado && <span className="text-[10px] font-bold text-orange-500 shrink-0">YA REGISTRADO</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="px-3 py-2 border-t bg-gray-50 text-[10px] text-gray-400">
+                      {allDocentes.length} docentes disponibles
+                    </div>
+                  </div>
+                )}
+              </div>
+              {newNombre && (
+                <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Docente seleccionado del sistema
+                </p>
+              )}
             </div>
 
             {/* Tipo */}
@@ -443,7 +556,7 @@ export default function Seguridad() {
               <li>▸ Los docentes registrados aquí aparecen automáticamente marcados en la <strong>Lista de Docentes</strong>.</li>
               <li>▸ Los de tipo <em>"Renunció a su carga lectiva"</em> se muestran en <span className="text-red-600 font-semibold">rojo</span> con el badge RENUNCIÓ.</li>
               <li>▸ Todos los tipos afectan también el <strong>Excel descargado</strong> de la lista.</li>
-              <li>▸ El nombre debe escribirse en <strong>MAYÚSCULAS</strong> tal como aparece en el sistema.</li>
+              <li>▸ Solo puedes registrar docentes que ya existen en la planificación FICA o FCS 2026-I.</li>
             </ul>
           </div>
         </CardContent>
