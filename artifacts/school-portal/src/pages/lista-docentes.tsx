@@ -7,7 +7,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Users, Search, Download, Loader2, MapPin, Layers,
+  Users, Search, Download, Loader2, MapPin, Layers, UserX,
 } from "lucide-react";
 
 type PlanRow = {
@@ -185,24 +185,40 @@ async function exportExcel(
     cell.border = MED;
   });
 
+  const RED_BG   = "FFFFF0F0";
+  const RED_TXT  = "FFC0392B";
+  const RED_BDR: Partial<ExcelJS.Borders> = {
+    top:    { style: "thin", color: { argb: "FFFFC0C0" } },
+    bottom: { style: "thin", color: { argb: "FFFFC0C0" } },
+    left:   { style: "thin", color: { argb: "FFFFC0C0" } },
+    right:  { style: "thin", color: { argb: "FFFFC0C0" } },
+  };
+
   docentes.forEach((d, idx) => {
     const rowNum = 10 + idx;
     ws.getRow(rowNum).height = 18;
-    const bg = idx % 2 === 0 ? "FFFFFFFF" : "FFF5F7FF";
+    const renuncio = esRenunciado(d.nombre);
+    const bg = renuncio ? RED_BG : (idx % 2 === 0 ? "FFFFFFFF" : "FFF5F7FF");
     const vals: (string | number)[] = [
       idx + 1,
-      d.nombre,
+      renuncio ? `${d.nombre}  ✗ RENUNCIÓ` : d.nombre,
       d.locales.join(" / "),
       d.carreras.join(", "),
       d.ciclos.join(", "),
-      d.horasAcad,
+      renuncio ? "Renunció a su carga lectiva" : d.horasAcad,
     ];
     vals.forEach((v, i) => {
       const cell = ws.getRow(rowNum).getCell(i + 1);
       cell.value = v as ExcelJS.CellValue;
-      cell.font = { size: 9.5, color: { argb: DGRAY }, name: "Calibri" };
+      cell.font = {
+        size: 9.5,
+        color: { argb: renuncio ? RED_TXT : DGRAY },
+        bold: renuncio,
+        italic: renuncio && i === 5,
+        name: "Calibri",
+      };
       cell.fill = sf(bg);
-      cell.border = THIN;
+      cell.border = renuncio ? RED_BDR : THIN;
       cell.alignment = i === 1 ? LEFT : CTR;
     });
   });
@@ -227,6 +243,15 @@ async function exportExcel(
   a.download = `Lista_Docentes_${facultad}_UAI_2026-1.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Docentes que renunciaron a su carga lectiva (nombre en MAYÚSCULAS tal como aparece en el JSON)
+const RENUNCIARON = new Set([
+  "RECUAY SALAZAR CARLOS ALBERTO",
+]);
+
+function esRenunciado(nombre: string) {
+  return RENUNCIARON.has(nombre.trim().toUpperCase());
 }
 
 const LOCAL_COLOR: Record<string, string> = {
@@ -421,48 +446,78 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
                 </tr>
               </thead>
               <tbody>
-                {docentes.map((d, i) => (
-                  <tr
-                    key={d.nombre}
-                    className={`border-b last:border-0 hover:bg-primary/5 transition-colors ${
-                      i % 2 === 0 ? "bg-white" : "bg-muted/30"
-                    }`}
-                  >
-                    <td className="px-3 py-2.5 text-center text-xs text-muted-foreground font-mono">{i + 1}</td>
-                    <td className="px-4 py-2.5 text-sm font-semibold text-foreground">{d.nombre}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex flex-wrap gap-1">
-                        {d.locales.map(l => (
-                          <span
-                            key={l}
-                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                              LOCAL_COLOR[l] ?? "bg-gray-100 text-gray-700 border-gray-200"
-                            }`}
-                          >
-                            {l}
+                {docentes.map((d, i) => {
+                  const renuncio = esRenunciado(d.nombre);
+                  return (
+                    <tr
+                      key={d.nombre}
+                      className={`border-b last:border-0 transition-colors ${
+                        renuncio
+                          ? "bg-red-50 hover:bg-red-100/60"
+                          : `hover:bg-primary/5 ${i % 2 === 0 ? "bg-white" : "bg-muted/30"}`
+                      }`}
+                    >
+                      <td className={`px-3 py-2.5 text-center text-xs font-mono ${renuncio ? "text-red-400" : "text-muted-foreground"}`}>
+                        {i + 1}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          {renuncio && <UserX className="w-3.5 h-3.5 text-red-500 shrink-0" />}
+                          <span className={`text-sm font-semibold ${renuncio ? "text-red-700" : "text-foreground"}`}>
+                            {d.nombre}
                           </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex flex-wrap gap-1">
-                        {d.carreras.map(c => (
-                          <Badge key={c} variant="outline" className="text-[10px] px-1.5 py-0 font-mono font-bold">
-                            {c}
-                          </Badge>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
-                      {d.ciclos.join(", ")}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-sm font-bold text-emerald-700">
-                      {d.horasAcad > 0
-                        ? `${d.horasAcad}h`
-                        : <span className="text-muted-foreground font-normal">—</span>}
-                    </td>
-                  </tr>
-                ))}
+                          {renuncio && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 whitespace-nowrap">
+                              RENUNCIÓ
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {d.locales.map(l => (
+                            <span
+                              key={l}
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+                                renuncio
+                                  ? "bg-red-100 text-red-700 border-red-200"
+                                  : LOCAL_COLOR[l] ?? "bg-gray-100 text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              {l}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {d.carreras.map(c => (
+                            <Badge
+                              key={c}
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 font-mono font-bold ${renuncio ? "border-red-200 text-red-600" : ""}`}
+                            >
+                              {c}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className={`px-3 py-2.5 text-center text-xs ${renuncio ? "text-red-400" : "text-muted-foreground"}`}>
+                        {d.ciclos.join(", ")}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {renuncio ? (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-700 border border-red-200">
+                            RENUNCIÓ
+                          </span>
+                        ) : d.horasAcad > 0
+                          ? <span className="text-sm font-bold text-emerald-700">{d.horasAcad}h</span>
+                          : <span className="text-muted-foreground font-normal">—</span>
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="bg-[#D9E0F1] border-t-2 border-[#001F5F]">
