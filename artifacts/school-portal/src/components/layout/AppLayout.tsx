@@ -41,6 +41,7 @@ import {
   Map,
   DatabaseZap,
   FileEdit,
+  ShieldAlert,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -124,6 +125,12 @@ const menuItems: MenuItem[] = [
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,
+    roles: ["administrador"],
+  },
+  {
+    title: "Seguridad",
+    url: "/seguridad",
+    icon: ShieldAlert,
     roles: ["administrador"],
   },
   {

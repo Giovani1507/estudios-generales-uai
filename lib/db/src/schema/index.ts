@@ -13,3 +13,4 @@ export * from "./sessions";
 export * from "./codigos_verificados";
 export * from "./mapeo_cambios";
 export * from "./rectificaciones";
+export * from "./seguridad_docentes";

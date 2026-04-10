@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import * as ExcelJS from "exceljs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,7 @@ async function exportExcel(
   docentes: DocenteEntry[],
   facultad: "FICA" | "FCS",
   baseUrl: string,
+  flagMap?: Map<string, SeguridadFlag>,
 ) {
   type Fill = ExcelJS.Fill;
   const NAVY = "FF001F5F";
@@ -185,40 +186,51 @@ async function exportExcel(
     cell.border = MED;
   });
 
-  const RED_BG   = "FFFFF0F0";
-  const RED_TXT  = "FFC0392B";
+  const RED_BG    = "FFFFF0F0";
+  const AMBER_BG  = "FFFFF8E8";
+  const RED_TXT   = "FFC0392B";
+  const AMBER_TXT = "FF92600A";
   const RED_BDR: Partial<ExcelJS.Borders> = {
     top:    { style: "thin", color: { argb: "FFFFC0C0" } },
     bottom: { style: "thin", color: { argb: "FFFFC0C0" } },
     left:   { style: "thin", color: { argb: "FFFFC0C0" } },
     right:  { style: "thin", color: { argb: "FFFFC0C0" } },
   };
+  const AMBER_BDR: Partial<ExcelJS.Borders> = {
+    top:    { style: "thin", color: { argb: "FFFFDDAA" } },
+    bottom: { style: "thin", color: { argb: "FFFFDDAA" } },
+    left:   { style: "thin", color: { argb: "FFFFDDAA" } },
+    right:  { style: "thin", color: { argb: "FFFFDDAA" } },
+  };
 
   docentes.forEach((d, idx) => {
     const rowNum = 10 + idx;
     ws.getRow(rowNum).height = 18;
-    const renuncio = esRenunciado(d.nombre);
-    const bg = renuncio ? RED_BG : (idx % 2 === 0 ? "FFFFFFFF" : "FFF5F7FF");
+    const flag = flagMap?.get(d.nombre.trim().toUpperCase()) ?? null;
+    const esRojo = flag?.tipo === "RENUNCIO_CARGA" || flag?.tipo === "NO_REGRESA";
+    const esAmbar = flag && !esRojo;
+    const bg = esRojo ? RED_BG : esAmbar ? AMBER_BG : (idx % 2 === 0 ? "FFFFFFFF" : "FFF5F7FF");
+    const flagLabel = flag ? (TIPO_LABEL[flag.tipo] ?? flag.tipo) : null;
     const vals: (string | number)[] = [
       idx + 1,
-      renuncio ? `${d.nombre}  ✗ RENUNCIÓ` : d.nombre,
+      flag ? `${d.nombre}  ⚠ ${flagLabel}` : d.nombre,
       d.locales.join(" / "),
       d.carreras.join(", "),
       d.ciclos.join(", "),
-      renuncio ? "Renunció a su carga lectiva" : d.horasAcad,
+      flag ? (esRojo ? flagLabel! : `${d.horasAcad}h — ${flagLabel}`) : d.horasAcad,
     ];
     vals.forEach((v, i) => {
       const cell = ws.getRow(rowNum).getCell(i + 1);
       cell.value = v as ExcelJS.CellValue;
+      const txtColor = esRojo ? RED_TXT : esAmbar ? AMBER_TXT : DGRAY;
       cell.font = {
-        size: 9.5,
-        color: { argb: renuncio ? RED_TXT : DGRAY },
-        bold: renuncio,
-        italic: renuncio && i === 5,
+        size: 9.5, color: { argb: txtColor },
+        bold: !!flag,
+        italic: !!flag && i === 5,
         name: "Calibri",
       };
       cell.fill = sf(bg);
-      cell.border = renuncio ? RED_BDR : THIN;
+      cell.border = esRojo ? RED_BDR : esAmbar ? AMBER_BDR : THIN;
       cell.alignment = i === 1 ? LEFT : CTR;
     });
   });
@@ -245,14 +257,17 @@ async function exportExcel(
   URL.revokeObjectURL(url);
 }
 
-// Docentes que renunciaron a su carga lectiva (nombre en MAYÚSCULAS tal como aparece en el JSON)
-const RENUNCIARON = new Set([
-  "RECUAY SALAZAR CARLOS ALBERTO",
-]);
+type SeguridadFlag = { id: number; nombre: string; tipo: string; observacion: string | null };
 
-function esRenunciado(nombre: string) {
-  return RENUNCIARON.has(nombre.trim().toUpperCase());
-}
+const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
+const TIPO_LABEL: Record<string, string> = {
+  RENUNCIO_CARGA:      "Renunció a su carga lectiva",
+  NO_REGRESA:          "No regresa este semestre",
+  CAMBIO_PLANIFICACION:"Cambio en la planificación",
+  BAJA_TEMPORAL:       "Baja temporal",
+  OTRO:                "Otro",
+};
 
 const LOCAL_COLOR: Record<string, string> = {
   PRINCIPAL: "bg-blue-100 text-blue-800 border-blue-200",
@@ -270,15 +285,26 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
   const [search,   setSearch]   = useState("");
   const [localFiltro, setLocalFiltro] = useState("TODOS");
   const [exporting, setExporting] = useState(false);
+  const [flags, setFlags] = useState<SeguridadFlag[]>([]);
+
+  const flagMap = useMemo(() => {
+    const m = new Map<string, SeguridadFlag>();
+    flags.forEach(f => m.set(f.nombre.trim().toUpperCase(), f));
+    return m;
+  }, [flags]);
+
+  const getFlag = useCallback((nombre: string) => flagMap.get(nombre.trim().toUpperCase()) ?? null, [flagMap]);
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
     Promise.all([
       fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.json()),
       fetch(`${base}planificacion-fcs-2026-1.json`).then(r => r.json()),
-    ]).then(([fica, fcs]) => {
+      fetch(`${apiBase}/api/seguridad-docentes`, { credentials: "include" }).then(r => r.ok ? r.json() : []),
+    ]).then(([fica, fcs, segs]) => {
       setFicaData(fica);
       setFcsData(fcs);
+      setFlags(segs);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -312,7 +338,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
     if (exporting) return;
     setExporting(true);
     try {
-      await exportExcel(docentes, facultad, import.meta.env.BASE_URL);
+      await exportExcel(docentes, facultad, import.meta.env.BASE_URL, flagMap);
       const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
       fetch(`${base}/api/activity/log`, {
         method: "POST",
@@ -447,7 +473,9 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
               </thead>
               <tbody>
                 {docentes.map((d, i) => {
-                  const renuncio = esRenunciado(d.nombre);
+                  const flag = getFlag(d.nombre);
+                  const renuncio = flag?.tipo === "RENUNCIO_CARGA" || flag?.tipo === "NO_REGRESA";
+                  const tieneFlag = !!flag;
                   return (
                     <tr
                       key={d.nombre}
@@ -466,9 +494,13 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
                           <span className={`text-sm font-semibold ${renuncio ? "text-red-700" : "text-foreground"}`}>
                             {d.nombre}
                           </span>
-                          {renuncio && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 whitespace-nowrap">
-                              RENUNCIÓ
+                          {tieneFlag && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
+                              renuncio
+                                ? "bg-red-100 text-red-700 border-red-200"
+                                : "bg-amber-100 text-amber-700 border-amber-200"
+                            }`}>
+                              {flag!.tipo === "RENUNCIO_CARGA" ? "RENUNCIÓ" : flag!.tipo === "NO_REGRESA" ? "NO REGRESA" : flag!.tipo === "BAJA_TEMPORAL" ? "BAJA TEMP." : flag!.tipo === "CAMBIO_PLANIFICACION" ? "CAMBIO" : "OBSERVADO"}
                             </span>
                           )}
                         </div>
@@ -508,8 +540,13 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
                       <td className="px-3 py-2.5 text-right">
                         {renuncio ? (
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-700 border border-red-200">
-                            RENUNCIÓ
+                            {flag!.tipo === "RENUNCIO_CARGA" ? "RENUNCIÓ" : "NO REGRESA"}
                           </span>
+                        ) : tieneFlag ? (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-sm font-bold text-emerald-700">{d.horasAcad > 0 ? `${d.horasAcad}h` : "—"}</span>
+                            <span className="text-[9px] text-amber-600 font-semibold">⚠ ver seguridad</span>
+                          </div>
                         ) : d.horasAcad > 0
                           ? <span className="text-sm font-bold text-emerald-700">{d.horasAcad}h</span>
                           : <span className="text-muted-foreground font-normal">—</span>
