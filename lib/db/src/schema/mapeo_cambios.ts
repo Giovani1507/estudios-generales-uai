@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const mapeoCambiosTable = pgTable("mapeo_cambios", {
   id:               serial("id").primaryKey(),
@@ -13,6 +13,9 @@ export const mapeoCambiosTable = pgTable("mapeo_cambios", {
   observaciones:    text("observaciones"),
   registradoPor:    text("registrado_por"),
   registradoEn:     timestamp("registrado_en").notNull().defaultNow(),
+  resuelto:         boolean("resuelto").notNull().default(false),
+  resueltaEn:       timestamp("resuelta_en"),
+  resueltaPor:      text("resuelta_por"),
 });
 
 export type MapeoCambio = typeof mapeoCambiosTable.$inferSelect;

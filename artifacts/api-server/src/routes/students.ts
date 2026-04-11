@@ -484,6 +484,30 @@ router.post("/mapeo-cambios", requireAuth, async (req: any, res) => {
   }
 });
 
+// PUT /api/students/mapeo-cambios/:id — toggle resuelto
+router.put("/mapeo-cambios/:id", requireAuth, async (req: any, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
+    const { resuelto } = req.body as { resuelto: boolean };
+    const resueltaPor = req.currentUser?.username ?? "sistema";
+    const [row] = await db
+      .update(mapeoCambiosTable)
+      .set({
+        resuelto,
+        resueltaEn: resuelto ? new Date() : null,
+        resueltaPor: resuelto ? resueltaPor : null,
+      })
+      .where(eq(mapeoCambiosTable.id, id))
+      .returning();
+    if (!row) { res.status(404).json({ error: "No encontrado" }); return; }
+    res.json(row);
+  } catch (err) {
+    console.error("Mapeo-cambios PUT error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // DELETE /api/students/mapeo-cambios/:id — delete one
 router.delete("/mapeo-cambios/:id", requireAuth, async (req, res) => {
   try {
