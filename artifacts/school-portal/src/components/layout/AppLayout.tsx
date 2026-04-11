@@ -42,6 +42,7 @@ import {
   DatabaseZap,
   FileEdit,
   ShieldAlert,
+  UserX,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -71,12 +72,6 @@ const menuItems: MenuItem[] = [
     title: "Calendario 2026",
     url: "/calendario",
     icon: CalendarIcon,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Estudiantes",
-    url: "/estudiantes",
-    icon: Users,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
@@ -142,6 +137,7 @@ const menuItems: MenuItem[] = [
 ];
 
 function getPageTitle(pathname: string) {
+  if (pathname === "/estudiantes/sin-matricula") return "Estudiantes sin Matrícula";
   const match = menuItems.find((item) => item.url === pathname);
   if (match) return match.title;
   if (pathname === "/login") return "Inicio de sesión";
@@ -169,6 +165,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
   const [listaOpen, setListaOpen] = useState(
     location.startsWith("/lista-docentes")
+  );
+  const [estudiantesOpen, setEstudiantesOpen] = useState(
+    location.startsWith("/estudiantes")
   );
   const [gridOpen, setGridOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -326,6 +325,45 @@ export function AppLayout({ children }: { children: ReactNode }) {
                               {planOpen && (
                                 <div className="bg-black/15">
                                   {subItems.map(({ href, label, Icon }) => (
+                                    <Link
+                                      key={href}
+                                      href={href}
+                                      className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                        location === href
+                                          ? "bg-white/20 text-white font-semibold"
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
+                                    >
+                                      <Icon className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1">{label}</span>
+                                      <ChevronRight className="w-3 h-3 text-white/40" />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </SidebarMenuItem>
+                        )}
+
+                        {/* Estudiantes submenu after Horario por Carrera */}
+                        {idx === 1 && (
+                          <SidebarMenuItem>
+                            <div className="border-b border-white/10">
+                              <button
+                                onClick={() => setEstudiantesOpen((o) => !o)}
+                                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                <Users className="w-4 h-4 shrink-0 text-white/80" />
+                                <span className="text-sm flex-1 text-left">Estudiantes</span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${estudiantesOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                              {estudiantesOpen && (
+                                <div className="bg-black/15">
+                                  {[
+                                    { href: "/estudiantes/sin-matricula", label: "Sin Matrícula", Icon: UserX },
+                                  ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}
                                       href={href}

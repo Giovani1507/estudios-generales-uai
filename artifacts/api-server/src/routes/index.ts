@@ -14,6 +14,7 @@ import studentsRouter from "./students.js";
 import rectificacionesRouter from "./rectificaciones.js";
 import seguridadDocentesRouter from "./seguridad-docentes.js";
 import seguridadIncidenciasRouter from "./seguridad-incidencias.js";
+import sinMatriculaRouter from "./sin-matricula.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/students", studentsRouter);
 router.use("/rectificaciones", rectificacionesRouter);
 router.use("/seguridad-docentes", seguridadDocentesRouter);
 router.use("/seguridad-incidencias", seguridadIncidenciasRouter);
+router.use("/sin-matricula", sinMatriculaRouter);
 
 export default router;

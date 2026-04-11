@@ -15,3 +15,4 @@ export * from "./mapeo_cambios";
 export * from "./rectificaciones";
 export * from "./seguridad_docentes";
 export * from "./seguridad_incidencias";
+export * from "./estudiantes_sin_matricula";
