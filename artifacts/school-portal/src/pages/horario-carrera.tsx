@@ -73,15 +73,18 @@ function baseSeccion(s: string) { return s.replace(/\d+$/, ""); }
 function normDia(d: string) {
   return d.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
+function padHora(hora: string) {
+  return hora.trim().replace(/^(\d):/, "0$1:");
+}
 function slotIdx(hora: string) {
-  const h = hora.trim();
+  const h = padHora(hora);
   const i = SLOTS.findIndex(s => s.start === h);
   if (i >= 0) return i;
   const j = SLOTS.findIndex(s => s.start >= h);
   return j >= 0 ? j : 0;
 }
 function slotEndIdx(horaFin: string) {
-  const h = horaFin.trim();
+  const h = padHora(horaFin);
   const i = SLOTS.findIndex(s => s.end === h);
   if (i >= 0) return i;
   const j = SLOTS.findIndex(s => s.end >= h);

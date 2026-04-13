@@ -212,8 +212,8 @@ export default function HorarioDocente() {
     ];
     const FIRST_DATA_ROW = 6; // fila Excel donde empieza la primera franja
 
-    // Normaliza la hora (elimina espacios)
-    const norm = (h: string) => (h ?? "").trim().replace(/\s/g, "");
+    // Normaliza la hora (elimina espacios y agrega cero inicial si es necesario)
+    const norm = (h: string) => (h ?? "").trim().replace(/\s/g, "").replace(/^(\d):/, "0$1:");
 
     function findStartRow(hora: string): number {
       const h = norm(hora);

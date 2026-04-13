@@ -74,16 +74,19 @@ function normDia(d: string) {
   return d.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
+function padHora(h: string) {
+  return h.trim().replace(/^(\d):/, "0$1:");
+}
 function slotIdx(h: string) {
-  const i = SLOTS.indexOf(h.trim());
-  return i >= 0 ? i : SLOTS.findIndex(s => s >= h.trim());
+  const norm = padHora(h);
+  const i = SLOTS.indexOf(norm);
+  return i >= 0 ? i : SLOTS.findIndex(s => s >= norm);
 }
 
 function slotEndIdx(h: string) {
-  const t = h.trim();
+  const t = padHora(h);
   const i = SLOTS.findIndex(s => SLOT_END[s] === t || s === t);
   if (i >= 0) return i;
-  // find slot whose end matches
   const j = SLOTS.findIndex(s => SLOT_END[s] >= t);
   return j >= 0 ? j : SLOTS.length - 1;
 }
