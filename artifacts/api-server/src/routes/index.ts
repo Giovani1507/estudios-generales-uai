@@ -15,6 +15,7 @@ import rectificacionesRouter from "./rectificaciones.js";
 import seguridadDocentesRouter from "./seguridad-docentes.js";
 import seguridadIncidenciasRouter from "./seguridad-incidencias.js";
 import sinMatriculaRouter from "./sin-matricula.js";
+import sinVacanteRouter from "./sin-vacante.js";
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use("/rectificaciones", rectificacionesRouter);
 router.use("/seguridad-docentes", seguridadDocentesRouter);
 router.use("/seguridad-incidencias", seguridadIncidenciasRouter);
 router.use("/sin-matricula", sinMatriculaRouter);
+router.use("/sin-vacante", sinVacanteRouter);
 
 export default router;

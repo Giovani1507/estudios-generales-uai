@@ -138,6 +138,7 @@ const menuItems: MenuItem[] = [
 
 function getPageTitle(pathname: string) {
   if (pathname === "/estudiantes/sin-matricula") return "Estudiantes sin Matrícula";
+  if (pathname === "/estudiantes/sin-vacante")   return "Estudiantes sin Vacante";
   const match = menuItems.find((item) => item.url === pathname);
   if (match) return match.title;
   if (pathname === "/login") return "Inicio de sesión";
@@ -363,6 +364,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                 <div className="bg-black/15">
                                   {[
                                     { href: "/estudiantes/sin-matricula", label: "Sin Matrícula", Icon: UserX },
+                                    { href: "/estudiantes/sin-vacante",   label: "Sin Vacante",   Icon: AlertTriangle },
                                   ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}

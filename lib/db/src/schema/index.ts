@@ -16,3 +16,4 @@ export * from "./rectificaciones";
 export * from "./seguridad_docentes";
 export * from "./seguridad_incidencias";
 export * from "./estudiantes_sin_matricula";
+export * from "./estudiantes_sin_vacante";

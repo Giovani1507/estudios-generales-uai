@@ -33,6 +33,7 @@ import ReporteEstudiantes from "@/pages/reporte-estudiantes";
 import MapeoEstudiantes from "@/pages/mapeo-estudiantes";
 import VerificacionData from "@/pages/verificacion-data";
 import SinMatriculaAdmin from "@/pages/sin-matricula-admin";
+import SinVacanteAdmin from "@/pages/sin-vacante-admin";
 import RegistroSinMatricula from "@/pages/registro-sin-matricula";
 import RegistroRectificacion from "@/pages/registro-rectificacion";
 import RectificacionesAdmin from "@/pages/rectificaciones-admin";
@@ -102,6 +103,10 @@ function AppRouter() {
       <Route
         path="/estudiantes/sin-matricula"
         component={() => <ProtectedRoute component={SinMatriculaAdmin} />}
+      />
+      <Route
+        path="/estudiantes/sin-vacante"
+        component={() => <ProtectedRoute component={SinVacanteAdmin} />}
       />
       <Route
         path="/docentes/horario-fica"
