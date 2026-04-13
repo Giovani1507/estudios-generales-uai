@@ -131,15 +131,10 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       .catch(() => setLoading(false));
   }, [faculty, jsonFile]);
 
-  /* Solo ciclos 1 y 2 */
-  const dataCiclo12 = useMemo(() =>
-    data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
-  [data]);
-
   /* Docentes únicos ordenados */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number; horasAcad: number }>();
-    dataCiclo12.forEach(r => {
+    data.forEach(r => {
       if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0, horasAcad: 0 });
@@ -152,7 +147,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [dataCiclo12]);
+  }, [data]);
 
   const filteredTeachers = useMemo(() => {
     const q = search.toLowerCase();
@@ -161,14 +156,14 @@ export default function HorarioDocenteBase({ faculty }: Props) {
 
   const courses = useMemo(() => {
     if (!selected) return [];
-    return dataCiclo12
+    return data
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
-  }, [dataCiclo12, selected]);
+  }, [data, selected]);
 
   const totals = useMemo(() => {
     const sedeMap = new Map<string, number>();
@@ -232,7 +227,10 @@ export default function HorarioDocenteBase({ faculty }: Props) {
       { start: "22:40", end: "23:30" },
     ];
     const FIRST_DATA_ROW = 6;
-    const norm = (h: string) => (h ?? "").trim().replace(/\s/g, "");
+    const norm = (h: string) => {
+      const s = (h ?? "").trim().replace(/\s/g, "");
+      return s.replace(/^(\d):/, "0$1:");
+    };
 
     function findStartRow(hora: string): number {
       const h = norm(hora);
@@ -420,7 +418,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     for (let i = 0; i < teachers.length; i++) {
       const t = teachers[i];
       setBulkProgress({ current: i + 1, total: teachers.length });
-      const teacherRows = dataCiclo12.filter(
+      const teacherRows = data.filter(
         r => r.docente?.toUpperCase().trim() === t.nombre,
       );
       if (teacherRows.length === 0) continue;
