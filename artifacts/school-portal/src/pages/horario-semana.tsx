@@ -161,38 +161,36 @@ export default function HorarioSemana() {
       const col  = DIA_COLOR[dia] ?? { bg: "#f8fafc", text: "#334155", border: "#e2e8f0" };
       const rowsHtml = rows.map((r, i) => `
         <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"}">
-          <td style="padding:6px 8px;white-space:nowrap;font-weight:700;color:${col.text};font-size:10px;">
-            ${padH(r.hora)}<br/><span style="font-weight:400;color:#94a3b8;">↓</span><br/>${padH(r.horaFin)}
+          <td style="padding:3px 6px;white-space:nowrap;font-weight:700;color:${col.text};font-size:8px;">${padH(r.hora)}–${padH(r.horaFin)}</td>
+          <td style="padding:3px 6px;font-size:8px;">
+            <span style="background:#001F5F;color:white;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;">${r.carreraFull}</span>
+            <span style="background:#C9A84C;color:#001F5F;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;margin-left:3px;">C${r.ciclo}·${r.seccion}</span>
           </td>
-          <td style="padding:6px 8px;font-size:10px;">
-            <span style="background:#001F5F;color:white;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;">${r.carreraFull}</span>
-            <span style="background:#C9A84C;color:#001F5F;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px;">Ciclo ${r.ciclo} · ${r.seccion}</span>
+          <td style="padding:3px 6px;font-size:8px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
+          <td style="padding:3px 6px;font-size:8px;color:#475569;">${r.docente}</td>
+          <td style="padding:3px 6px;font-size:8px;">
+            ${r.aula ? `<span style="background:#fef9c3;color:#854d0e;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #fde68a;">${r.aula}</span>` : ""}
+            ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #6ee7b7;margin-left:2px;">${r.laboratorio}</span>` : ""}
+            ${!r.aula && !r.laboratorio ? `<span style="color:#94a3b8;font-size:7px;">${r.modalidad}</span>` : ""}
           </td>
-          <td style="padding:6px 8px;font-size:10px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
-          <td style="padding:6px 8px;font-size:10px;color:#475569;">${r.docente}</td>
-          <td style="padding:6px 8px;font-size:10px;">
-            ${r.aula ? `<span style="background:#fef9c3;color:#854d0e;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;border:1px solid #fde68a;">${r.aula}</span>` : ""}
-            ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;border:1px solid #6ee7b7;margin-left:2px;">${r.laboratorio}</span>` : ""}
-            ${!r.aula && !r.laboratorio ? `<span style="color:#94a3b8;font-size:9px;">${r.modalidad}</span>` : ""}
-          </td>
-          <td style="padding:6px 8px;font-size:9px;color:#94a3b8;">${r.local}</td>
+          <td style="padding:3px 6px;font-size:7px;color:#94a3b8;">${r.local}</td>
         </tr>`).join("");
 
       return `
-        <div style="margin-bottom:20px;break-inside:avoid;">
-          <div style="background:${col.text};color:white;padding:8px 14px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-weight:800;font-size:13px;">${DIAS_LABEL[dia]}</span>
-            <span style="background:white;color:${col.text};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;">${rows.length} clase${rows.length !== 1 ? "s" : ""}</span>
+        <div style="margin-bottom:16px;">
+          <div style="background:${col.text};color:white;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;break-after:avoid;page-break-after:avoid;">
+            <span style="font-weight:800;font-size:12px;">${DIAS_LABEL[dia]}</span>
+            <span style="background:white;color:${col.text};padding:2px 10px;border-radius:20px;font-size:9px;font-weight:700;">${rows.length} clase${rows.length !== 1 ? "s" : ""}</span>
           </div>
-          <table style="width:100%;border-collapse:collapse;border:1px solid ${col.border};border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
-            <thead>
+          <table style="width:100%;border-collapse:collapse;border:1px solid ${col.border};border-top:none;">
+            <thead style="display:table-header-group;">
               <tr style="background:${col.bg};">
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">HORA</th>
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CARRERA / CICLO</th>
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CURSO</th>
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">DOCENTE</th>
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">AULA / LAB</th>
-                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">LOCAL</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};white-space:nowrap;">HORA</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CARRERA / CICLO</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CURSO</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">DOCENTE</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">AULA / LAB</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">LOCAL</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
