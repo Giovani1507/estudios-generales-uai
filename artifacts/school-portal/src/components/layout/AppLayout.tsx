@@ -63,6 +63,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Horario por Semana",
+    url: "/horarios/semana",
+    icon: CalendarDays,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Horario por Carrera",
     url: "/horarios/seccion",
     icon: GraduationCap,
@@ -245,11 +251,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       Icon: School,
     },
     {
-      href: "/horarios/semana",
-      label: "Horario por Semana",
-      Icon: CalendarDays,
-    },
-    {
       href: "/planificacion/crear",
       label: "Crear Planificación",
       Icon: ClipboardList,
@@ -354,7 +355,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         )}
 
                         {/* Estudiantes submenu after Horario por Carrera */}
-                        {idx === 1 && (
+                        {idx === 2 && (
                           <SidebarMenuItem>
                             <div className="border-b border-white/10">
                               <button
