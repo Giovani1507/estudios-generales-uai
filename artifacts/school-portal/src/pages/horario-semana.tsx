@@ -3,7 +3,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2 } from "lucide-react";
+import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical } from "lucide-react";
 
 const NAVY = "#001F5F";
 const GOLD = "#C9A84C";
@@ -44,6 +44,9 @@ interface Row {
   dia: string;
   hora: string;
   horaFin: string;
+  pabellon?: string;
+  aula?: string;
+  laboratorio?: string;
   facultad: "FICA" | "FCS";
 }
 
@@ -318,7 +321,7 @@ export default function HorarioSemana() {
                             <span className="text-[10px] text-slate-400 flex-shrink-0">({r.tipo})</span>
                           </div>
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 mb-0.5">
                             <User className="w-3 h-3 text-slate-400 flex-shrink-0" />
                             <p className="text-xs text-slate-500 truncate">{r.docente}</p>
                             <span
@@ -328,6 +331,29 @@ export default function HorarioSemana() {
                               {r.local}
                             </span>
                           </div>
+
+                          {(r.aula || r.laboratorio) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              {r.aula && (
+                                <span
+                                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md"
+                                  style={{ background: "#fef9c3", color: "#854d0e", border: "1px solid #fde68a" }}
+                                >
+                                  <DoorOpen className="w-3 h-3" />
+                                  {r.aula}
+                                </span>
+                              )}
+                              {r.laboratorio && (
+                                <span
+                                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md"
+                                  style={{ background: "#d1fae5", color: "#065f46", border: "1px solid #6ee7b7" }}
+                                >
+                                  <FlaskConical className="w-3 h-3" />
+                                  {r.laboratorio}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
