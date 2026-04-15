@@ -3,7 +3,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical } from "lucide-react";
+import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const NAVY = "#001F5F";
 const GOLD = "#C9A84C";
@@ -132,6 +133,99 @@ export default function HorarioSemana() {
   const totalDocentes  = new Set(filtered.map(r => r.docente)).size;
   const totalCarreras  = new Set(filtered.map(r => r.carreraFull)).size;
 
+  const printHorario = () => {
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    const logoUrl = `${window.location.origin}${base}/logo-uai.png`;
+
+    const filterLabel = [
+      facultad  !== "TODAS" ? `Facultad: ${facultad}` : null,
+      local     !== "TODOS" ? `Local: ${local}`        : null,
+      ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
+        : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
+      diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
+    ].filter(Boolean).join(" · ") || "Todos los filtros";
+
+    const diasHtml = diasConClases.map(dia => {
+      const rows = byDay.get(dia) ?? [];
+      const col  = DIA_COLOR[dia] ?? { bg: "#f8fafc", text: "#334155", border: "#e2e8f0" };
+      const rowsHtml = rows.map((r, i) => `
+        <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"}">
+          <td style="padding:6px 8px;white-space:nowrap;font-weight:700;color:${col.text};font-size:10px;">
+            ${padH(r.hora)}<br/><span style="font-weight:400;color:#94a3b8;">↓</span><br/>${padH(r.horaFin)}
+          </td>
+          <td style="padding:6px 8px;font-size:10px;">
+            <span style="background:#001F5F;color:white;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;">${r.carreraFull}</span>
+            <span style="background:#C9A84C;color:#001F5F;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px;">Ciclo ${r.ciclo} · ${r.seccion}</span>
+          </td>
+          <td style="padding:6px 8px;font-size:10px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
+          <td style="padding:6px 8px;font-size:10px;color:#475569;">${r.docente}</td>
+          <td style="padding:6px 8px;font-size:10px;">
+            ${r.aula ? `<span style="background:#fef9c3;color:#854d0e;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;border:1px solid #fde68a;">${r.aula}</span>` : ""}
+            ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;border:1px solid #6ee7b7;margin-left:2px;">${r.laboratorio}</span>` : ""}
+            ${!r.aula && !r.laboratorio ? `<span style="color:#94a3b8;font-size:9px;">${r.modalidad}</span>` : ""}
+          </td>
+          <td style="padding:6px 8px;font-size:9px;color:#94a3b8;">${r.local}</td>
+        </tr>`).join("");
+
+      return `
+        <div style="margin-bottom:20px;break-inside:avoid;">
+          <div style="background:${col.text};color:white;padding:8px 14px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-weight:800;font-size:13px;">${DIAS_LABEL[dia]}</span>
+            <span style="background:white;color:${col.text};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;">${rows.length} clase${rows.length !== 1 ? "s" : ""}</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;border:1px solid ${col.border};border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+            <thead>
+              <tr style="background:${col.bg};">
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">HORA</th>
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CARRERA / CICLO</th>
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CURSO</th>
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">DOCENTE</th>
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">AULA / LAB</th>
+                <th style="padding:5px 8px;text-align:left;font-size:9px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">LOCAL</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>`;
+    }).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Horario por Semana · UAI 2026-I</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; padding: 24px; background: white; color: #1e293b; }
+    @media print {
+      body { padding: 12px; }
+      @page { margin: 1cm; size: A4 landscape; }
+    }
+    .no-print { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()" style="background:#001F5F;color:white;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold;">🖨️ Imprimir / Guardar PDF</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #001F5F;">
+    <img src="${logoUrl}" style="height:56px;object-fit:contain;" alt="UAI" />
+    <div>
+      <h1 style="font-size:18px;font-weight:900;color:#001F5F;">HORARIO POR SEMANA · 2026-I</h1>
+      <p style="font-size:11px;color:#64748b;margin-top:2px;">Universidad Autónoma de Ica · Filtros: ${filterLabel}</p>
+      <p style="font-size:10px;color:#94a3b8;">Total: ${filtered.length} clases · ${diasConClases.length} días · ${totalDocentes} docentes · ${totalCarreras} carreras</p>
+    </div>
+  </div>
+  ${diasHtml}
+  <p style="text-align:center;font-size:9px;color:#94a3b8;margin-top:20px;">Generado el ${new Date().toLocaleDateString("es-PE", { day:"2-digit", month:"long", year:"numeric" })}</p>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 gap-2 text-muted-foreground">
@@ -142,14 +236,24 @@ export default function HorarioSemana() {
 
   return (
     <div className="space-y-5 pb-10">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: NAVY }}>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: NAVY }}>
           <CalendarDays className="w-5 h-5 text-white" />
         </div>
         <div>
           <h1 className="text-xl font-bold" style={{ color: NAVY }}>Horario por Semana</h1>
           <p className="text-xs text-muted-foreground">Vista semanal de clases · 2026-I</p>
         </div>
+        <Button
+          size="sm"
+          className="ml-auto text-white font-semibold"
+          style={{ background: NAVY }}
+          onClick={printHorario}
+          disabled={diasConClases.length === 0}
+        >
+          <Printer className="w-4 h-4 mr-1.5" />
+          Imprimir / PDF
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
