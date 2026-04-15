@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { CheckCircle2, Users, Loader2, ChevronRight, Star } from "lucide-react";
+import { CheckCircle2, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+const BASE_URL = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
 const NAVY = "#001F5F";
 const GOLD = "#C9A84C";
 
@@ -27,79 +28,7 @@ const CARRERAS = [
   "TERAPIA FÍSICA Y REHABILITACIÓN",
 ];
 
-function WelcomeScreen({ onStart }: { onStart: () => void }) {
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "linear-gradient(135deg, #001F5F 0%, #003399 100%)" }}
-    >
-      <div className="text-center max-w-sm w-full space-y-8 flex flex-col items-center">
-        <div className="relative">
-          <div
-            className="w-28 h-28 rounded-full flex items-center justify-center mx-auto shadow-2xl"
-            style={{ background: GOLD }}
-          >
-            <Star className="w-14 h-14 text-white" fill="white" />
-          </div>
-          <span
-            className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap shadow"
-            style={{ background: "#003399", border: "2px solid " + GOLD }}
-          >
-            UAI · 2026-I
-          </span>
-        </div>
-
-        <div className="space-y-3 pt-4">
-          <p className="text-yellow-300 font-bold text-lg tracking-widest uppercase">
-            ¡Bienvenido, UAINO!
-          </p>
-          <h1 className="text-white font-extrabold leading-tight" style={{ fontSize: "2rem" }}>
-            Sé el líder de<br />tu salón
-          </h1>
-          <p className="text-blue-200 text-sm leading-relaxed px-4">
-            Regístrate como <span className="text-yellow-300 font-semibold">Delegado</span> de tu sección y
-            representa a tus compañeros este ciclo.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 w-full px-4 pt-2">
-          <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 text-left">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: GOLD }}>
-              <span className="text-white font-bold text-xs">1</span>
-            </div>
-            <p className="text-blue-100 text-sm">Llena el formulario con tus datos</p>
-          </div>
-          <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 text-left">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: GOLD }}>
-              <span className="text-white font-bold text-xs">2</span>
-            </div>
-            <p className="text-blue-100 text-sm">Tu registro queda guardado al instante</p>
-          </div>
-          <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 text-left">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: GOLD }}>
-              <span className="text-white font-bold text-xs">3</span>
-            </div>
-            <p className="text-blue-100 text-sm">La coordinación se contactará contigo</p>
-          </div>
-        </div>
-
-        <Button
-          onClick={onStart}
-          className="w-full h-14 font-bold text-base rounded-2xl shadow-xl flex items-center justify-center gap-2"
-          style={{ background: GOLD, color: NAVY }}
-        >
-          Registrarme como Delegado
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-
-        <p className="text-blue-300 text-xs pb-4">Solo Ciclo 1 y Ciclo 2 · Universidad Autónoma de Ica</p>
-      </div>
-    </div>
-  );
-}
-
 export default function RegistroDelegado() {
-  const [step, setStep] = useState<"welcome" | "form">("welcome");
   const [form, setForm] = useState({
     apellidosNombres: "",
     carrera: "",
@@ -142,12 +71,11 @@ export default function RegistroDelegado() {
     }
   };
 
-  if (step === "welcome") return <WelcomeScreen onStart={() => setStep("form")} />;
-
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #001F5F 0%, #003399 100%)" }}>
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center space-y-4">
+          <img src={`${BASE_URL}/logo-uai.png`} alt="UAI" className="h-14 mx-auto object-contain" />
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: "#dcfce7" }}>
             <CheckCircle2 className="w-9 h-9 text-green-600" />
           </div>
@@ -164,7 +92,7 @@ export default function RegistroDelegado() {
           <Button
             className="w-full text-white"
             style={{ background: NAVY }}
-            onClick={() => { setSuccess(false); setStep("welcome"); setForm({ apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "" }); }}
+            onClick={() => { setSuccess(false); setForm({ apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "" }); }}
           >
             Registrar otro delegado
           </Button>
@@ -176,12 +104,20 @@ export default function RegistroDelegado() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: "linear-gradient(135deg, #001F5F 0%, #003399 100%)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="px-8 pt-8 pb-5 text-center" style={{ background: NAVY }}>
-          <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: GOLD }}>
-            <Users className="w-7 h-7 text-white" />
+        <div className="px-8 pt-7 pb-5 text-center" style={{ background: NAVY }}>
+          <img
+            src={`${BASE_URL}/logo-uai.png`}
+            alt="Universidad Autónoma de Ica"
+            className="h-16 mx-auto object-contain mb-4"
+          />
+          <div
+            className="inline-block px-3 py-0.5 rounded-full text-xs font-bold mb-3"
+            style={{ background: GOLD, color: NAVY }}
+          >
+            EE.GG · Estudios Generales
           </div>
-          <h1 className="text-xl font-bold text-white">Registro de Delegados</h1>
-          <p className="text-blue-200 text-sm mt-1">Universidad Autónoma de Ica · 2026-I</p>
+          <h1 className="text-lg font-bold text-white leading-tight">Registro de Delegados</h1>
+          <p className="text-blue-200 text-xs mt-1">Universidad Autónoma de Ica · 2026-I</p>
           <div className="flex justify-center gap-2 mt-3">
             <span className="px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/30">Ciclo 1</span>
             <span className="px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/30">Ciclo 2</span>
