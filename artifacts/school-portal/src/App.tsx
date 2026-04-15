@@ -34,6 +34,8 @@ import MapeoEstudiantes from "@/pages/mapeo-estudiantes";
 import VerificacionData from "@/pages/verificacion-data";
 import SinMatriculaAdmin from "@/pages/sin-matricula-admin";
 import SinVacanteAdmin from "@/pages/sin-vacante-admin";
+import DelegadosAdmin from "@/pages/delegados-admin";
+import RegistroDelegado from "@/pages/registro-delegado";
 import RegistroSinMatricula from "@/pages/registro-sin-matricula";
 import RegistroRectificacion from "@/pages/registro-rectificacion";
 import RectificacionesAdmin from "@/pages/rectificaciones-admin";
@@ -108,6 +110,11 @@ function AppRouter() {
         path="/estudiantes/sin-vacante"
         component={() => <ProtectedRoute component={SinVacanteAdmin} />}
       />
+      <Route
+        path="/estudiantes/delegados"
+        component={() => <ProtectedRoute component={DelegadosAdmin} />}
+      />
+      <Route path="/registro-delegado" component={RegistroDelegado} />
       <Route
         path="/docentes/horario-fica"
         component={() => <ProtectedRoute component={HorarioDocenteFica} />}
