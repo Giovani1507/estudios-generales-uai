@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Trash2, Download, RefreshCw, Search, QrCode, X, Copy, CheckCircle2 } from "lucide-react";
+import { Users, Trash2, Download, RefreshCw, Search, QrCode, X, Copy, CheckCircle2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import * as ExcelJS from "exceljs";
@@ -131,6 +131,103 @@ export default function DelegadosAdmin() {
     });
   };
 
+  const printQR = () => {
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    const logoUrl = `${window.location.origin}${base}/logo-uai.png`;
+    const encoded = encodeURIComponent(QR_URL);
+    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}&color=001F5F&bgcolor=ffffff&margin=10`;
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>QR Delegados UAI</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f4ff; }
+    .card {
+      background:white;
+      width:380px;
+      padding:36px 30px 28px;
+      border-radius:20px;
+      box-shadow:0 8px 40px rgba(0,31,95,0.18);
+      text-align:center;
+    }
+    .logo { height:64px; margin-bottom:18px; object-fit:contain; }
+    .header {
+      background:#001F5F;
+      border-radius:12px;
+      padding:14px 20px;
+      margin-bottom:20px;
+    }
+    .header .badge {
+      font-size:10px; font-weight:700; letter-spacing:2px;
+      color:#C9A84C; text-transform:uppercase; margin-bottom:4px;
+    }
+    .header .title { font-size:26px; font-weight:900; color:white; line-height:1.1; }
+    .subtitle { font-size:13px; color:#555; margin-bottom:18px; line-height:1.5; }
+    .qr-wrap {
+      display:inline-block;
+      border:6px solid #001F5F;
+      border-radius:16px;
+      padding:10px;
+      background:white;
+      margin-bottom:18px;
+    }
+    .qr-wrap img { width:240px; height:240px; display:block; }
+    .instruction {
+      background:#f8f9fa;
+      border-radius:10px;
+      padding:12px 16px;
+      margin-bottom:16px;
+    }
+    .instruction p { font-size:11px; color:#666; }
+    .instruction .url { font-size:8px; color:#001F5F; word-break:break-all; margin-top:4px; font-weight:600; }
+    .ciclos { display:flex; justify-content:center; gap:10px; margin-bottom:16px; }
+    .ciclo-badge {
+      padding:4px 16px; border-radius:20px;
+      font-size:11px; font-weight:700;
+    }
+    .footer { font-size:10px; color:#aaa; }
+    @media print {
+      body { background:white; }
+      .card { box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="${logoUrl}" class="logo" alt="UAI" />
+    <div class="header">
+      <div class="badge">EE.GG · Estudios Generales · UAI</div>
+      <div class="title">REGÍSTRATE<br/>DELEGADO</div>
+    </div>
+    <p class="subtitle">Escanea el código QR con tu celular<br/>y regístrate como delegado de tu sección</p>
+    <div class="qr-wrap">
+      <img src="${qrImgUrl}" alt="QR Registro Delegados" />
+    </div>
+    <div class="instruction">
+      <p>¿Sin cámara? Ingresa al enlace:</p>
+      <p class="url">${QR_URL}</p>
+    </div>
+    <div class="ciclos">
+      <span class="ciclo-badge" style="background:#C9A84C;color:#001F5F;">CICLO 1</span>
+      <span class="ciclo-badge" style="background:#001F5F;color:white;">CICLO 2</span>
+    </div>
+    <p class="footer">Universidad Autónoma de Ica · 2026-I</p>
+  </div>
+  <script>
+    document.querySelector('.qr-wrap img').onload = function() {
+      setTimeout(function() { window.print(); }, 400);
+    };
+  <\/script>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank", "width=500,height=700");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return rows.filter(r =>
@@ -225,6 +322,15 @@ export default function DelegadosAdmin() {
                 Abrir
               </Button>
             </div>
+            <Button
+              size="sm"
+              className="w-full font-semibold text-white"
+              style={{ background: GOLD, color: NAVY }}
+              onClick={printQR}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir QR
+            </Button>
             <div className="w-full text-center">
               <p className="text-xs text-muted-foreground">Comparte este QR con los estudiantes para que se registren como delegados</p>
             </div>
