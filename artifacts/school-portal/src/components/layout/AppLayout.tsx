@@ -140,6 +140,7 @@ function getPageTitle(pathname: string) {
   if (pathname === "/estudiantes/sin-matricula") return "Estudiantes sin Matrícula";
   if (pathname === "/estudiantes/sin-vacante")   return "Estudiantes sin Vacante";
   if (pathname === "/estudiantes/delegados")     return "Delegados";
+  if (pathname === "/horarios/semana")           return "Horario por Semana";
   const match = menuItems.find((item) => item.url === pathname);
   if (match) return match.title;
   if (pathname === "/login") return "Inicio de sesión";
@@ -242,6 +243,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       href: "/horarios/carrera",
       label: "Horario por Aula",
       Icon: School,
+    },
+    {
+      href: "/horarios/semana",
+      label: "Horario por Semana",
+      Icon: CalendarDays,
     },
     {
       href: "/planificacion/crear",

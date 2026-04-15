@@ -23,6 +23,7 @@ import StudentsPage from "@/pages/StudentsPage";
 import HorarioDocenteFica from "@/pages/horario-docente-fica";
 import HorarioDocenteFcs from "@/pages/horario-docente-fcs";
 import HorarioCarrera from "@/pages/horario-carrera";
+import HorarioSemana from "@/pages/horario-semana";
 import CrearPlanificacion from "@/pages/crear-planificacion";
 import HorarioCruce from "@/pages/horario-cruce";
 import ListaDocentes from "@/pages/lista-docentes";
@@ -126,6 +127,10 @@ function AppRouter() {
       <Route
         path="/horarios/carrera"
         component={() => <ProtectedRoute component={HorarioCarrera} />}
+      />
+      <Route
+        path="/horarios/semana"
+        component={() => <ProtectedRoute component={HorarioSemana} />}
       />
       <Route
         path="/planificacion/crear"
