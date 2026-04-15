@@ -19,15 +19,17 @@ router.get("/", async (_req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { apellidosNombres, carrera, ciclo, seccion, numero, correo } = req.body;
+  const { tipo, apellidosNombres, carrera, ciclo, seccion, numero, correo } = req.body;
   if (!apellidosNombres?.trim()) return res.status(400).json({ error: "Apellidos y nombres es requerido" });
   if (!carrera?.trim())          return res.status(400).json({ error: "Carrera es requerida" });
   if (!ciclo?.trim())            return res.status(400).json({ error: "Ciclo es requerido" });
   if (!seccion?.trim())          return res.status(400).json({ error: "Sección es requerida" });
+  const tipoVal = tipo === "SUB DELEGADO" ? "SUB DELEGADO" : "DELEGADO";
   try {
     const [row] = await db
       .insert(delegadosTable)
       .values({
+        tipo:             tipoVal,
         apellidosNombres: apellidosNombres.trim().toUpperCase(),
         carrera:          carrera.trim().toUpperCase(),
         ciclo:            ciclo.trim(),

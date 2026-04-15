@@ -2,6 +2,7 @@ import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const delegadosTable = pgTable("delegados", {
   id:               serial("id").primaryKey(),
+  tipo:             text("tipo").notNull().default("DELEGADO"),
   apellidosNombres: text("apellidos_nombres").notNull(),
   carrera:          text("carrera").notNull(),
   ciclo:            text("ciclo").notNull(),

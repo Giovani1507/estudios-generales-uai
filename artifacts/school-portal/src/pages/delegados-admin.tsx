@@ -17,6 +17,7 @@ const QR_URL = (() => {
 
 type Delegado = {
   id: number;
+  tipo: string;
   apellidosNombres: string;
   carrera: string;
   ciclo: string;
@@ -42,7 +43,7 @@ async function exportarExcel(rows: Delegado[]) {
   const WHITE  = "FFFFFFFF";
 
   ws.columns = [
-    { width: 4 }, { width: 36 }, { width: 30 }, { width: 8 },
+    { width: 4 }, { width: 14 }, { width: 36 }, { width: 30 }, { width: 8 },
     { width: 10 }, { width: 15 }, { width: 28 }, { width: 18 },
   ];
 
@@ -55,14 +56,14 @@ async function exportarExcel(rows: Delegado[]) {
   };
 
   ws.getRow(1).height = 28;
-  ws.mergeCells("A1:H1");
+  ws.mergeCells("A1:I1");
   const t = ws.getCell("A1");
   t.value = "UNIVERSIDAD AUTÓNOMA DE ICA — REGISTRO DE DELEGADOS 2026-I";
   t.font  = { bold: true, size: 13, color: { argb: WHITE } };
   t.fill  = sf(NAVY_A); t.alignment = CTR; t.border = THIN;
 
   ws.getRow(2).height = 6;
-  const headers = ["N°", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", "Registrado"];
+  const headers = ["N°", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", "Registrado"];
   ws.getRow(3).height = 20;
   headers.forEach((h, i) => {
     const c = ws.getRow(3).getCell(i + 1);
@@ -73,7 +74,7 @@ async function exportarExcel(rows: Delegado[]) {
   rows.forEach((r, i) => {
     const row = ws.getRow(4 + i); row.height = 17;
     const vals = [
-      i + 1, r.apellidosNombres, r.carrera, r.ciclo, r.seccion,
+      i + 1, r.tipo || "DELEGADO", r.apellidosNombres, r.carrera, r.ciclo, r.seccion,
       r.numero || "—", r.correo || "—", fmtDate(r.registradoEn),
     ];
     vals.forEach((v, ci) => {
@@ -98,6 +99,7 @@ export default function DelegadosAdmin() {
   const [search,  setSearch]  = useState("");
   const [copied,  setCopied]  = useState(false);
   const [filterCiclo, setFilterCiclo] = useState<"" | "1" | "2">("");
+  const [filterTipo,  setFilterTipo]  = useState<"" | "DELEGADO" | "SUB DELEGADO">("");
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -232,13 +234,14 @@ export default function DelegadosAdmin() {
     const q = search.toLowerCase();
     return rows.filter(r =>
       (!filterCiclo || r.ciclo === filterCiclo) &&
+      (!filterTipo  || (r.tipo || "DELEGADO") === filterTipo) &&
       (!q || r.apellidosNombres.toLowerCase().includes(q) ||
              r.carrera.toLowerCase().includes(q) ||
              r.seccion.toLowerCase().includes(q) ||
              (r.numero || "").includes(q) ||
              (r.correo || "").toLowerCase().includes(q))
     );
-  }, [rows, search, filterCiclo]);
+  }, [rows, search, filterCiclo, filterTipo]);
 
   const stats = useMemo(() => {
     const c1 = rows.filter(r => r.ciclo === "1").length;
@@ -346,7 +349,16 @@ export default function DelegadosAdmin() {
                   {filtered.length}
                 </span>
               </span>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+                <select
+                  value={filterTipo}
+                  onChange={e => setFilterTipo(e.target.value as "" | "DELEGADO" | "SUB DELEGADO")}
+                  className="h-8 text-xs border rounded-md px-2 bg-white"
+                >
+                  <option value="">Todos los tipos</option>
+                  <option value="DELEGADO">Delegado</option>
+                  <option value="SUB DELEGADO">Sub Delegado</option>
+                </select>
                 <select
                   value={filterCiclo}
                   onChange={e => setFilterCiclo(e.target.value as "" | "1" | "2")}
@@ -381,7 +393,7 @@ export default function DelegadosAdmin() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr style={{ background: NAVY }}>
-                      {["#", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", ""].map(h => (
+                      {["#", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", ""].map(h => (
                         <th key={h} className="px-3 py-2 text-white font-semibold text-left whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -390,6 +402,16 @@ export default function DelegadosAdmin() {
                     {filtered.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-slate-50" : "bg-white"}>
                         <td className="px-3 py-2 text-center text-slate-400">{i + 1}</td>
+                        <td className="px-3 py-2 text-center">
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
+                            style={(r.tipo || "DELEGADO") === "SUB DELEGADO"
+                              ? { background: "#fef9c3", color: "#854d0e" }
+                              : { background: "#dbeafe", color: "#1e40af" }}
+                          >
+                            {r.tipo || "DELEGADO"}
+                          </span>
+                        </td>
                         <td className="px-3 py-2 font-medium" style={{ color: NAVY }}>{r.apellidosNombres}</td>
                         <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate" title={r.carrera}>{r.carrera}</td>
                         <td className="px-3 py-2 text-center">

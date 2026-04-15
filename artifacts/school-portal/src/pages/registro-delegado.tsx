@@ -30,6 +30,7 @@ const CARRERAS = [
 
 export default function RegistroDelegado() {
   const [form, setForm] = useState({
+    tipo: "DELEGADO",
     apellidosNombres: "",
     carrera: "",
     ciclo: "",
@@ -84,6 +85,17 @@ export default function RegistroDelegado() {
             Tu registro como delegado ha sido guardado correctamente. La coordinación se pondrá en contacto contigo.
           </p>
           <div className="bg-slate-50 rounded-xl p-4 text-left text-sm space-y-1">
+            <p>
+              <span className="font-semibold text-slate-600">Tipo: </span>
+              <span
+                className="px-2 py-0.5 rounded-full text-xs font-bold"
+                style={form.tipo === "SUB DELEGADO"
+                  ? { background: "#fef9c3", color: "#854d0e" }
+                  : { background: "#dbeafe", color: "#1e40af" }}
+              >
+                {form.tipo}
+              </span>
+            </p>
             <p><span className="font-semibold text-slate-600">Nombre:</span> {form.apellidosNombres.toUpperCase()}</p>
             <p><span className="font-semibold text-slate-600">Carrera:</span> {form.carrera}</p>
             <p><span className="font-semibold text-slate-600">Ciclo:</span> {form.ciclo}</p>
@@ -92,7 +104,7 @@ export default function RegistroDelegado() {
           <Button
             className="w-full text-white"
             style={{ background: NAVY }}
-            onClick={() => { setSuccess(false); setForm({ apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "" }); }}
+            onClick={() => { setSuccess(false); setForm({ tipo: "DELEGADO", apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "" }); }}
           >
             Registrar otro delegado
           </Button>
@@ -125,6 +137,26 @@ export default function RegistroDelegado() {
         </div>
 
         <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
+
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-slate-600">Tipo de Registro <span className="text-red-500">*</span></Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["DELEGADO", "SUB DELEGADO"] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, tipo: t }))}
+                  className="h-12 rounded-xl border-2 font-bold text-sm transition-all"
+                  style={form.tipo === t
+                    ? { background: NAVY, borderColor: NAVY, color: "white" }
+                    : { background: "white", borderColor: "#e2e8f0", color: "#64748b" }}
+                >
+                  {t === "DELEGADO" ? "👑 Delegado" : "⭐ Sub Delegado"}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-600">Apellidos y Nombres <span className="text-red-500">*</span></Label>
             <Input
