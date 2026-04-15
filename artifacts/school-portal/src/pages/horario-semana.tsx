@@ -133,9 +133,20 @@ export default function HorarioSemana() {
   const totalDocentes  = new Set(filtered.map(r => r.docente)).size;
   const totalCarreras  = new Set(filtered.map(r => r.carreraFull)).size;
 
-  const printHorario = () => {
+  const printHorario = async () => {
     const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
     const logoUrl = `${window.location.origin}${base}/logo-uai.png`;
+
+    let logoData = "";
+    try {
+      const res  = await fetch(logoUrl);
+      const blob = await res.blob();
+      logoData = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch { logoData = ""; }
 
     const filterLabel = [
       facultad  !== "TODAS" ? `Facultad: ${facultad}` : null,
@@ -210,7 +221,7 @@ export default function HorarioSemana() {
     <button onclick="window.print()" style="background:#001F5F;color:white;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold;">🖨️ Imprimir / Guardar PDF</button>
   </div>
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #001F5F;">
-    <img src="${logoUrl}" style="height:56px;object-fit:contain;" alt="UAI" />
+    ${logoData ? `<img src="${logoData}" style="height:52px;width:auto;object-fit:contain;flex-shrink:0;" alt="UAI" />` : ""}
     <div>
       <h1 style="font-size:18px;font-weight:900;color:#001F5F;">HORARIO POR SEMANA · 2026-I</h1>
       <p style="font-size:11px;color:#64748b;margin-top:2px;">Universidad Autónoma de Ica · Filtros: ${filterLabel}</p>
