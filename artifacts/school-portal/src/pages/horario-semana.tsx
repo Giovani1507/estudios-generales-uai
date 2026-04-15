@@ -60,7 +60,7 @@ export default function HorarioSemana() {
   const [loading,   setLoading]   = useState(true);
   const [facultad,  setFacultad]  = useState("TODAS");
   const [local,     setLocal]     = useState("TODOS");
-  const [ciclo,     setCiclo]     = useState("TODOS");
+  const [ciclo,     setCiclo]     = useState("1Y2");
   const [diaFiltro, setDiaFiltro] = useState("TODOS");
   const [search,    setSearch]    = useState("");
 
@@ -87,7 +87,8 @@ export default function HorarioSemana() {
       (facultad === "TODAS" || r.facultad === facultad) &&
       (local    === "TODOS" || r.local    === local)
     );
-    return ["TODOS", ...Array.from(new Set(base.map(r => r.ciclo)))
+    return ["1Y2", "1", "2", ...Array.from(new Set(base.map(r => r.ciclo)))
+      .filter(c => c !== "1" && c !== "2")
       .sort((a, b) => Number(a) - Number(b))];
   }, [allData, facultad, local]);
 
@@ -96,8 +97,12 @@ export default function HorarioSemana() {
     return allData.filter(r => {
       if (facultad  !== "TODAS" && r.facultad !== facultad)  return false;
       if (local     !== "TODOS" && r.local    !== local)     return false;
-      if (ciclo     !== "TODOS" && r.ciclo    !== ciclo)     return false;
-      if (diaFiltro !== "TODOS" && r.dia      !== diaFiltro) return false;
+      if (ciclo === "1Y2") {
+        if (r.ciclo !== "1" && r.ciclo !== "2") return false;
+      } else if (ciclo !== "TODOS" && r.ciclo !== ciclo) {
+        return false;
+      }
+      if (diaFiltro !== "TODOS" && r.dia !== diaFiltro) return false;
       if (q) {
         const hay = `${r.carreraFull} ${r.seccion} ${r.curso} ${r.docente} ${r.ciclo} ${r.local}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -191,8 +196,13 @@ export default function HorarioSemana() {
               </SelectTrigger>
               <SelectContent>
                 {ciclos.map(c => (
-                  <SelectItem key={c} value={c}>{c === "TODOS" ? "Todos los ciclos" : `Ciclo ${c}`}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    {c === "1Y2"  ? "Ciclos 1 y 2 (EE.GG)"
+                     : c === "TODOS" ? "Todos los ciclos"
+                     : `Ciclo ${c}`}
+                  </SelectItem>
                 ))}
+                <SelectItem value="TODOS">Todos los ciclos</SelectItem>
               </SelectContent>
             </Select>
 
