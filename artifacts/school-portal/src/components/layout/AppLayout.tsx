@@ -75,34 +75,10 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Calendario 2026",
-    url: "/calendario",
-    icon: CalendarIcon,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Usuarios",
     url: "/usuarios",
     icon: Users,
     roles: ["administrador"],
-  },
-  {
-    title: "Roles y Permisos",
-    url: "/roles",
-    icon: ShieldCheck,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Avisos y Comunicados",
-    url: "/avisos",
-    icon: BellRing,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Reportes",
-    url: "/reportes",
-    icon: BarChart3,
-    roles: ["administrador", "coordinador", "administrativo"],
   },
   {
     title: "Reporte de Estudiantes",
