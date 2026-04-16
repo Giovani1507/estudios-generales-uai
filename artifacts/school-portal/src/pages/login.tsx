@@ -53,24 +53,25 @@ export default function Login() {
       className="min-h-screen w-full flex relative overflow-hidden"
       style={{
         backgroundImage: `url(${import.meta.env.BASE_URL}uai-student-bg.jpg)`,
-        backgroundSize: "cover",
-        backgroundPosition: "center 15%",
+        backgroundSize: "contain",
+        backgroundPosition: "center top",
+        backgroundRepeat: "no-repeat",
+        backgroundColor: "#001340",
       }}
     >
-      {/* Overlay: oscuro a la izquierda para la tarjeta, transparente a la derecha para ver la estudiante */}
+      {/* Overlay uniforme para legibilidad */}
       <div
         className="absolute inset-0"
-        style={{
-          background: "linear-gradient(to right, rgba(0,20,70,0.80) 0%, rgba(0,20,70,0.65) 42%, rgba(0,20,70,0.10) 70%, transparent 100%)",
-        }}
+        style={{ background: "rgba(0,15,55,0.55)" }}
       />
 
-      {/* Panel izquierdo: tarjeta de login */}
-      <div className="relative z-10 flex flex-col justify-center px-8 md:px-16 py-10 w-full md:max-w-[520px]">
+      {/* Tarjeta centrada */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen px-4 py-10">
         <motion.div
-          initial={{ opacity: 0, x: -28 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="w-full max-w-md"
         >
           {/* Logo */}
           <div className="flex justify-center mb-6">
@@ -87,8 +88,8 @@ export default function Login() {
             <h1 className="text-3xl font-extrabold text-white mb-1 tracking-tight">
               Portal Académico
             </h1>
-            <p className="text-sm text-white/70">Universidad Autónoma de Ica · 2026-1</p>
-            <p className="text-xs text-white/50 mt-0.5">Estudios Generales</p>
+            <p className="text-sm text-white font-medium">Universidad Autónoma de Ica · 2026-1</p>
+            <p className="text-xs text-white/60 mt-0.5">Estudios Generales</p>
           </div>
 
           {/* Card */}
