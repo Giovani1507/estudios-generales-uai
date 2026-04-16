@@ -212,28 +212,35 @@ export default function AsistenciaAdmin() {
   const selectCls = "border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/30 bg-white";
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Reporte de Asistencia</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Los estudiantes registran su asistencia escaneando el QR institucional</p>
+    <div className="min-h-screen bg-[#f0f4ff]">
+      {/* ── Top header bar ── */}
+      <div className="bg-[#001F5F] px-6 py-4 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-[#C9A84C]" />
+          </div>
+          <div>
+            <h1 className="text-white font-bold text-base leading-tight">Reporte de Asistencia</h1>
+            <p className="text-white/50 text-xs">Universidad Autónoma de Ica — 2026-I</p>
+          </div>
         </div>
-        <button onClick={fetchData} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-600 hover:bg-gray-50">
-          <RefreshCw className="w-4 h-4" />
+        <button onClick={fetchData}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium hover:bg-white/20 transition-colors">
+          <RefreshCw className="w-3.5 h-3.5" />
           Actualizar
         </button>
       </div>
 
+      <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-white border border-[#001F5F]/15 rounded-xl p-1 w-fit shadow-sm">
         {[
           { key: "registros", label: "Registros", Icon: Users },
           { key: "graficos", label: "Gráficos", Icon: BarChart3 },
           { key: "qr", label: "QR", Icon: Download },
         ].map(({ key, label, Icon }) => (
           <button key={key} onClick={() => setTab(key as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === key ? "bg-white text-[#001F5F] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === key ? "bg-[#001F5F] text-white shadow-sm" : "text-gray-500 hover:text-[#001F5F]"}`}>
             <Icon className="w-4 h-4" />{label}
           </button>
         ))}
@@ -241,32 +248,47 @@ export default function AsistenciaAdmin() {
 
       {/* ── REGISTROS TAB ── */}
       {tab === "registros" && (
-        <div className="space-y-4">
-          {/* Search bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre, docente, curso..."
-              className="pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/30 w-full" />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="space-y-3">
 
-          {/* Filter row */}
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Filtros</span>
-              {hasFilters && (
-                <button onClick={clearFilters} className="ml-auto text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1">
-                  <X className="w-3 h-3" /> Limpiar filtros
+          {/* Search + Export bar */}
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre, docente, curso..."
+                className="pl-9 pr-4 py-2.5 border border-[#001F5F]/20 bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/30 w-full shadow-sm" />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <button onClick={handleExcel}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-sm whitespace-nowrap">
+              <Download className="w-4 h-4" /> Exportar Excel
+            </button>
+          </div>
+
+          {/* Filter panel */}
+          <div className="bg-white border border-[#001F5F]/15 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-[#001F5F] px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-3.5 h-3.5 text-[#C9A84C]" />
+                <span className="text-white text-xs font-bold uppercase tracking-wider">Filtros de búsqueda</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-white/60 text-xs font-medium">
+                  {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+                </span>
+                {hasFilters && (
+                  <button onClick={clearFilters}
+                    className="flex items-center gap-1 text-xs text-red-300 hover:text-red-200 font-medium">
+                    <X className="w-3 h-3" /> Limpiar
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               <select value={filterCarrera} onChange={(e) => setFilterCarrera(e.target.value)} className={selectCls}>
                 <option value="">Todas las carreras</option>
                 {uniqueValues("carrera").map((v) => <option key={v} value={v}>{v}</option>)}
@@ -284,14 +306,7 @@ export default function AsistenciaAdmin() {
                 {uniqueValues("dia").map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
               <input type="date" value={filterFecha} onChange={(e) => setFilterFecha(e.target.value)}
-                className={`${selectCls} col-span-1`} />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{filtered.length} registro{filtered.length !== 1 ? "s" : ""}</span>
-                <button onClick={handleExcel}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 whitespace-nowrap">
-                  <Download className="w-3.5 h-3.5" /> Excel
-                </button>
-              </div>
+                className={selectCls} />
             </div>
           </div>
 
@@ -300,55 +315,90 @@ export default function AsistenciaAdmin() {
               <div className="w-6 h-6 border-2 border-[#001F5F] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="bg-white border border-[#001F5F]/10 rounded-2xl text-center py-16 text-gray-400 shadow-sm">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{hasFilters ? "Sin resultados para los filtros aplicados." : "Aún no hay registros de asistencia."}</p>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="rounded-2xl overflow-hidden shadow-md border border-[#001F5F]/20">
+              {/* Table title bar */}
+              <div className="bg-[#001F5F] px-4 py-2.5 flex items-center justify-between">
+                <span className="text-white text-xs font-bold uppercase tracking-wider">
+                  Lista de Asistencias
+                </span>
+                <span className="text-[#C9A84C] text-xs font-semibold">
+                  {filtered.length} registro{filtered.length !== 1 ? "s" : ""} · {uniqueStudents} estudiante{uniqueStudents !== 1 ? "s" : ""} único{uniqueStudents !== 1 ? "s" : ""}
+                </span>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      {["#","Apellidos","Nombres","Asist.","Docente","Curso","Carrera","Ciclo","Sec.","Día","Fecha","Hora",""].map((h) => (
-                        <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-[#001F5F]/90">
+                      {[
+                        { label: "#", cls: "w-8 text-center" },
+                        { label: "Apellidos", cls: "" },
+                        { label: "Nombres", cls: "" },
+                        { label: "Asist.", cls: "text-center" },
+                        { label: "Docente", cls: "" },
+                        { label: "Curso", cls: "" },
+                        { label: "Carrera", cls: "" },
+                        { label: "Ciclo", cls: "text-center" },
+                        { label: "Sec.", cls: "text-center" },
+                        { label: "Día", cls: "text-center" },
+                        { label: "Fecha", cls: "" },
+                        { label: "Hora", cls: "" },
+                        { label: "", cls: "w-10" },
+                      ].map((h, i) => (
+                        <th key={i}
+                          className={`px-3 py-2.5 text-left text-[10px] font-bold text-white/80 uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-0 ${h.cls}`}>
+                          {h.label}
+                        </th>
                       ))}
+                    </tr>
+                    {/* Gold accent line */}
+                    <tr>
+                      <td colSpan={13} className="p-0">
+                        <div className="h-[3px] bg-[#C9A84C] w-full" />
+                      </td>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((r, i) => {
                       const count = studentCount[`${r.apellidos}|${r.nombres}`] || 1;
+                      const isEven = i % 2 === 0;
+                      const rowBg = isEven ? "bg-white" : "bg-[#f0f4ff]";
+                      const cellBorder = "border-r border-[#001F5F]/8 last:border-0";
                       return (
-                        <tr key={r.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
-                          <td className="px-3 py-2.5 text-gray-400 text-xs">{i + 1}</td>
-                          <td className="px-3 py-2.5 font-semibold text-gray-800 whitespace-nowrap">{r.apellidos}</td>
-                          <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">{r.nombres}</td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${count > 1 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                              {count} {count === 1 ? "asist." : "asist."}
+                        <tr key={r.id}
+                          className={`${rowBg} hover:bg-[#001F5F]/5 transition-colors border-b border-[#001F5F]/8`}>
+                          <td className={`px-3 py-2.5 text-center text-xs font-bold text-[#001F5F]/40 ${cellBorder}`}>{i + 1}</td>
+                          <td className={`px-3 py-2.5 font-bold text-[#001F5F] whitespace-nowrap ${cellBorder}`}>{r.apellidos}</td>
+                          <td className={`px-3 py-2.5 text-gray-700 whitespace-nowrap ${cellBorder}`}>{r.nombres}</td>
+                          <td className={`px-3 py-2.5 text-center ${cellBorder}`}>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${count > 1 ? "bg-red-100 text-red-700 border border-red-200" : "bg-emerald-100 text-emerald-700 border border-emerald-200"}`}>
+                              {count}×
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.docente}</td>
-                          <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.curso}</td>
-                          <td className="px-3 py-2.5 whitespace-nowrap">
-                            <span className="text-xs bg-[#001F5F]/10 text-[#001F5F] px-2 py-0.5 rounded-full font-medium">{r.carrera}</span>
+                          <td className={`px-3 py-2.5 text-gray-700 whitespace-nowrap text-xs ${cellBorder}`}>{r.docente}</td>
+                          <td className={`px-3 py-2.5 text-gray-700 whitespace-nowrap text-xs ${cellBorder}`}>{r.curso}</td>
+                          <td className={`px-3 py-2.5 whitespace-nowrap ${cellBorder}`}>
+                            <span className="text-[11px] bg-[#001F5F] text-white px-2 py-0.5 rounded font-semibold">{r.carrera}</span>
                           </td>
-                          <td className="px-3 py-2.5 text-gray-600 text-center">{r.ciclo}</td>
-                          <td className="px-3 py-2.5 text-gray-600 text-center">{r.seccion}</td>
-                          <td className="px-3 py-2.5 whitespace-nowrap">
-                            <span className="text-xs bg-[#C9A84C]/15 text-[#8a6e1f] px-2 py-0.5 rounded-full font-medium">{r.dia}</span>
+                          <td className={`px-3 py-2.5 text-center font-bold text-[#001F5F] ${cellBorder}`}>{r.ciclo}</td>
+                          <td className={`px-3 py-2.5 text-center font-semibold text-gray-600 ${cellBorder}`}>{r.seccion}</td>
+                          <td className={`px-3 py-2.5 text-center ${cellBorder}`}>
+                            <span className="text-[11px] bg-[#C9A84C]/20 text-[#7a5c00] px-2 py-0.5 rounded font-bold border border-[#C9A84C]/30">{r.dia}</span>
                           </td>
-                          <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{r.fecha}</td>
-                          <td className="px-3 py-2.5 text-gray-400 text-xs whitespace-nowrap">
+                          <td className={`px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap ${cellBorder}`}>{r.fecha}</td>
+                          <td className={`px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap ${cellBorder}`}>
                             {new Date(r.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="px-2 py-2.5 text-center">
                             <button
                               onClick={() => handleDelete(r.id)}
                               disabled={deletingId === r.id}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
-                              title="Eliminar registro"
-                            >
+                              className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                              title="Eliminar registro">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
@@ -357,6 +407,11 @@ export default function AsistenciaAdmin() {
                     })}
                   </tbody>
                 </table>
+              </div>
+              {/* Footer */}
+              <div className="bg-[#001F5F]/5 border-t border-[#001F5F]/10 px-4 py-2 flex items-center justify-between">
+                <span className="text-xs text-gray-500">Mostrando {filtered.length} de {registros.length} registros totales</span>
+                <span className="text-xs text-[#001F5F] font-semibold">{uniqueStudents} estudiantes únicos</span>
               </div>
             </div>
           )}
@@ -480,6 +535,7 @@ export default function AsistenciaAdmin() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
