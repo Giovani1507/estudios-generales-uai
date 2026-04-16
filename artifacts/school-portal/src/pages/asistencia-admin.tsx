@@ -122,7 +122,7 @@ export default function AsistenciaAdmin() {
     // ─── Fetch logo ───
     let logoId: number | null = null;
     try {
-      const logoBlob = await fetch(`${base}/logo-uai.png`).then((r) => r.blob());
+      const logoBlob = await fetch(`${base}/escudo.png`).then((r) => r.blob());
       const logoBuffer = await logoBlob.arrayBuffer();
       logoId = wb.addImage({ buffer: logoBuffer, extension: "png" });
     } catch (_) {}
@@ -132,37 +132,59 @@ export default function AsistenciaAdmin() {
       pageSetup: { paperSize: 9, orientation: "landscape" },
     });
 
-    // Logo (rows 1-4, cols A-B)
-    if (logoId !== null) {
-      ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 160, height: 55 } });
-    }
-
-    // Row heights for logo area
-    ws.getRow(1).height = 20;
-    ws.getRow(2).height = 18;
-    ws.getRow(3).height = 16;
-    ws.getRow(4).height = 14;
-
     // Helpers
     const navy = "001F5F";
     const gold = "C9A84C";
     const white = "FFFFFF";
     const lightBlue = "EEF3FF";
 
-    const titleStyle = (txt: string, row: number, bold = false, size = 11) => {
+    // ─── Header rows (1-5): fondo azul marino ───
+    for (let rowNum = 1; rowNum <= 5; rowNum++) {
+      const r = ws.getRow(rowNum);
+      for (let col = 1; col <= 11; col++) {
+        r.getCell(col).fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+      }
+    }
+
+    // Row heights
+    ws.getRow(1).height = 16;
+    ws.getRow(2).height = 22; // logo row
+    ws.getRow(3).height = 16;
+    ws.getRow(4).height = 14;
+    ws.getRow(5).height = 14;
+
+    // ─── Logo centrado en fila 2 ───
+    if (logoId !== null) {
+      // Columnas WIDTHS = [5,22,20,28,32,26,7,8,12,12,10] → total 182 chars
+      // Centro ≈ col 4.5 (índice 0-based). Logo 72x72px
+      ws.addImage(logoId, {
+        tl: { col: 4.6, row: 1.1 },
+        ext: { width: 72, height: 72 },
+      });
+    }
+
+    const titleStyle = (txt: string, row: number, bold = false, size = 11, color = white) => {
       const r = ws.getRow(row);
-      r.getCell(1).value = txt;
-      r.getCell(1).font = { bold, size, color: { argb: bold ? navy : "444444" }, name: "Arial" };
       ws.mergeCells(row, 1, row, 11);
+      r.getCell(1).value = txt;
+      r.getCell(1).font = { bold, size, color: { argb: color }, name: "Arial" };
+      r.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
       r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     };
 
-    titleStyle("UNIVERSIDAD AUTÓNOMA DE ICA", 1, true, 14);
-    titleStyle("Sistema de Control de Asistencia Académica", 2, false, 11);
-    titleStyle(`Semestre Académico: 2026-I   |   Fecha: ${exportDate} ${exportTime}`, 3, false, 10);
-    titleStyle(`Total registros: ${filtered.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10);
-
+    // Fila vacía (logo ocupa filas 1-3)
+    ws.getRow(1).height = 8; // top padding
+    titleStyle("UNIVERSIDAD AUTÓNOMA DE ICA", 2, true, 16, white);
+    ws.getRow(2).height = 90; // espacio para el logo + título
+    titleStyle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 3, false, 11, "AABBD4");
+    titleStyle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${filtered.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10, "AABBD4");
     ws.getRow(5).height = 6; // spacer
+
+    // Línea dorada separadora
+    const goldenRow = ws.getRow(5);
+    for (let col = 1; col <= 11; col++) {
+      goldenRow.getCell(col).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
+    }
 
     // ─── Table header ───
     const COLS = ["#", "Apellidos", "Nombres", "Docente", "Curso", "Carrera", "Ciclo", "Sección", "Día", "Fecha", "Hora"];
