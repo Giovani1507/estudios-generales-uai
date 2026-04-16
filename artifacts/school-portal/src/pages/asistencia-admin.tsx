@@ -280,6 +280,147 @@ export default function AsistenciaAdmin() {
     URL.revokeObjectURL(url);
   };
 
+  // ─── Helper compartido: crea WB con encabezado UAI ───
+  const buildWbWithHeader = async (sheetName: string, orientation: "landscape" | "portrait" = "landscape") => {
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    const exportDate = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+    const exportTime = new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Sistema UAI";
+    wb.created = new Date();
+
+    let logoId: number | null = null;
+    try {
+      const blob = await fetch(`${base}/escudo.png`).then((r) => r.blob());
+      logoId = wb.addImage({ buffer: await blob.arrayBuffer(), extension: "png" });
+    } catch (_) {}
+
+    const ws = wb.addWorksheet(sheetName, { pageSetup: { paperSize: 9, orientation } });
+    const navy = "001F5F", gold = "C9A84C", white = "FFFFFF";
+
+    const NCOLS = 11;
+    for (let rn = 1; rn <= 5; rn++)
+      for (let c = 1; c <= NCOLS; c++)
+        ws.getRow(rn).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+
+    ws.getRow(1).height = 8;
+    ws.getRow(2).height = 90;
+    ws.getRow(3).height = 16;
+    ws.getRow(4).height = 14;
+    ws.getRow(5).height = 6;
+
+    if (logoId !== null)
+      ws.addImage(logoId, { tl: { col: 4.6, row: 1.1 }, ext: { width: 72, height: 72 } });
+
+    const addTitle = (txt: string, row: number, bold: boolean, size: number, color = white) => {
+      ws.mergeCells(row, 1, row, NCOLS);
+      const cell = ws.getRow(row).getCell(1);
+      cell.value = txt;
+      cell.font = { bold, size, color: { argb: color }, name: "Arial" };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+    };
+
+    addTitle("UNIVERSIDAD AUTÓNOMA DE ICA", 2, true, 16);
+    addTitle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 3, false, 11, "AABBD4");
+    addTitle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${registros.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10, "AABBD4");
+
+    for (let c = 1; c <= NCOLS; c++)
+      ws.getRow(5).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
+
+    return { wb, ws, navy, gold, white, NCOLS };
+  };
+
+  const downloadBuffer = async (wb: ExcelJS.Workbook, filename: string) => {
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ─── Excel Resumen ───
+  const handleExcelResumen = async () => {
+    const { wb, ws, navy, gold, white } = await buildWbWithHeader("Resumen por Clase");
+    const COLS2 = ["#", "Carrera", "Ciclo", "Sección", "Curso", "Docente", "Total Asistentes"];
+    const W2    = [4, 26, 7, 8, 32, 30, 16];
+    COLS2.forEach((h, i) => { ws.getColumn(i + 1).width = W2[i]; });
+
+    const hr = ws.getRow(6); hr.height = 18;
+    COLS2.forEach((h, i) => {
+      const cell = hr.getCell(i + 1);
+      cell.value = h;
+      cell.font = { bold: true, color: { argb: white }, size: 10 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { top: { style: "thin", color: { argb: gold } }, bottom: { style: "thin", color: { argb: gold } } };
+    });
+
+    const groups: Record<string, { carrera: string; ciclo: string; seccion: string; curso: string; docente: string; count: number }> = {};
+    registros.forEach((r) => {
+      const key = `${r.carrera}||${r.ciclo}||${r.seccion}||${r.curso}||${r.docente}`;
+      if (!groups[key]) groups[key] = { carrera: r.carrera, ciclo: r.ciclo, seccion: r.seccion, curso: r.curso, docente: r.docente, count: 0 };
+      groups[key].count++;
+    });
+    const sorted = Object.values(groups).sort((a, b) => a.carrera.localeCompare(b.carrera) || a.ciclo.localeCompare(b.ciclo) || a.seccion.localeCompare(b.seccion));
+
+    sorted.forEach((g, i) => {
+      const row = ws.getRow(7 + i); row.height = 13;
+      const bg = i % 2 === 0 ? "FFFFFF" : "EEF3FF";
+      [i + 1, g.carrera, g.ciclo, g.seccion, g.curso, g.docente, g.count].forEach((v, ci) => {
+        const cell = row.getCell(ci + 1);
+        cell.value = v;
+        cell.font = { size: 9, bold: ci === 6 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+        cell.alignment = { vertical: "middle", horizontal: [0, 2, 3, 6].includes(ci) ? "center" : "left" };
+        cell.border = { bottom: { style: "hair", color: { argb: "CCCCDD" } } };
+      });
+    });
+
+    await downloadBuffer(wb, `resumen-asistencia-uai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  // ─── Excel Gráficos ───
+  const handleExcelGraficos = async () => {
+    if (!reporte) return;
+    const { wb } = await buildWbWithHeader("Resumen General");
+
+    const addSheet = (name: string, data: { name: string; value: number }[], cols: [string, string]) => {
+      const sheet = wb.addWorksheet(name);
+      sheet.getColumn(1).width = 36;
+      sheet.getColumn(2).width = 16;
+      const hr = sheet.getRow(1); hr.height = 16;
+      cols.forEach((h, i) => {
+        const cell = hr.getCell(i + 1);
+        cell.value = h;
+        cell.font = { bold: true, color: { argb: "FFFFFF" }, size: 10 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "001F5F" } };
+        cell.alignment = { horizontal: i === 1 ? "center" : "left", vertical: "middle" };
+        cell.border = { bottom: { style: "thin", color: { argb: "C9A84C" } } };
+      });
+      data.forEach((d, i) => {
+        const row = sheet.getRow(2 + i); row.height = 13;
+        const bg = i % 2 === 0 ? "FFFFFF" : "EEF3FF";
+        [d.name, d.value].forEach((v, ci) => {
+          const cell = row.getCell(ci + 1);
+          cell.value = v;
+          cell.font = { size: 9, bold: ci === 1 };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+          cell.alignment = { vertical: "middle", horizontal: ci === 1 ? "center" : "left" };
+          cell.border = { bottom: { style: "hair", color: { argb: "CCCCDD" } } };
+        });
+      });
+    };
+
+    addSheet("Por Carrera",  reporte.porCarrera,  ["Carrera",  "Registros"]);
+    addSheet("Por Curso",    reporte.porCurso,    ["Curso",    "Registros"]);
+    addSheet("Por Docente",  reporte.porDocente,  ["Docente",  "Registros"]);
+    addSheet("Por Día",      reporte.porDia,      ["Día",      "Registros"]);
+
+    await downloadBuffer(wb, `graficos-asistencia-uai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
     if (!svg) return;
@@ -555,7 +696,13 @@ export default function AsistenciaAdmin() {
             <div className="rounded-2xl overflow-hidden shadow-md border border-[#001F5F]/20">
               <div className="bg-[#001F5F] px-4 py-2.5 flex items-center justify-between">
                 <span className="text-white text-xs font-bold uppercase tracking-wider">Resumen de Asistentes por Clase</span>
-                <span className="text-[#C9A84C] text-xs font-semibold">{sorted.length} combinaciones · {registros.length} total registros</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#C9A84C] text-xs font-semibold">{sorted.length} combinaciones · {registros.length} total registros</span>
+                  <button onClick={handleExcelResumen}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-400 transition-colors whitespace-nowrap">
+                    <Download className="w-3.5 h-3.5" /> Exportar Excel
+                  </button>
+                </div>
               </div>
               {loading ? (
                 <div className="flex items-center justify-center py-10 bg-white">
@@ -624,6 +771,14 @@ export default function AsistenciaAdmin() {
       {/* ── GRÁFICOS TAB ── */}
       {tab === "graficos" && (
         <div className="space-y-5">
+          {/* Export button */}
+          <div className="flex justify-end">
+            <button onClick={handleExcelGraficos}
+              disabled={!reporte || reporte.totalRegistros === 0}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <Download className="w-4 h-4" /> Exportar datos a Excel
+            </button>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: "Total Registros", value: reporte?.totalRegistros ?? 0, color: "text-[#001F5F]" },
