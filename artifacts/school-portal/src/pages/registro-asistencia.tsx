@@ -3,14 +3,78 @@ import { useState } from "react";
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const SECCIONES = ["A","B","C","D","E","F","G","H","I","J","K","L","M"];
+
+const CURSOS_MAP: Record<string, Record<string, string[]>> = {
+  "ADMINISTRACION DE EMPRESAS": {
+    "1": ["Cultura Ambiental","Filosofía y Ética","Introduccion a la Administración","Matemática","Métodos de Estudio Universitario","Redacción y Comunicación"],
+    "2": ["Cultura inclusiva","Economía","Matemática Financiera","Metodología de la Investigación","Realidad Nacional y Globalizacion","Redacción académica"],
+  },
+  "ARQUITECTURA": {
+    "1": ["Filosofía y ética","Geometría descriptiva","Introducción a la arquitectura","Matemáticas aplicadas","Métodos de estudio universitario","Redacción y comunicación"],
+    "2": ["Administración y Emprendimiento","Cálculo","Dibujo Arquitectónico I","Física I","Metodología de la Investigación","Realidad Nacional y Globalización"],
+  },
+  "CONTABILIDAD": {
+    "1": ["Contabilidad General","Cultura Ambiental","Filosofia y Etica","Matematica","Metodos de Estudio Universitario","Redaccion y Comunicacion"],
+    "2": ["Contabilidad Financiera","Cultura Inclusiva","Economía","Matemática II","Metodología de la Investigación","Realidad nacional y Globalizacion"],
+  },
+  "DERECHO": {
+    "1": ["Cultura ambiental","Filosofía y Ética","Introducción al Derecho","Matemática I","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y Emprendimiento","Cultura inclusiva","Expresión oral y liderazgo","Matemática II","Metodología de la Investigación","Realidad nacional y Globalización"],
+  },
+  "ENFERMERÍA": {
+    "1": ["Biologia","Filosofía y Ética","Introducción a la enfermería","Matemática I","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y emprendimiento","Anatomia y fisiologia","Cultura inclusiva","Matemática II","Metodología de la investigación","Realidad nacional y Globalizacion"],
+  },
+  "FARMACIA Y BIOQUÍMICA": {
+    "1": ["Biología General","Filosofía y Ética","Introducción a la Tecnología Médica","Matemática","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y emprendimiento","Anatomía","Cultura Ambiental","Cultura inclusiva","Metodología de la investigación","Realidad nacional y Globalización"],
+  },
+  "INGENIERIA CIVIL": {
+    "1": ["Dibujo de ingeniería I","Filosofía y ética","Introducción a las ingenierías","Matemáticas para Ingenieros","Métodos de estudio universitario","Redacción y comunicación"],
+    "2": ["Administración y Emprendimiento","Cálculo I","Dibujo de ingeniería II","Física","Metodología de la Investigación","Realidad Nacional y Globalización"],
+  },
+  "INGENIERIA DE SISTEMAS": {
+    "1": ["Dibujo de Ingeniería","Filosofía y Ética","Introducción a las Ingenierías","Matemáticas para Ingenieros","Métodos de Estudio Universitario","Redacción y Comunicación"],
+    "2": ["Administración y Emprendimiento","Cultura Inclusiva","Cálculo I","Física I","Métodologia de la Investigación","Realidad Nacional y Globalización"],
+  },
+  "INGENIERIA INDUSTRIAL": {
+    "1": ["Cultura Ambiental","Filosofía y Ética","Introducción a las Ingenierías","Matemáticas","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración General","Cultura inclusiva","Cálculo I","Dibujo de Ingeniería","Metodología de la Investigación","Realidad Nacional y Globalización"],
+  },
+  "MEDICINA HUMANA": {
+    "1": ["Biología","Filosofía y Ética","Introducción a la medicina","Matemática I","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y emprendimiento","Anatomía","Cultura Ambiental","Matemática II","Metodología de la Investigación","Realidad nacional y Globalización"],
+  },
+  "OBSTETRICIA": {
+    "1": ["Cultura ambiental","Filosofía y Ética","Introducción a la obstetricia","Matemática I","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración general","Anatomía y fisiología","Cultura inclusiva","Matemática II","Metodología de la Investigación","Realidad nacional y Globalización"],
+  },
+  "OPTOMETRÍA": {
+    "1": ["Biologia General","Filosofía y Ética","Introducción a la Tecnología Médica","Matemática","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y emprendimiento","Anatomía Humana","Cultura Ambiental","Cultura inclusiva","Metodología de la investigación","Realidad nacional y Globalización"],
+  },
+  "PSICOLOGÍA": {
+    "1": ["Biología","Filosofía y Ética","Introducción a la psicología","Matemática I","Métodos de estudio universitario","Redacción y Comunicación"],
+    "2": ["Administración y emprendimiento","Anatomía y fisiología","Cultura inclusiva","Matemática II","Metodología de la Investigación","Realidad nacional y Globalización"],
+  },
+  "TERAPIA DEL LENGUAJE": {
+    "1": ["Biología General","Filosofía y Ética","Introducción a la Tecnología Médica","Matemática","Métodos de estudio universitario","Redacción y Comunicación"],
+  },
+  "TERAPIA FÍSICA Y REHABILITACIÓN": {
+    "1": ["Biologia General","Filosofía y Ética","Introducción a la Tecnología Médica","Matemática","Métodos de estudio universitario","Redacción y Comunicación"],
+  },
+};
+
+const CARRERAS = Object.keys(CURSOS_MAP).sort();
 
 const emptyForm = {
   apellidos: "",
   nombres: "",
   docente: "",
-  curso: "",
   carrera: "",
   ciclo: "",
+  curso: "",
   seccion: "",
   dia: "",
   fecha: new Date().toISOString().slice(0, 10),
@@ -22,8 +86,16 @@ export default function RegistroAsistencia() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (key: string, value: string) => {
-    setForm((f) => ({ ...f, [key]: value }));
+  const cursosDisponibles = (form.carrera && form.ciclo)
+    ? (CURSOS_MAP[form.carrera]?.[form.ciclo] ?? [])
+    : [];
+
+  const handleCarreraChange = (val: string) => {
+    setForm((f) => ({ ...f, carrera: val, ciclo: "", curso: "" }));
+  };
+
+  const handleCicloChange = (val: string) => {
+    setForm((f) => ({ ...f, ciclo: val, curso: "" }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,15 +136,13 @@ export default function RegistroAsistencia() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">¡Asistencia Registrada!</h2>
-          <p className="text-sm text-gray-500 mb-5">
-            Tu asistencia fue registrada correctamente.
-          </p>
+          <p className="text-sm text-gray-500 mb-5">Tu asistencia fue registrada correctamente.</p>
           <div className="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-1.5">
             <p><span className="font-medium text-gray-600">Estudiante:</span> {form.apellidos}, {form.nombres}</p>
             <p><span className="font-medium text-gray-600">Docente:</span> {form.docente}</p>
-            <p><span className="font-medium text-gray-600">Curso:</span> {form.curso}</p>
             <p><span className="font-medium text-gray-600">Carrera:</span> {form.carrera}</p>
             <p><span className="font-medium text-gray-600">Ciclo / Sec.:</span> {form.ciclo} — {form.seccion}</p>
+            <p><span className="font-medium text-gray-600">Curso:</span> {form.curso}</p>
             <p><span className="font-medium text-gray-600">Día:</span> {form.dia} · {form.fecha}</p>
           </div>
           <button
@@ -105,14 +175,14 @@ export default function RegistroAsistencia() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
           <p className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
             Completa todos los campos para registrar tu asistencia de hoy.
           </p>
 
-          {/* Datos del estudiante */}
+          {/* ── Datos del estudiante ── */}
           <div>
-            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-2">Datos del Estudiante</p>
+            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-3">Datos del Estudiante</p>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
@@ -121,7 +191,7 @@ export default function RegistroAsistencia() {
                 <input
                   type="text"
                   value={form.apellidos}
-                  onChange={(e) => handleChange("apellidos", e.target.value)}
+                  onChange={(e) => setForm((f) => ({ ...f, apellidos: e.target.value.toUpperCase() }))}
                   placeholder="Ej: GARCÍA RAMOS"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
                   required
@@ -134,7 +204,7 @@ export default function RegistroAsistencia() {
                 <input
                   type="text"
                   value={form.nombres}
-                  onChange={(e) => handleChange("nombres", e.target.value)}
+                  onChange={(e) => setForm((f) => ({ ...f, nombres: e.target.value.toUpperCase() }))}
                   placeholder="Ej: JUAN CARLOS"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
                   required
@@ -143,10 +213,84 @@ export default function RegistroAsistencia() {
             </div>
           </div>
 
-          {/* Datos de la clase */}
+          {/* ── Datos de la clase ── */}
           <div>
-            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-2">Datos de la Clase</p>
+            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-3">Datos de la Clase</p>
             <div className="space-y-3">
+
+              {/* Carrera */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Carrera <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.carrera}
+                  onChange={(e) => handleCarreraChange(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
+                >
+                  <option value="">Seleccionar carrera</option>
+                  {CARRERAS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Ciclo + Sección */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Ciclo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.ciclo}
+                    onChange={(e) => handleCicloChange(e.target.value)}
+                    required
+                    disabled={!form.carrera}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] disabled:bg-gray-100 disabled:text-gray-400"
+                  >
+                    <option value="">Ciclo</option>
+                    {["1", "2"].filter((c) => CURSOS_MAP[form.carrera]?.[c]).map((c) => (
+                      <option key={c} value={c}>Ciclo {c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Sección <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.seccion}
+                    onChange={(e) => setForm((f) => ({ ...f, seccion: e.target.value }))}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
+                  >
+                    <option value="">Sección</option>
+                    {SECCIONES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Curso — dinámico */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Curso <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.curso}
+                  onChange={(e) => setForm((f) => ({ ...f, curso: e.target.value }))}
+                  required
+                  disabled={cursosDisponibles.length === 0}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="">
+                    {cursosDisponibles.length === 0
+                      ? "Selecciona carrera y ciclo primero"
+                      : "Seleccionar curso"}
+                  </option>
+                  {cursosDisponibles.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Docente */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   Docente <span className="text-red-500">*</span>
@@ -154,66 +298,14 @@ export default function RegistroAsistencia() {
                 <input
                   type="text"
                   value={form.docente}
-                  onChange={(e) => handleChange("docente", e.target.value)}
+                  onChange={(e) => setForm((f) => ({ ...f, docente: e.target.value.toUpperCase() }))}
                   placeholder="Apellidos y nombres del docente"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Curso <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.curso}
-                  onChange={(e) => handleChange("curso", e.target.value)}
-                  placeholder="Nombre del curso"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Carrera <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.carrera}
-                  onChange={(e) => handleChange("carrera", e.target.value)}
-                  placeholder="Ej: INGENIERÍA CIVIL"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Ciclo <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.ciclo}
-                    onChange={(e) => handleChange("ciclo", e.target.value)}
-                    placeholder="Ej: III"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Sección <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.seccion}
-                    onChange={(e) => handleChange("seccion", e.target.value)}
-                    placeholder="Ej: A"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                    required
-                  />
-                </div>
-              </div>
+
+              {/* Día + Fecha */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
@@ -221,11 +313,11 @@ export default function RegistroAsistencia() {
                   </label>
                   <select
                     value={form.dia}
-                    onChange={(e) => handleChange("dia", e.target.value)}
+                    onChange={(e) => setForm((f) => ({ ...f, dia: e.target.value }))}
                     required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">Día</option>
                     {DIAS.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
@@ -236,7 +328,7 @@ export default function RegistroAsistencia() {
                   <input
                     type="date"
                     value={form.fecha}
-                    onChange={(e) => handleChange("fecha", e.target.value)}
+                    onChange={(e) => setForm((f) => ({ ...f, fecha: e.target.value }))}
                     required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
                   />
