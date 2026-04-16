@@ -41,6 +41,8 @@ import RegistroSinMatricula from "@/pages/registro-sin-matricula";
 import RegistroRectificacion from "@/pages/registro-rectificacion";
 import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 import Seguridad from "@/pages/seguridad";
+import AsistenciaAdmin from "@/pages/asistencia-admin";
+import RegistroAsistencia from "@/pages/registro-asistencia";
 
 const queryClient = new QueryClient();
 
@@ -188,6 +190,11 @@ function AppRouter() {
         path="/seguridad"
         component={() => <ProtectedRoute component={Seguridad} />}
       />
+      <Route
+        path="/asistencia"
+        component={() => <ProtectedRoute component={AsistenciaAdmin} />}
+      />
+      <Route path="/registro-asistencia" component={RegistroAsistencia} />
       {/* 404 */}
       <Route component={NotFound} />
     </Switch>

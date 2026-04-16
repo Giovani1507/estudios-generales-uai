@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = [
   "/registro-rectificacion",
   "/registro-delegado",
   "/registro-sin-matricula",
+  "/registro-asistencia",
 ];
 
 interface AuthContextType {
