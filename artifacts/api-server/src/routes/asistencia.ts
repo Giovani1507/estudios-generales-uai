@@ -47,6 +47,18 @@ router.get("/registros", requireAuth, async (_req, res) => {
   }
 });
 
+// DELETE /api/asistencia/registros/:id — delete a record (protected)
+router.delete("/registros/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
+  try {
+    await db.delete(asistenciaRegistrosTable).where(eq(asistenciaRegistrosTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Error al eliminar registro" });
+  }
+});
+
 // GET /api/asistencia/reporte — aggregate data for charts (protected)
 router.get("/reporte", requireAuth, async (_req, res) => {
   try {

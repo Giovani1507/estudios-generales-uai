@@ -2,8 +2,22 @@ import { useState } from "react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const SECCIONES = ["A","B","C","D","E","F","G","H","I","J","K","L","M"];
+const DIAS_SEMANA = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+
+// Get today in Peru time (UTC-5, no DST)
+function getPeruToday() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const peru = new Date(utc + (-5 * 60 * 60000));
+  const y = peru.getFullYear();
+  const m = String(peru.getMonth() + 1).padStart(2, "0");
+  const d = String(peru.getDate()).padStart(2, "0");
+  const dayName = DIAS_SEMANA[peru.getDay()];
+  return { fecha: `${y}-${m}-${d}`, dia: dayName };
+}
+
+const { fecha: TODAY, dia: TODAY_DIA } = getPeruToday();
 
 const CURSOS_MAP: Record<string, Record<string, string[]>> = {
   "ADMINISTRACION DE EMPRESAS": {
@@ -76,8 +90,8 @@ const emptyForm = {
   ciclo: "",
   curso: "",
   seccion: "",
-  dia: "",
-  fecha: new Date().toISOString().slice(0, 10),
+  dia: TODAY_DIA,
+  fecha: TODAY,
 };
 
 export default function RegistroAsistencia() {
@@ -305,33 +319,20 @@ export default function RegistroAsistencia() {
                 />
               </div>
 
-              {/* Día + Fecha */}
+              {/* Día + Fecha — automáticos, solo lectura */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Día <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={form.dia}
-                    onChange={(e) => setForm((f) => ({ ...f, dia: e.target.value }))}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
-                  >
-                    <option value="">Día</option>
-                    {DIAS.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Día</label>
+                  <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700 font-semibold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                    {TODAY_DIA}
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Fecha <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={form.fecha}
-                    onChange={(e) => setForm((f) => ({ ...f, fecha: e.target.value }))}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
-                  />
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Fecha</label>
+                  <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700 font-semibold">
+                    {TODAY}
+                  </div>
                 </div>
               </div>
             </div>
