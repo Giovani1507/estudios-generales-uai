@@ -111,23 +111,54 @@ export default function AsistenciaAdmin() {
   };
 
   const handleExcel = () => {
-    const rows = filtered.map((r, i) => ({
-      "#": i + 1,
-      Apellidos: r.apellidos,
-      Nombres: r.nombres,
-      Docente: r.docente,
-      Curso: r.curso,
-      Carrera: r.carrera,
-      Ciclo: r.ciclo,
-      Sección: r.seccion,
-      Día: r.dia,
-      Fecha: r.fecha,
-      "Hora registro": new Date(r.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const exportDate = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+    const exportTime = new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+
+    // Header rows
+    const header: any[][] = [
+      ["UNIVERSIDAD AUTÓNOMA DE ICA"],
+      ["Sistema de Control de Asistencia Académica"],
+      [`Semestre: 2026-I`],
+      [`Fecha de exportación: ${exportDate} ${exportTime}`],
+      [`Total de registros: ${filtered.length}   |   Estudiantes únicos: ${uniqueStudents}`],
+      [], // fila vacía
+      ["#", "Apellidos", "Nombres", "Docente", "Curso", "Carrera", "Ciclo", "Sección", "Día", "Fecha", "Hora registro"],
+    ];
+
+    const dataRows = filtered.map((r, i) => [
+      i + 1,
+      r.apellidos,
+      r.nombres,
+      r.docente,
+      r.curso,
+      r.carrera,
+      r.ciclo,
+      r.seccion,
+      r.dia,
+      r.fecha,
+      new Date(r.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...dataRows]);
+
+    // Merge cells for title row
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // row 1: universidad
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }, // row 2: sistema
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } }, // row 3: semestre
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } }, // row 4: fecha
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 10 } }, // row 5: totales
+    ];
+
+    // Column widths
+    ws["!cols"] = [
+      { wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 30 }, { wch: 35 },
+      { wch: 28 }, { wch: 7 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+    ];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
-    XLSX.writeFile(wb, `asistencias-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `reporte-asistencia-uai-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const handleDownloadQR = () => {

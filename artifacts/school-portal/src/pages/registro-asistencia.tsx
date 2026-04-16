@@ -104,13 +104,15 @@ export default function RegistroAsistencia() {
 
   useEffect(() => {
     const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-    fetch(`${base}/docentes-registro-2026-1.json`)
-      .then((r) => r.json())
-      .then((data: { nombre: string }[]) => {
-        const names = data.map((d) => d.nombre).filter(Boolean).sort();
-        setDocentes(names);
-      })
-      .catch(() => {});
+    Promise.all([
+      fetch(`${base}/planificacion-fica-2026-1.json`).then((r) => r.json()),
+      fetch(`${base}/planificacion-fcs-2026-1.json`).then((r) => r.json()),
+    ]).then(([fica, fcs]: [{ ciclo: string; docente: string }[][], { ciclo: string; docente: string }[][]]) => {
+      const all = [...(fica as any[]), ...(fcs as any[])];
+      const fromCiclos12 = all.filter((r) => r.ciclo === "1" || r.ciclo === "2");
+      const names = [...new Set(fromCiclos12.map((r) => r.docente).filter(Boolean))].sort();
+      setDocentes(names);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -214,78 +216,102 @@ export default function RegistroAsistencia() {
     );
   }
 
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/30 focus:border-[#001F5F] bg-white transition-shadow";
+  const labelCls = "block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5";
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 py-8">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className="bg-[#001F5F] px-6 py-5">
-          <div className="flex items-center gap-3">
-            <img
-              src={`${import.meta.env.BASE_URL}logo-sidebar.png`}
-              alt="UAI"
-              className="h-10 object-contain filter brightness-0 invert"
-            />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 py-8"
+      style={{ background: "linear-gradient(135deg, #001F5F 0%, #002a80 45%, #0a3a8f 100%)" }}>
+
+      {/* Card principal */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+        {/* ── Header ── */}
+        <div className="relative bg-[#001F5F] px-6 pt-7 pb-6 overflow-hidden">
+          {/* fondo decorativo */}
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: "repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)", backgroundSize: "14px 14px" }} />
+          <div className="relative flex items-center gap-4">
+            <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-inner">
+              <img
+                src={`${import.meta.env.BASE_URL}escudo.png`}
+                alt="Escudo UAI"
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `${import.meta.env.BASE_URL}logo.png`;
+                }}
+              />
+            </div>
             <div>
-              <h1 className="text-white font-bold text-base leading-tight">Registro de Asistencia</h1>
-              <p className="text-white/70 text-xs">Universidad Autónoma de Ica</p>
+              <p className="text-[#C9A84C] text-[10px] font-bold uppercase tracking-widest mb-0.5">Universidad Autónoma de Ica</p>
+              <h1 className="text-white font-extrabold text-lg leading-tight">Registro de Asistencia</h1>
+              <p className="text-white/60 text-xs mt-0.5">Semestre Académico 2026-I</p>
+            </div>
+          </div>
+          {/* Banda dorada inferior */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#C9A84C]" />
+        </div>
+
+        {/* ── Fecha/Día Banner ── */}
+        <div className="flex bg-[#001F5F]/5 border-b border-gray-100">
+          <div className="flex-1 flex items-center gap-2 px-5 py-3 border-r border-gray-100">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Día</p>
+              <p className="text-sm font-bold text-[#001F5F]">{TODAY_DIA}</p>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center gap-2 px-5 py-3">
+            <span className="w-2 h-2 rounded-full bg-[#C9A84C] flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Fecha</p>
+              <p className="text-sm font-bold text-[#001F5F]">{TODAY}</p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-          <p className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-            Completa todos los campos para registrar tu asistencia de hoy.
-          </p>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
-          {/* ── Datos del estudiante ── */}
-          <div>
-            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-3">Datos del Estudiante</p>
-            <div className="space-y-3">
+          {/* ── Sección: Datos del Estudiante ── */}
+          <div className="rounded-2xl border border-[#001F5F]/15 overflow-hidden">
+            <div className="bg-[#001F5F] px-4 py-2.5 flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#C9A84C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-white text-xs font-bold uppercase tracking-wider">Datos del Estudiante</span>
+            </div>
+            <div className="p-4 space-y-3 bg-gray-50/50">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Apellidos <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.apellidos}
+                <label className={labelCls}>Apellidos <span className="text-red-500">*</span></label>
+                <input type="text" value={form.apellidos}
                   onChange={(e) => setForm((f) => ({ ...f, apellidos: e.target.value.toUpperCase() }))}
-                  placeholder="Ej: GARCÍA RAMOS"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                  required
-                />
+                  placeholder="EJ: GARCÍA RAMOS"
+                  className={`${inputCls} uppercase`} required />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Nombres <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.nombres}
+                <label className={labelCls}>Nombres <span className="text-red-500">*</span></label>
+                <input type="text" value={form.nombres}
                   onChange={(e) => setForm((f) => ({ ...f, nombres: e.target.value.toUpperCase() }))}
-                  placeholder="Ej: JUAN CARLOS"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                  required
-                />
+                  placeholder="EJ: JUAN CARLOS"
+                  className={`${inputCls} uppercase`} required />
               </div>
             </div>
           </div>
 
-          {/* ── Datos de la clase ── */}
-          <div>
-            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-3">Datos de la Clase</p>
-            <div className="space-y-3">
+          {/* ── Sección: Datos de la Clase ── */}
+          <div className="rounded-2xl border border-[#C9A84C]/40 overflow-hidden">
+            <div className="bg-[#C9A84C] px-4 py-2.5 flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#001F5F]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span className="text-[#001F5F] text-xs font-bold uppercase tracking-wider">Datos de la Clase</span>
+            </div>
+            <div className="p-4 space-y-3 bg-gray-50/50">
 
               {/* Carrera */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Carrera <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.carrera}
-                  onChange={(e) => handleCarreraChange(e.target.value)}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
-                >
+                <label className={labelCls}>Carrera <span className="text-red-500">*</span></label>
+                <select value={form.carrera} onChange={(e) => handleCarreraChange(e.target.value)} required className={inputCls}>
                   <option value="">Seleccionar carrera</option>
                   {CARRERAS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -294,16 +320,9 @@ export default function RegistroAsistencia() {
               {/* Ciclo + Sección */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Ciclo <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={form.ciclo}
-                    onChange={(e) => handleCicloChange(e.target.value)}
-                    required
-                    disabled={!form.carrera}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] disabled:bg-gray-100 disabled:text-gray-400"
-                  >
+                  <label className={labelCls}>Ciclo <span className="text-red-500">*</span></label>
+                  <select value={form.ciclo} onChange={(e) => handleCicloChange(e.target.value)} required
+                    disabled={!form.carrera} className={`${inputCls} disabled:bg-gray-100 disabled:text-gray-400`}>
                     <option value="">Ciclo</option>
                     {["1", "2"].filter((c) => CURSOS_MAP[form.carrera]?.[c]).map((c) => (
                       <option key={c} value={c}>Ciclo {c}</option>
@@ -311,50 +330,30 @@ export default function RegistroAsistencia() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                    Sección <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={form.seccion}
-                    onChange={(e) => setForm((f) => ({ ...f, seccion: e.target.value }))}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
-                  >
+                  <label className={labelCls}>Sección <span className="text-red-500">*</span></label>
+                  <select value={form.seccion} onChange={(e) => setForm((f) => ({ ...f, seccion: e.target.value }))}
+                    required className={inputCls}>
                     <option value="">Sección</option>
                     {SECCIONES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Curso — dinámico */}
+              {/* Curso */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Curso <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.curso}
-                  onChange={(e) => setForm((f) => ({ ...f, curso: e.target.value }))}
-                  required
-                  disabled={cursosDisponibles.length === 0}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] disabled:bg-gray-100 disabled:text-gray-400"
-                >
-                  <option value="">
-                    {cursosDisponibles.length === 0
-                      ? "Selecciona carrera y ciclo primero"
-                      : "Seleccionar curso"}
-                  </option>
+                <label className={labelCls}>Curso <span className="text-red-500">*</span></label>
+                <select value={form.curso} onChange={(e) => setForm((f) => ({ ...f, curso: e.target.value }))}
+                  required disabled={cursosDisponibles.length === 0}
+                  className={`${inputCls} disabled:bg-gray-100 disabled:text-gray-400`}>
+                  <option value="">{cursosDisponibles.length === 0 ? "Selecciona carrera y ciclo primero" : "Seleccionar curso"}</option>
                   {cursosDisponibles.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
               {/* Docente — autocomplete */}
               <div ref={docenteRef} className="relative">
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Docente <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.docente}
+                <label className={labelCls}>Docente <span className="text-red-500">*</span></label>
+                <input type="text" value={form.docente}
                   onChange={(e) => handleDocenteChange(e.target.value)}
                   onFocus={() => {
                     if (form.docente.trim().length >= 2) {
@@ -365,26 +364,25 @@ export default function RegistroAsistencia() {
                   }}
                   placeholder="Escribe apellido del docente…"
                   autoComplete="off"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-                  required
-                />
+                  className={`${inputCls} uppercase`} required />
                 {showSuggestions && (
-                  <ul className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-52 overflow-y-auto">
+                  <ul className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-xl mt-1.5 max-h-52 overflow-y-auto">
                     {docenteSuggestions.map((name) => {
                       const q = form.docente.trim();
                       const idx = name.indexOf(q);
                       return (
-                        <li key={name}
-                          onMouseDown={() => selectDocente(name)}
-                          className="px-3 py-2.5 cursor-pointer hover:bg-[#001F5F]/5 text-sm text-gray-800 border-b border-gray-50 last:border-0 flex items-center gap-2">
+                        <li key={name} onMouseDown={() => selectDocente(name)}
+                          className="px-4 py-2.5 cursor-pointer hover:bg-[#001F5F]/5 text-sm text-gray-800 border-b border-gray-50 last:border-0 flex items-center gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] flex-shrink-0" />
-                          {idx >= 0 ? (
-                            <>
-                              {name.slice(0, idx)}
-                              <mark className="bg-[#C9A84C]/30 text-[#001F5F] font-semibold rounded px-0.5">{name.slice(idx, idx + q.length)}</mark>
-                              {name.slice(idx + q.length)}
-                            </>
-                          ) : name}
+                          <span>
+                            {idx >= 0 ? (
+                              <>
+                                {name.slice(0, idx)}
+                                <mark className="bg-[#C9A84C]/35 text-[#001F5F] font-bold rounded px-0.5 not-italic">{name.slice(idx, idx + q.length)}</mark>
+                                {name.slice(idx + q.length)}
+                              </>
+                            ) : name}
+                          </span>
                         </li>
                       );
                     })}
@@ -392,40 +390,31 @@ export default function RegistroAsistencia() {
                 )}
               </div>
 
-              {/* Día + Fecha — automáticos, solo lectura */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Día</label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700 font-semibold flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                    {TODAY_DIA}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Fecha</label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700 font-semibold">
-                    {TODAY}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-sm text-red-700">
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" /></svg>
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-[#001F5F] hover:bg-[#001F5F]/90 text-white font-semibold rounded-xl py-3 text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Registrando..." : "Registrar mi Asistencia"}
+          <button type="submit" disabled={submitting}
+            className="w-full font-bold rounded-2xl py-3.5 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg active:scale-[0.99]"
+            style={{ background: "linear-gradient(135deg,#001F5F 0%,#002f8f 100%)", color: "#fff" }}>
+            {submitting
+              ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Registrando...</span>
+              : "✓ Registrar mi Asistencia"}
           </button>
+
+          <p className="text-center text-[11px] text-gray-400 pb-1">
+            Todos los campos son obligatorios para completar el registro.
+          </p>
         </form>
       </div>
+
+      <p className="text-white/40 text-[10px] mt-5">© 2026 Universidad Autónoma de Ica — Sistema de Control Académico</p>
     </div>
   );
 }
