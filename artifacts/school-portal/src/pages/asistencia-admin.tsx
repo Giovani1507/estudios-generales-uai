@@ -4,8 +4,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { Download, Printer, BarChart3, Users, Search, X, RefreshCw, Trash2, Filter } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Download, Printer, BarChart3, Users, Search, X, RefreshCw, Trash2, Filter, TableProperties } from "lucide-react";
+import ExcelJS from "exceljs";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 const COLORS = ["#001F5F","#C9A84C","#3B82F6","#10B981","#F59E0B","#EF4444","#8B5CF6","#EC4899"];
@@ -38,7 +38,7 @@ interface Reporte {
 }
 
 export default function AsistenciaAdmin() {
-  const [tab, setTab] = useState<"registros" | "graficos" | "qr">("registros");
+  const [tab, setTab] = useState<"registros" | "resumen" | "graficos" | "qr">("registros");
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(true);
   const [reporte, setReporte] = useState<Reporte | null>(null);
@@ -110,55 +110,152 @@ export default function AsistenciaAdmin() {
     }
   };
 
-  const handleExcel = () => {
+  const handleExcel = async () => {
     const exportDate = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
     const exportTime = new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
 
-    // Header rows
-    const header: any[][] = [
-      ["UNIVERSIDAD AUTÓNOMA DE ICA"],
-      ["Sistema de Control de Asistencia Académica"],
-      [`Semestre: 2026-I`],
-      [`Fecha de exportación: ${exportDate} ${exportTime}`],
-      [`Total de registros: ${filtered.length}   |   Estudiantes únicos: ${uniqueStudents}`],
-      [], // fila vacía
-      ["#", "Apellidos", "Nombres", "Docente", "Curso", "Carrera", "Ciclo", "Sección", "Día", "Fecha", "Hora registro"],
-    ];
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Sistema UAI";
+    wb.created = new Date();
 
-    const dataRows = filtered.map((r, i) => [
-      i + 1,
-      r.apellidos,
-      r.nombres,
-      r.docente,
-      r.curso,
-      r.carrera,
-      r.ciclo,
-      r.seccion,
-      r.dia,
-      r.fecha,
-      new Date(r.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
-    ]);
+    // ─── Fetch logo ───
+    let logoId: number | null = null;
+    try {
+      const logoBlob = await fetch(`${base}/logo-uai.png`).then((r) => r.blob());
+      const logoBuffer = await logoBlob.arrayBuffer();
+      logoId = wb.addImage({ buffer: logoBuffer, extension: "png" });
+    } catch (_) {}
 
-    const ws = XLSX.utils.aoa_to_sheet([...header, ...dataRows]);
+    // ─── Hoja 1: Detalle de Asistencias ───
+    const ws = wb.addWorksheet("Asistencias", {
+      pageSetup: { paperSize: 9, orientation: "landscape" },
+    });
 
-    // Merge cells for title row
-    ws["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // row 1: universidad
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }, // row 2: sistema
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } }, // row 3: semestre
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } }, // row 4: fecha
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 10 } }, // row 5: totales
-    ];
+    // Logo (rows 1-4, cols A-B)
+    if (logoId !== null) {
+      ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 160, height: 55 } });
+    }
 
-    // Column widths
-    ws["!cols"] = [
-      { wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 30 }, { wch: 35 },
-      { wch: 28 }, { wch: 7 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
-    ];
+    // Row heights for logo area
+    ws.getRow(1).height = 20;
+    ws.getRow(2).height = 18;
+    ws.getRow(3).height = 16;
+    ws.getRow(4).height = 14;
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
-    XLSX.writeFile(wb, `reporte-asistencia-uai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    // Helpers
+    const navy = "001F5F";
+    const gold = "C9A84C";
+    const white = "FFFFFF";
+    const lightBlue = "EEF3FF";
+
+    const titleStyle = (txt: string, row: number, bold = false, size = 11) => {
+      const r = ws.getRow(row);
+      r.getCell(1).value = txt;
+      r.getCell(1).font = { bold, size, color: { argb: bold ? navy : "444444" }, name: "Arial" };
+      ws.mergeCells(row, 1, row, 11);
+      r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+    };
+
+    titleStyle("UNIVERSIDAD AUTÓNOMA DE ICA", 1, true, 14);
+    titleStyle("Sistema de Control de Asistencia Académica", 2, false, 11);
+    titleStyle(`Semestre Académico: 2026-I   |   Fecha: ${exportDate} ${exportTime}`, 3, false, 10);
+    titleStyle(`Total registros: ${filtered.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10);
+
+    ws.getRow(5).height = 6; // spacer
+
+    // ─── Table header ───
+    const COLS = ["#", "Apellidos", "Nombres", "Docente", "Curso", "Carrera", "Ciclo", "Sección", "Día", "Fecha", "Hora"];
+    const WIDTHS = [5, 22, 20, 28, 32, 26, 7, 8, 12, 12, 10];
+    COLS.forEach((col, i) => {
+      ws.getColumn(i + 1).width = WIDTHS[i];
+    });
+
+    const headerRow = ws.getRow(6);
+    headerRow.height = 18;
+    COLS.forEach((col, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = col;
+      cell.font = { bold: true, color: { argb: white }, size: 10, name: "Arial" };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = {
+        top: { style: "thin", color: { argb: gold } },
+        bottom: { style: "thin", color: { argb: gold } },
+        left: { style: "thin", color: { argb: "3333AA" } },
+        right: { style: "thin", color: { argb: "3333AA" } },
+      };
+    });
+
+    // ─── Data rows ───
+    filtered.forEach((r, i) => {
+      const row = ws.getRow(7 + i);
+      row.height = 14;
+      const isEven = i % 2 === 0;
+      const bg = isEven ? white : lightBlue;
+      const vals = [
+        i + 1, r.apellidos, r.nombres, r.docente, r.curso,
+        r.carrera, r.ciclo, r.seccion, r.dia, r.fecha,
+        new Date(r.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
+      ];
+      vals.forEach((val, ci) => {
+        const cell = row.getCell(ci + 1);
+        cell.value = val;
+        cell.font = { size: 9, name: "Arial", bold: ci === 1 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+        cell.alignment = { vertical: "middle", horizontal: [0, 6, 7, 8].includes(ci) ? "center" : "left", wrapText: false };
+        cell.border = {
+          bottom: { style: "hair", color: { argb: "CCCCDD" } },
+          left: { style: "hair", color: { argb: "CCCCDD" } },
+          right: { style: "hair", color: { argb: "CCCCDD" } },
+        };
+      });
+    });
+
+    // ─── Hoja 2: Resumen por Clase ───
+    const ws2 = wb.addWorksheet("Resumen por Clase");
+    ["#", "Carrera", "Ciclo", "Sección", "Curso", "Docente", "Total Asistentes"].forEach((h, i) => {
+      const widths2 = [4, 26, 7, 8, 32, 30, 16];
+      ws2.getColumn(i + 1).width = widths2[i];
+      const cell = ws2.getRow(1).getCell(i + 1);
+      cell.value = h;
+      cell.font = { bold: true, color: { argb: white }, size: 10 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { bottom: { style: "thin", color: { argb: gold } } };
+    });
+    ws2.getRow(1).height = 18;
+
+    const groups: Record<string, { carrera: string; ciclo: string; seccion: string; curso: string; docente: string; count: number }> = {};
+    registros.forEach((r) => {
+      const key = `${r.carrera}||${r.ciclo}||${r.seccion}||${r.curso}||${r.docente}`;
+      if (!groups[key]) groups[key] = { carrera: r.carrera, ciclo: r.ciclo, seccion: r.seccion, curso: r.curso, docente: r.docente, count: 0 };
+      groups[key].count++;
+    });
+    const sorted = Object.values(groups).sort((a, b) => a.carrera.localeCompare(b.carrera) || a.ciclo.localeCompare(b.ciclo) || a.seccion.localeCompare(b.seccion));
+    sorted.forEach((g, i) => {
+      const row2 = ws2.getRow(2 + i);
+      row2.height = 13;
+      const bg = i % 2 === 0 ? white : lightBlue;
+      [i + 1, g.carrera, g.ciclo, g.seccion, g.curso, g.docente, g.count].forEach((v, ci) => {
+        const cell = row2.getCell(ci + 1);
+        cell.value = v;
+        cell.font = { size: 9, bold: ci === 6 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+        cell.alignment = { vertical: "middle", horizontal: [0, 2, 3, 6].includes(ci) ? "center" : "left" };
+        cell.border = { bottom: { style: "hair", color: { argb: "CCCCDD" } } };
+      });
+    });
+
+    // ─── Guardar ───
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reporte-asistencia-uai-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleDownloadQR = () => {
@@ -233,9 +330,10 @@ export default function AsistenciaAdmin() {
 
       <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
       {/* Tabs */}
-      <div className="flex gap-1 bg-white border border-[#001F5F]/15 rounded-xl p-1 w-fit shadow-sm">
+      <div className="flex gap-1 bg-white border border-[#001F5F]/15 rounded-xl p-1 w-fit shadow-sm flex-wrap">
         {[
           { key: "registros", label: "Registros", Icon: Users },
+          { key: "resumen", label: "Resumen", Icon: TableProperties },
           { key: "graficos", label: "Gráficos", Icon: BarChart3 },
           { key: "qr", label: "QR", Icon: Download },
         ].map(({ key, label, Icon }) => (
@@ -417,6 +515,89 @@ export default function AsistenciaAdmin() {
           )}
         </div>
       )}
+
+      {/* ── RESUMEN TAB ── */}
+      {tab === "resumen" && (() => {
+        // Agrupar por Carrera + Ciclo + Sección + Curso + Docente
+        const groups: Record<string, { carrera: string; ciclo: string; seccion: string; curso: string; docente: string; count: number }> = {};
+        registros.forEach((r) => {
+          const key = `${r.carrera}||${r.ciclo}||${r.seccion}||${r.curso}||${r.docente}`;
+          if (!groups[key]) groups[key] = { carrera: r.carrera, ciclo: r.ciclo, seccion: r.seccion, curso: r.curso, docente: r.docente, count: 0 };
+          groups[key].count++;
+        });
+        const sorted = Object.values(groups).sort((a, b) =>
+          a.carrera.localeCompare(b.carrera) || a.ciclo.localeCompare(b.ciclo) || a.seccion.localeCompare(b.seccion)
+        );
+        return (
+          <div className="space-y-3">
+            <div className="rounded-2xl overflow-hidden shadow-md border border-[#001F5F]/20">
+              <div className="bg-[#001F5F] px-4 py-2.5 flex items-center justify-between">
+                <span className="text-white text-xs font-bold uppercase tracking-wider">Resumen de Asistentes por Clase</span>
+                <span className="text-[#C9A84C] text-xs font-semibold">{sorted.length} combinaciones · {registros.length} total registros</span>
+              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-10 bg-white">
+                  <div className="w-5 h-5 border-2 border-[#001F5F] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : sorted.length === 0 ? (
+                <div className="bg-white text-center py-12 text-gray-400 text-sm">Aún no hay registros.</div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-[#001F5F]/85">
+                          {[
+                            { label: "#", cls: "text-center w-8" },
+                            { label: "Carrera", cls: "" },
+                            { label: "Ciclo", cls: "text-center" },
+                            { label: "Sec.", cls: "text-center" },
+                            { label: "Curso", cls: "" },
+                            { label: "Docente", cls: "" },
+                            { label: "Total Asistentes", cls: "text-center" },
+                          ].map((h, i) => (
+                            <th key={i} className={`px-3 py-2.5 text-[10px] font-bold text-white/80 uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-0 ${h.cls}`}>
+                              {h.label}
+                            </th>
+                          ))}
+                        </tr>
+                        <tr><td colSpan={7} className="p-0"><div className="h-[3px] bg-[#C9A84C]" /></td></tr>
+                      </thead>
+                      <tbody>
+                        {sorted.map((g, i) => {
+                          const isEven = i % 2 === 0;
+                          const cellBorder = "border-r border-[#001F5F]/8 last:border-0";
+                          return (
+                            <tr key={i} className={`${isEven ? "bg-white" : "bg-[#f0f4ff]"} border-b border-[#001F5F]/8 hover:bg-[#001F5F]/5 transition-colors`}>
+                              <td className={`px-3 py-2.5 text-center text-xs font-bold text-[#001F5F]/40 ${cellBorder}`}>{i + 1}</td>
+                              <td className={`px-3 py-2.5 whitespace-nowrap ${cellBorder}`}>
+                                <span className="text-[11px] bg-[#001F5F] text-white px-2 py-0.5 rounded font-semibold">{g.carrera}</span>
+                              </td>
+                              <td className={`px-3 py-2.5 text-center font-bold text-[#001F5F] ${cellBorder}`}>{g.ciclo}</td>
+                              <td className={`px-3 py-2.5 text-center font-semibold text-gray-600 ${cellBorder}`}>{g.seccion}</td>
+                              <td className={`px-3 py-2.5 text-xs text-gray-700 ${cellBorder}`}>{g.curso}</td>
+                              <td className={`px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap ${cellBorder}`}>{g.docente}</td>
+                              <td className={`px-3 py-2.5 text-center ${cellBorder}`}>
+                                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#001F5F] text-white font-extrabold text-base shadow-sm">
+                                  {g.count}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="bg-[#001F5F]/5 border-t border-[#001F5F]/10 px-4 py-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">{sorted.length} clases con registros</span>
+                    <span className="text-xs text-[#001F5F] font-semibold">Total: {registros.reduce((s) => s + 1, 0)} asistencias registradas</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── GRÁFICOS TAB ── */}
       {tab === "graficos" && (
