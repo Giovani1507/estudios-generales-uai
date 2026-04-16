@@ -69,12 +69,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Horario por Carrera",
-    url: "/horarios/seccion",
-    icon: GraduationCap,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Usuarios",
     url: "/usuarios",
     icon: Users,
@@ -331,9 +325,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                               {estudiantesOpen && (
                                 <div className="bg-black/15">
                                   {[
-                                    { href: "/estudiantes/sin-matricula", label: "Sin Matrícula", Icon: UserX },
-                                    { href: "/estudiantes/sin-vacante",   label: "Sin Vacante",   Icon: AlertTriangle },
-                                    { href: "/estudiantes/delegados",     label: "Delegados",     Icon: Users },
+                                    { href: "/estudiantes/delegados", label: "Delegados", Icon: Users },
                                   ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}
