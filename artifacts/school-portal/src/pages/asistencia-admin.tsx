@@ -138,28 +138,28 @@ export default function AsistenciaAdmin() {
     const white = "FFFFFF";
     const lightBlue = "EEF3FF";
 
-    // ─── Header rows (1-5): fondo azul marino ───
-    for (let rowNum = 1; rowNum <= 5; rowNum++) {
+    // ─── Header rows (1-6): fondo azul marino ───
+    // Row 1=padding, 2=logo, 3=title, 4=subtitle, 5=date, 6=gold bar
+    for (let rowNum = 1; rowNum <= 6; rowNum++) {
       const r = ws.getRow(rowNum);
       for (let col = 1; col <= 11; col++) {
         r.getCell(col).fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
       }
     }
 
-    // Row heights
-    ws.getRow(1).height = 16;
-    ws.getRow(2).height = 22; // logo row
-    ws.getRow(3).height = 16;
-    ws.getRow(4).height = 14;
-    ws.getRow(5).height = 14;
+    // Row heights — logo in its own row (row 2), title below (row 3)
+    ws.getRow(1).height = 4;  // top padding
+    ws.getRow(2).height = 65; // logo only
+    ws.getRow(3).height = 22; // university name
+    ws.getRow(4).height = 15; // subtitle
+    ws.getRow(5).height = 13; // date / totals
+    ws.getRow(6).height = 5;  // gold separator
 
-    // ─── Logo centrado en fila 2 ───
+    // ─── Logo centrado en fila 2 (sin texto) ───
     if (logoId !== null) {
-      // Columnas WIDTHS = [5,22,20,28,32,26,7,8,12,12,10] → total 182 chars
-      // Centro ≈ col 4.5 (índice 0-based). Logo 72x72px
       ws.addImage(logoId, {
-        tl: { col: 4.6, row: 1.1 },
-        ext: { width: 72, height: 72 },
+        tl: { col: 4.8, row: 1.1 },
+        ext: { width: 60, height: 60 },
       });
     }
 
@@ -172,18 +172,13 @@ export default function AsistenciaAdmin() {
       r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     };
 
-    // Fila vacía (logo ocupa filas 1-3)
-    ws.getRow(1).height = 8; // top padding
-    titleStyle("UNIVERSIDAD AUTÓNOMA DE ICA", 2, true, 16, white);
-    ws.getRow(2).height = 90; // espacio para el logo + título
-    titleStyle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 3, false, 11, "AABBD4");
-    titleStyle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${filtered.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10, "AABBD4");
-    ws.getRow(5).height = 6; // spacer
+    titleStyle("UNIVERSIDAD AUTÓNOMA DE ICA", 3, true, 16, white);
+    titleStyle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 4, false, 11, "AABBD4");
+    titleStyle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${filtered.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 5, false, 10, "AABBD4");
 
-    // Línea dorada separadora
-    const goldenRow = ws.getRow(5);
+    // Línea dorada separadora (fila 6)
     for (let col = 1; col <= 11; col++) {
-      goldenRow.getCell(col).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
+      ws.getRow(6).getCell(col).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
     }
 
     // ─── Table header ───
@@ -193,7 +188,7 @@ export default function AsistenciaAdmin() {
       ws.getColumn(i + 1).width = WIDTHS[i];
     });
 
-    const headerRow = ws.getRow(6);
+    const headerRow = ws.getRow(7);
     headerRow.height = 18;
     COLS.forEach((col, i) => {
       const cell = headerRow.getCell(i + 1);
@@ -209,9 +204,9 @@ export default function AsistenciaAdmin() {
       };
     });
 
-    // ─── Data rows ───
+    // ─── Data rows (start at row 8, after header at row 7) ───
     filtered.forEach((r, i) => {
-      const row = ws.getRow(7 + i);
+      const row = ws.getRow(8 + i);
       row.height = 14;
       const isEven = i % 2 === 0;
       const bg = isEven ? white : lightBlue;
@@ -298,20 +293,20 @@ export default function AsistenciaAdmin() {
 
     const ws = wb.addWorksheet(sheetName, { pageSetup: { paperSize: 9, orientation } });
     const navy = "001F5F", gold = "C9A84C", white = "FFFFFF";
-
     const NCOLS = 11;
-    for (let rn = 1; rn <= 5; rn++)
+
+    // Rows: 1=padding, 2=logo, 3=title, 4=subtitle, 5=date, 6=gold bar
+    const HEIGHTS = [4, 65, 22, 15, 13, 5];
+    HEIGHTS.forEach((h, i) => { ws.getRow(i + 1).height = h; });
+
+    // Navy background for rows 1-6
+    for (let rn = 1; rn <= 6; rn++)
       for (let c = 1; c <= NCOLS; c++)
         ws.getRow(rn).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
 
-    ws.getRow(1).height = 8;
-    ws.getRow(2).height = 90;
-    ws.getRow(3).height = 16;
-    ws.getRow(4).height = 14;
-    ws.getRow(5).height = 6;
-
+    // Logo in row 2, centered (row index 1 in 0-based = row 2)
     if (logoId !== null)
-      ws.addImage(logoId, { tl: { col: 4.6, row: 1.1 }, ext: { width: 72, height: 72 } });
+      ws.addImage(logoId, { tl: { col: 4.8, row: 1.1 }, ext: { width: 60, height: 60 } });
 
     const addTitle = (txt: string, row: number, bold: boolean, size: number, color = white) => {
       ws.mergeCells(row, 1, row, NCOLS);
@@ -322,14 +317,18 @@ export default function AsistenciaAdmin() {
       cell.alignment = { horizontal: "center", vertical: "middle" };
     };
 
-    addTitle("UNIVERSIDAD AUTÓNOMA DE ICA", 2, true, 16);
-    addTitle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 3, false, 11, "AABBD4");
-    addTitle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${registros.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 4, false, 10, "AABBD4");
-
+    // Row 2: empty (logo only)
+    // Row 3: University name
+    addTitle("UNIVERSIDAD AUTÓNOMA DE ICA", 3, true, 16);
+    // Row 4: system subtitle
+    addTitle("Sistema de Control de Asistencia Académica — Semestre 2026-I", 4, false, 11, "AABBD4");
+    // Row 5: date + totals
+    addTitle(`Fecha: ${exportDate}  ${exportTime}   ·   Registros: ${registros.length}   ·   Estudiantes únicos: ${uniqueStudents}`, 5, false, 10, "AABBD4");
+    // Row 6: gold separator
     for (let c = 1; c <= NCOLS; c++)
-      ws.getRow(5).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
+      ws.getRow(6).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
 
-    return { wb, ws, navy, gold, white, NCOLS };
+    return { wb, ws, navy, gold, white, NCOLS, dataStartRow: 7 };
   };
 
   const downloadBuffer = async (wb: ExcelJS.Workbook, filename: string) => {
@@ -347,7 +346,7 @@ export default function AsistenciaAdmin() {
     const W2    = [4, 26, 7, 8, 32, 30, 16];
     COLS2.forEach((h, i) => { ws.getColumn(i + 1).width = W2[i]; });
 
-    const hr = ws.getRow(6); hr.height = 18;
+    const hr = ws.getRow(7); hr.height = 18;
     COLS2.forEach((h, i) => {
       const cell = hr.getCell(i + 1);
       cell.value = h;
@@ -366,7 +365,7 @@ export default function AsistenciaAdmin() {
     const sorted = Object.values(groups).sort((a, b) => a.carrera.localeCompare(b.carrera) || a.ciclo.localeCompare(b.ciclo) || a.seccion.localeCompare(b.seccion));
 
     sorted.forEach((g, i) => {
-      const row = ws.getRow(7 + i); row.height = 13;
+      const row = ws.getRow(8 + i); row.height = 13;
       const bg = i % 2 === 0 ? "FFFFFF" : "EEF3FF";
       [i + 1, g.carrera, g.ciclo, g.seccion, g.curso, g.docente, g.count].forEach((v, ci) => {
         const cell = row.getCell(ci + 1);
