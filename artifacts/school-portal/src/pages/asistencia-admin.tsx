@@ -63,6 +63,13 @@ export default function AsistenciaAdmin() {
     return !q || [r.apellidos, r.nombres, r.docente, r.curso, r.carrera, r.seccion, r.dia].some((v) => v.toLowerCase().includes(q));
   });
 
+  // Count registrations per student (apellidos + nombres)
+  const studentCount: Record<string, number> = {};
+  for (const r of registros) {
+    const key = `${r.apellidos}|${r.nombres}`;
+    studentCount[key] = (studentCount[key] || 0) + 1;
+  }
+
   const handleExcel = () => {
     const rows = filtered.map((r, i) => ({
       "#": i + 1,
@@ -230,7 +237,7 @@ export default function AsistenciaAdmin() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      {["#", "Apellidos", "Nombres", "Docente", "Curso", "Carrera", "Ciclo", "Sec.", "Día", "Fecha", "Hora"].map((h) => (
+                      {["#", "Apellidos", "Nombres", "Asist.", "Docente", "Curso", "Carrera", "Ciclo", "Sec.", "Día", "Fecha", "Hora"].map((h) => (
                         <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                           {h}
                         </th>
@@ -243,6 +250,16 @@ export default function AsistenciaAdmin() {
                         <td className="px-3 py-2.5 text-gray-400 text-xs">{i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-gray-800 whitespace-nowrap">{r.apellidos}</td>
                         <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">{r.nombres}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          {(() => {
+                            const count = studentCount[`${r.apellidos}|${r.nombres}`] || 1;
+                            return (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${count > 1 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                {count} {count === 1 ? "asistencia" : "asistencias"}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.docente}</td>
                         <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.curso}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
