@@ -159,21 +159,22 @@ export default function HorarioSemana() {
     const diasHtml = diasConClases.map(dia => {
       const rows = byDay.get(dia) ?? [];
       const col  = DIA_COLOR[dia] ?? { bg: "#f8fafc", text: "#334155", border: "#e2e8f0" };
+      const cellStyle = `border-bottom:1px solid ${col.border};border-right:1px solid ${col.border};padding:4px 7px;vertical-align:middle;`;
       const rowsHtml = rows.map((r, i) => `
-        <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"}">
-          <td style="padding:3px 6px;white-space:nowrap;font-weight:700;color:${col.text};font-size:8px;">${padH(r.hora)}–${padH(r.horaFin)}</td>
-          <td style="padding:3px 6px;font-size:8px;">
-            <span style="background:#001F5F;color:white;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;">${r.carreraFull}</span>
-            <span style="background:#C9A84C;color:#001F5F;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;margin-left:3px;">C${r.ciclo}·${r.seccion}</span>
+        <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+          <td style="${cellStyle}white-space:nowrap;font-weight:700;color:${col.text};font-size:8px;">${padH(r.hora)}–${padH(r.horaFin)}</td>
+          <td style="${cellStyle}font-size:8px;">
+            <span style="background:#001F5F;color:white;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;margin-bottom:2px;">${r.carrera}</span><br/>
+            <span style="background:#C9A84C;color:#001F5F;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;">C${r.ciclo}·${r.seccion}</span>
           </td>
-          <td style="padding:3px 6px;font-size:8px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
-          <td style="padding:3px 6px;font-size:8px;color:#475569;">${r.docente}</td>
-          <td style="padding:3px 6px;font-size:8px;">
-            ${r.aula ? `<span style="background:#fef9c3;color:#854d0e;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #fde68a;">${r.aula}</span>` : ""}
-            ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #6ee7b7;margin-left:2px;">${r.laboratorio}</span>` : ""}
+          <td style="${cellStyle}font-size:8px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
+          <td style="${cellStyle}font-size:8px;color:#475569;">${r.docente}</td>
+          <td style="${cellStyle}font-size:8px;">
+            ${r.aula ? `<span style="background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #fde68a;display:inline-block;">${r.aula}</span>` : ""}
+            ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;border:1px solid #6ee7b7;display:inline-block;margin-top:2px;">${r.laboratorio}</span>` : ""}
             ${!r.aula && !r.laboratorio ? `<span style="color:#94a3b8;font-size:7px;">${r.modalidad}</span>` : ""}
           </td>
-          <td style="padding:3px 6px;font-size:7px;color:#94a3b8;">${r.local}</td>
+          <td style="${cellStyle}font-size:7px;color:#64748b;border-right:none;">${r.local}</td>
         </tr>`).join("");
 
       return `
