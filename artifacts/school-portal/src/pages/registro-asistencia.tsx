@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -97,6 +97,49 @@ const emptyForm = {
 export default function RegistroAsistencia() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [docentes, setDocentes] = useState<string[]>([]);
+  const [docenteSuggestions, setDocenteSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const docenteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    fetch(`${base}/docentes-registro-2026-1.json`)
+      .then((r) => r.json())
+      .then((data: { nombre: string }[]) => {
+        const names = data.map((d) => d.nombre).filter(Boolean).sort();
+        setDocentes(names);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (docenteRef.current && !docenteRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleDocenteChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setForm((f) => ({ ...f, docente: upper }));
+    if (upper.trim().length >= 2) {
+      const q = upper.trim();
+      const matches = docentes.filter((d) => d.includes(q)).slice(0, 8);
+      setDocenteSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectDocente = (name: string) => {
+    setForm((f) => ({ ...f, docente: name }));
+    setShowSuggestions(false);
+  };
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
@@ -304,19 +347,49 @@ export default function RegistroAsistencia() {
                 </select>
               </div>
 
-              {/* Docente */}
-              <div>
+              {/* Docente — autocomplete */}
+              <div ref={docenteRef} className="relative">
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   Docente <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={form.docente}
-                  onChange={(e) => setForm((f) => ({ ...f, docente: e.target.value.toUpperCase() }))}
-                  placeholder="Apellidos y nombres del docente"
+                  onChange={(e) => handleDocenteChange(e.target.value)}
+                  onFocus={() => {
+                    if (form.docente.trim().length >= 2) {
+                      const matches = docentes.filter((d) => d.includes(form.docente.trim())).slice(0, 8);
+                      setDocenteSuggestions(matches);
+                      setShowSuggestions(matches.length > 0);
+                    }
+                  }}
+                  placeholder="Escribe apellido del docente…"
+                  autoComplete="off"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
                   required
                 />
+                {showSuggestions && (
+                  <ul className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-52 overflow-y-auto">
+                    {docenteSuggestions.map((name) => {
+                      const q = form.docente.trim();
+                      const idx = name.indexOf(q);
+                      return (
+                        <li key={name}
+                          onMouseDown={() => selectDocente(name)}
+                          className="px-3 py-2.5 cursor-pointer hover:bg-[#001F5F]/5 text-sm text-gray-800 border-b border-gray-50 last:border-0 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] flex-shrink-0" />
+                          {idx >= 0 ? (
+                            <>
+                              {name.slice(0, idx)}
+                              <mark className="bg-[#C9A84C]/30 text-[#001F5F] font-semibold rounded px-0.5">{name.slice(idx, idx + q.length)}</mark>
+                              {name.slice(idx + q.length)}
+                            </>
+                          ) : name}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
 
               {/* Día + Fecha — automáticos, solo lectura */}
