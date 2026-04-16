@@ -1,68 +1,46 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState } from "react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
-interface Sesion {
-  id: number;
-  docente: string;
-  curso: string;
-  carrera: string;
-  ciclo: string;
-  seccion: string;
-  dia: string;
-  fecha: string;
-}
+const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+const emptyForm = {
+  apellidos: "",
+  nombres: "",
+  docente: "",
+  curso: "",
+  carrera: "",
+  ciclo: "",
+  seccion: "",
+  dia: "",
+  fecha: new Date().toISOString().slice(0, 10),
+};
 
 export default function RegistroAsistencia() {
-  const [location] = useLocation();
-  const params = new URLSearchParams(window.location.search);
-  const sesionId = params.get("id");
-
-  const [sesion, setSesion] = useState<Sesion | null>(null);
-  const [loadingSession, setLoadingSession] = useState(true);
-  const [sessionError, setSessionError] = useState("");
-
-  const [apellidos, setApellidos] = useState("");
-  const [nombres, setNombres] = useState("");
+  const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!sesionId) {
-      setSessionError("Código QR inválido. No se encontró el ID de sesión.");
-      setLoadingSession(false);
-      return;
-    }
-    fetch(`${apiBase}/api/asistencia/sesiones/${sesionId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Sesión no encontrada");
-        return r.json();
-      })
-      .then((data) => {
-        setSesion(data);
-        setLoadingSession(false);
-      })
-      .catch(() => {
-        setSessionError("No se pudo cargar la sesión. Verifica que el QR sea válido.");
-        setLoadingSession(false);
-      });
-  }, [sesionId]);
+  const handleChange = (key: string, value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apellidos.trim() || !nombres.trim()) {
-      setError("Por favor completa apellidos y nombres.");
-      return;
+    for (const [k, v] of Object.entries(form)) {
+      if (!v.trim()) {
+        setError("Por favor completa todos los campos.");
+        return;
+      }
     }
     setSubmitting(true);
     setError("");
     try {
-      const res = await fetch(`${apiBase}/api/asistencia/sesiones/${sesionId}/registros`, {
+      const res = await fetch(`${apiBase}/api/asistencia/registros`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apellidos: apellidos.trim(), nombres: nombres.trim() }),
+        body: JSON.stringify(form),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -76,33 +54,6 @@ export default function RegistroAsistencia() {
     }
   };
 
-  if (loadingSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#001F5F] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Cargando sesión...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (sessionError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-bold text-gray-800 mb-2">QR Inválido</h2>
-          <p className="text-sm text-gray-500">{sessionError}</p>
-        </div>
-      </div>
-    );
-  }
-
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -113,23 +64,31 @@ export default function RegistroAsistencia() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">¡Asistencia Registrada!</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            {nombres} {apellidos}, tu asistencia fue registrada correctamente.
+          <p className="text-sm text-gray-500 mb-5">
+            Tu asistencia fue registrada correctamente.
           </p>
-          <div className="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-1">
-            <p><span className="font-medium text-gray-600">Curso:</span> {sesion?.curso}</p>
-            <p><span className="font-medium text-gray-600">Docente:</span> {sesion?.docente}</p>
-            <p><span className="font-medium text-gray-600">Día:</span> {sesion?.dia}</p>
-            <p><span className="font-medium text-gray-600">Sección:</span> {sesion?.seccion}</p>
+          <div className="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-1.5">
+            <p><span className="font-medium text-gray-600">Estudiante:</span> {form.apellidos}, {form.nombres}</p>
+            <p><span className="font-medium text-gray-600">Docente:</span> {form.docente}</p>
+            <p><span className="font-medium text-gray-600">Curso:</span> {form.curso}</p>
+            <p><span className="font-medium text-gray-600">Carrera:</span> {form.carrera}</p>
+            <p><span className="font-medium text-gray-600">Ciclo / Sec.:</span> {form.ciclo} — {form.seccion}</p>
+            <p><span className="font-medium text-gray-600">Día:</span> {form.dia} · {form.fecha}</p>
           </div>
-          <p className="text-xs text-gray-400 mt-4">Puedes cerrar esta ventana.</p>
+          <button
+            onClick={() => { setForm(emptyForm); setSubmitted(false); }}
+            className="mt-5 w-full py-2.5 rounded-xl border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 font-medium"
+          >
+            Registrar otra asistencia
+          </button>
+          <p className="text-xs text-gray-400 mt-3">Puedes cerrar esta ventana.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 py-8">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-[#001F5F] px-6 py-5">
@@ -146,59 +105,144 @@ export default function RegistroAsistencia() {
           </div>
         </div>
 
-        {/* Session info */}
-        <div className="bg-[#C9A84C]/10 border-b border-[#C9A84C]/30 px-6 py-4">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Docente</p>
-              <p className="font-semibold text-gray-800 text-sm">{sesion?.docente}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Curso</p>
-              <p className="font-semibold text-gray-800 text-sm">{sesion?.curso}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Carrera</p>
-              <p className="font-semibold text-gray-800 text-sm">{sesion?.carrera}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Ciclo / Sección</p>
-              <p className="font-semibold text-gray-800 text-sm">{sesion?.ciclo} — {sesion?.seccion}</p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Día / Fecha</p>
-              <p className="font-semibold text-gray-800 text-sm">{sesion?.dia} · {sesion?.fecha}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <p className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+            Completa todos los campos para registrar tu asistencia de hoy.
+          </p>
+
+          {/* Datos del estudiante */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Apellidos <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={apellidos}
-              onChange={(e) => setApellidos(e.target.value.toUpperCase())}
-              placeholder="Ej: GARCÍA RAMOS"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-              required
-            />
+            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-2">Datos del Estudiante</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Apellidos <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.apellidos}
+                  onChange={(e) => handleChange("apellidos", e.target.value)}
+                  placeholder="Ej: GARCÍA RAMOS"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Nombres <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.nombres}
+                  onChange={(e) => handleChange("nombres", e.target.value)}
+                  placeholder="Ej: JUAN CARLOS"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                  required
+                />
+              </div>
+            </div>
           </div>
+
+          {/* Datos de la clase */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Nombres <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={nombres}
-              onChange={(e) => setNombres(e.target.value.toUpperCase())}
-              placeholder="Ej: JUAN CARLOS"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
-              required
-            />
+            <p className="text-xs font-bold text-[#001F5F] uppercase tracking-wider mb-2">Datos de la Clase</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Docente <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.docente}
+                  onChange={(e) => handleChange("docente", e.target.value)}
+                  placeholder="Apellidos y nombres del docente"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Curso <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.curso}
+                  onChange={(e) => handleChange("curso", e.target.value)}
+                  placeholder="Nombre del curso"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Carrera <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.carrera}
+                  onChange={(e) => handleChange("carrera", e.target.value)}
+                  placeholder="Ej: INGENIERÍA CIVIL"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Ciclo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.ciclo}
+                    onChange={(e) => handleChange("ciclo", e.target.value)}
+                    placeholder="Ej: III"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Sección <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.seccion}
+                    onChange={(e) => handleChange("seccion", e.target.value)}
+                    placeholder="Ej: A"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F] uppercase"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Día <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.dia}
+                    onChange={(e) => handleChange("dia", e.target.value)}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
+                  >
+                    <option value="">Seleccionar</option>
+                    {DIAS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Fecha <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.fecha}
+                    onChange={(e) => handleChange("fecha", e.target.value)}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001F5F]/40 focus:border-[#001F5F]"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -214,9 +258,6 @@ export default function RegistroAsistencia() {
           >
             {submitting ? "Registrando..." : "Registrar mi Asistencia"}
           </button>
-          <p className="text-center text-xs text-gray-400">
-            Solo necesitas registrarte una vez por clase.
-          </p>
         </form>
       </div>
     </div>
