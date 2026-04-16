@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { Clock, Users, BarChart2, Download, Search, Star } from "lucide-react";
 
 interface PlanRow {
+  local: string;
   carrera: string;
   ciclo: string;
   curso: string;
@@ -32,14 +33,17 @@ export default function DocentesTC() {
     fetch(`${base}/planificacion-fica-2026-1.json`)
       .then((r) => r.json())
       .then((json: PlanRow[]) => {
-        // 1. Docentes que dictan en ciclo 1 o 2
+        // Solo sede PRINCIPAL
+        const principal = json.filter((r) => r.local === "PRINCIPAL");
+
+        // 1. Docentes que dictan en ciclo 1 o 2 en PRINCIPAL
         const docsCiclo12 = new Set(
-          json.filter((r) => r.ciclo === "1" || r.ciclo === "2").map((r) => r.docente)
+          principal.filter((r) => r.ciclo === "1" || r.ciclo === "2").map((r) => r.docente)
         );
 
-        // 2. Acumular TODAS sus horas (incluyendo otros ciclos)
+        // 2. Acumular TODAS sus horas (incluyendo otros ciclos, pero solo PRINCIPAL)
         const map: Record<string, { horas: number; ciclos: Set<string>; carreras: Set<string>; cursos: DocenteTC["cursos"] }> = {};
-        json.forEach((r) => {
+        principal.forEach((r) => {
           if (!docsCiclo12.has(r.docente)) return;
           if (!map[r.docente])
             map[r.docente] = { horas: 0, ciclos: new Set(), carreras: new Set(), cursos: [] };
@@ -120,7 +124,7 @@ export default function DocentesTC() {
       cell.alignment = { horizontal: "center", vertical: "middle" };
     };
     addTitle("UNIVERSIDAD AUTÓNOMA DE ICA", 3, true, 16);
-    addTitle("Docentes Tiempo Completo (TC) — FICA 2026-I  ·  Criterio: ≥ 29 horas académicas", 4, false, 11, "AABBD4");
+    addTitle("Docentes Tiempo Completo (TC) — FICA 2026-I · Sede Principal  ·  Criterio: ≥ 29 horas académicas", 4, false, 11, "AABBD4");
     addTitle(
       `Generado: ${new Date().toLocaleDateString("es-PE")}  ·  Total TC: ${filtered.length}  ·  Incluye horas en todos los ciclos`,
       5, false, 10, "AABBD4"
@@ -173,11 +177,11 @@ export default function DocentesTC() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#001F5F]">Docentes Tiempo Completo — FICA</h1>
+            <h1 className="text-2xl font-bold text-[#001F5F]">Docentes Tiempo Completo — FICA · Sede Principal</h1>
             <p className="text-sm text-gray-500 mt-1">
               Docentes de ciclos 1 y 2 con{" "}
-              <span className="font-semibold text-[#001F5F]">≥ 29 horas académicas</span> en total
-              (incluyendo sus horas en otros ciclos)
+              <span className="font-semibold text-[#001F5F]">≥ 29 horas académicas</span> en la sede Principal
+              (se suman sus horas en todos los ciclos de la sede Principal)
             </p>
           </div>
           <button
