@@ -117,12 +117,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Verificación de Data",
-    url: "/verificacion-data",
-    icon: DatabaseZap,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,
@@ -250,16 +244,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "Horario por Aula",
       Icon: School,
     },
-    {
-      href: "/planificacion/crear",
-      label: "Crear Planificación",
-      Icon: ClipboardList,
-    },
-    {
-      href: "/planificacion/cruce",
-      label: "Cruce de Planificación",
-      Icon: AlertTriangle,
-    },
   ];
 
   return (
@@ -325,7 +309,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                 className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
                               >
                                 <FolderOpen className="w-4 h-4 shrink-0 text-white/80" />
-                                <span className="text-sm flex-1 text-left">Planificación</span>
+                                <span className="text-sm flex-1 text-left">Docentes</span>
                                 <ChevronDown
                                   className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${planOpen ? "rotate-180" : ""}`}
                                 />
