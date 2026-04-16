@@ -164,7 +164,7 @@ export default function HorarioSemana() {
         <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"};">
           <td style="${cellStyle}white-space:nowrap;font-weight:700;color:${col.text};font-size:8px;">${padH(r.hora)}–${padH(r.horaFin)}</td>
           <td style="${cellStyle}font-size:8px;">
-            <span style="background:#001F5F;color:white;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;margin-bottom:2px;">${r.carrera}</span><br/>
+            <span style="background:#001F5F;color:white;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;margin-bottom:2px;">${r.carreraFull}</span><br/>
             <span style="background:#C9A84C;color:#001F5F;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;">C${r.ciclo}·${r.seccion}</span>
           </td>
           <td style="${cellStyle}font-size:8px;font-weight:600;">${r.curso} <span style="color:#94a3b8;font-weight:400;">(${r.tipo})</span></td>
@@ -426,7 +426,9 @@ export default function HorarioSemana() {
                                     className="text-[10px] font-bold px-2 py-0.5 rounded-md text-white w-fit"
                                     style={{ background: NAVY }}
                                   >
-                                    {r.carrera}
+                                    {r.carreraFull.length > 32
+                                      ? r.carreraFull.split(" ").slice(0, 4).join(" ")
+                                      : r.carreraFull}
                                   </span>
                                   <span
                                     className="text-[10px] font-bold px-2 py-0.5 rounded-md w-fit"
