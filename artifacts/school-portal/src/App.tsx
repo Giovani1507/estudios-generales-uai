@@ -27,6 +27,7 @@ import HorarioSemana from "@/pages/horario-semana";
 import CrearPlanificacion from "@/pages/crear-planificacion";
 import HorarioCruce from "@/pages/horario-cruce";
 import ListaDocentes from "@/pages/lista-docentes";
+import DocentesTC from "@/pages/docentes-tc";
 import Actividad from "@/pages/actividad";
 import HorarioSeccion from "@/pages/horario-seccion";
 import RegistroEstudiante from "@/pages/registro-estudiante";
@@ -149,6 +150,10 @@ function AppRouter() {
       <Route
         path="/lista-docentes/fcs"
         component={() => <ProtectedRoute component={() => <ListaDocentes initialFacultad="FCS" />} />}
+      />
+      <Route
+        path="/lista-docentes/fica-tc"
+        component={() => <ProtectedRoute component={DocentesTC} />}
       />
       <Route
         path="/actividad"

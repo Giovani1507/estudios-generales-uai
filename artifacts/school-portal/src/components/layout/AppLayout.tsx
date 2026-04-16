@@ -371,8 +371,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                               {listaOpen && (
                                 <div className="bg-black/15">
                                   {[
-                                    { href: "/lista-docentes/fica", label: "FICA" },
-                                    { href: "/lista-docentes/fcs",  label: "FCS"  },
+                                    { href: "/lista-docentes/fica",    label: "FICA" },
+                                    { href: "/lista-docentes/fcs",     label: "FCS"  },
+                                    { href: "/lista-docentes/fica-tc", label: "TC FICA" },
                                   ].map(({ href, label }) => (
                                     <Link
                                       key={href}
