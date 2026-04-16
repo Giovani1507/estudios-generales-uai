@@ -52,16 +52,16 @@ export default function Login() {
     <div
       className="min-h-screen w-full flex relative overflow-hidden"
       style={{
-        backgroundImage: `url(${import.meta.env.BASE_URL}blue-bg.jpg)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}uai-student-bg.jpg)`,
         backgroundSize: "cover",
-        backgroundPosition: "center right",
+        backgroundPosition: "center 15%",
       }}
     >
-      {/* Gradient overlay — más fuerte a la izquierda para legibilidad, transparente a la derecha para ver la persona */}
+      {/* Overlay: oscuro a la izquierda para la tarjeta, transparente a la derecha para ver la estudiante */}
       <div
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(to right, rgba(10,30,90,0.82) 0%, rgba(10,30,90,0.65) 45%, rgba(10,30,90,0.10) 75%, transparent 100%)",
+          background: "linear-gradient(to right, rgba(0,20,70,0.80) 0%, rgba(0,20,70,0.65) 42%, rgba(0,20,70,0.10) 70%, transparent 100%)",
         }}
       />
 
