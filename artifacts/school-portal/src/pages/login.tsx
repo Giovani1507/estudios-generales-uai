@@ -52,9 +52,9 @@ export default function Login() {
     <div
       className="min-h-screen w-full flex relative overflow-hidden"
       style={{
-        backgroundImage: `url(${import.meta.env.BASE_URL}uai-student-bg.jpg)`,
-        backgroundSize: "contain",
-        backgroundPosition: "center top",
+        backgroundImage: `url(${import.meta.env.BASE_URL}uai-bg2.jpg)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center bottom",
         backgroundRepeat: "no-repeat",
         backgroundColor: "#001340",
       }}
@@ -62,7 +62,7 @@ export default function Login() {
       {/* Overlay uniforme para legibilidad */}
       <div
         className="absolute inset-0"
-        style={{ background: "rgba(0,15,55,0.55)" }}
+        style={{ background: "linear-gradient(to bottom, rgba(0,10,50,0.88) 0%, rgba(0,15,55,0.62) 40%, rgba(0,15,55,0.62) 70%, rgba(0,10,50,0.92) 100%)" }}
       />
 
       {/* Tarjeta centrada */}
