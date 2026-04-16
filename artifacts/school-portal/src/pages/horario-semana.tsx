@@ -380,96 +380,123 @@ export default function HorarioSemana() {
                   </span>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="divide-y">
-                    {rows.map((r, i) => (
-                      <div
-                        key={i}
-                        className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
-                      >
-                        <div
-                          className="flex-shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-2 min-w-[76px] text-center"
-                          style={{ background: col.bg, border: `1px solid ${col.border}` }}
-                        >
-                          <Clock className="w-3 h-3 mb-0.5" style={{ color: col.text }} />
-                          <span className="text-[11px] font-bold leading-tight" style={{ color: col.text }}>
-                            {padH(r.hora)}
-                          </span>
-                          <span className="text-[9px] text-slate-400">↓</span>
-                          <span className="text-[11px] font-bold leading-tight" style={{ color: col.text }}>
-                            {padH(r.horaFin)}
-                          </span>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                            <span
-                              className="text-xs font-bold px-2 py-0.5 rounded-md text-white"
-                              style={{ background: NAVY }}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr style={{ background: col.bg, borderBottom: `2px solid ${col.border}` }}>
+                          {["HORA", "CARRERA / CICLO", "CURSO", "DOCENTE", "AULA / LAB", "LOCAL"].map((h) => (
+                            <th
+                              key={h}
+                              className="px-3 py-2 text-left font-bold whitespace-nowrap"
+                              style={{ color: col.text, borderRight: `1px solid ${col.border}` }}
                             >
-                              {r.carreraFull.length > 32
-                                ? r.carreraFull.split(" ").slice(0, 4).join(" ")
-                                : r.carreraFull}
-                            </span>
-                            <span
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-                              style={{ background: GOLD, color: NAVY }}
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r, i) => {
+                          const isEven = i % 2 === 0;
+                          const rowBg = isEven ? "white" : "#f8fafc";
+                          const cellBorder = `1px solid #e2e8f0`;
+                          return (
+                            <tr
+                              key={i}
+                              style={{ background: rowBg, borderBottom: cellBorder }}
+                              className="hover:bg-slate-100 transition-colors"
                             >
-                              Ciclo {r.ciclo} · {r.seccion}
-                            </span>
-                            <span
-                              className="text-[10px] px-2 py-0.5 rounded-md font-semibold"
-                              style={{
-                                background: `${MODAL_COLOR[r.modalidad] ?? "#64748b"}22`,
-                                color: MODAL_COLOR[r.modalidad] ?? "#64748b",
-                              }}
-                            >
-                              {r.modalidad}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium uppercase">{r.facultad}</span>
-                          </div>
+                              {/* HORA */}
+                              <td
+                                className="px-3 py-2.5 whitespace-nowrap font-bold align-middle"
+                                style={{ borderRight: cellBorder, color: col.text, minWidth: 90 }}
+                              >
+                                <div className="flex flex-col items-start">
+                                  <span>{padH(r.hora)}</span>
+                                  <span className="text-[9px] text-slate-400 font-normal">↓</span>
+                                  <span>{padH(r.horaFin)}</span>
+                                </div>
+                              </td>
 
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <BookOpen className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                            <p className="text-xs font-semibold text-slate-700 truncate">{r.curso}</p>
-                            <span className="text-[10px] text-slate-400 flex-shrink-0">({r.tipo})</span>
-                          </div>
+                              {/* CARRERA / CICLO */}
+                              <td className="px-3 py-2.5 align-middle" style={{ borderRight: cellBorder, minWidth: 160 }}>
+                                <div className="flex flex-col gap-1">
+                                  <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-md text-white w-fit"
+                                    style={{ background: NAVY }}
+                                  >
+                                    {r.carrera}
+                                  </span>
+                                  <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-md w-fit"
+                                    style={{ background: GOLD, color: NAVY }}
+                                  >
+                                    Ciclo {r.ciclo} · {r.seccion}
+                                  </span>
+                                  <span
+                                    className="text-[10px] px-2 py-0.5 rounded-md font-medium w-fit"
+                                    style={{
+                                      background: `${MODAL_COLOR[r.modalidad] ?? "#64748b"}22`,
+                                      color: MODAL_COLOR[r.modalidad] ?? "#64748b",
+                                    }}
+                                  >
+                                    {r.modalidad}
+                                  </span>
+                                </div>
+                              </td>
 
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <User className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                            <p className="text-xs text-slate-500 truncate">{r.docente}</p>
-                            <span
-                              className="ml-auto text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 text-slate-500"
-                              style={{ background: "#f1f5f9" }}
-                            >
-                              {r.local}
-                            </span>
-                          </div>
+                              {/* CURSO */}
+                              <td className="px-3 py-2.5 align-middle" style={{ borderRight: cellBorder, minWidth: 200 }}>
+                                <p className="font-semibold text-slate-700">{r.curso}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">({r.tipo})</p>
+                              </td>
 
-                          {(r.aula || r.laboratorio) && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              {r.aula && (
+                              {/* DOCENTE */}
+                              <td className="px-3 py-2.5 align-middle" style={{ borderRight: cellBorder, minWidth: 180 }}>
+                                <p className="text-slate-600">{r.docente}</p>
+                              </td>
+
+                              {/* AULA / LAB */}
+                              <td className="px-3 py-2.5 align-middle" style={{ borderRight: cellBorder, minWidth: 100 }}>
+                                <div className="flex flex-col gap-1">
+                                  {r.aula && (
+                                    <span
+                                      className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md w-fit"
+                                      style={{ background: "#fef9c3", color: "#854d0e", border: "1px solid #fde68a" }}
+                                    >
+                                      <DoorOpen className="w-3 h-3" />
+                                      {r.aula}
+                                    </span>
+                                  )}
+                                  {r.laboratorio && (
+                                    <span
+                                      className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md w-fit"
+                                      style={{ background: "#d1fae5", color: "#065f46", border: "1px solid #6ee7b7" }}
+                                    >
+                                      <FlaskConical className="w-3 h-3" />
+                                      {r.laboratorio}
+                                    </span>
+                                  )}
+                                  {!r.aula && !r.laboratorio && (
+                                    <span className="text-slate-300">—</span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* LOCAL */}
+                              <td className="px-3 py-2.5 align-middle text-center" style={{ minWidth: 90 }}>
                                 <span
-                                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md"
-                                  style={{ background: "#fef9c3", color: "#854d0e", border: "1px solid #fde68a" }}
+                                  className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                                  style={{ background: "#f1f5f9", color: "#64748b" }}
                                 >
-                                  <DoorOpen className="w-3 h-3" />
-                                  {r.aula}
+                                  {r.local}
                                 </span>
-                              )}
-                              {r.laboratorio && (
-                                <span
-                                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md"
-                                  style={{ background: "#d1fae5", color: "#065f46", border: "1px solid #6ee7b7" }}
-                                >
-                                  <FlaskConical className="w-3 h-3" />
-                                  {r.laboratorio}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </CardContent>
               </Card>
