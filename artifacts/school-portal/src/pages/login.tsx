@@ -73,27 +73,29 @@ export default function Login() {
           transition={{ duration: 0.45 }}
           className="w-full max-w-md"
         >
-          {/* Header card con logo y título */}
-          <div className="mb-6 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 shadow-2xl px-6 pt-6 pb-5">
-            <div className="flex justify-center mb-4">
-              <img
-                src={`${import.meta.env.BASE_URL}logo.png`}
-                alt="Universidad Autónoma de Ica"
-                className="object-contain"
-                style={{ maxWidth: "260px", maxHeight: "80px" }}
-              />
+          {/* Marco unificado */}
+          <div className="rounded-3xl border border-white/30 shadow-2xl overflow-hidden backdrop-blur-md">
+            {/* Header con logo y título */}
+            <div className="bg-white/95 px-6 pt-6 pb-5">
+              <div className="flex justify-center mb-4">
+                <img
+                  src={`${import.meta.env.BASE_URL}logo.png`}
+                  alt="Universidad Autónoma de Ica"
+                  className="object-contain"
+                  style={{ maxWidth: "260px", maxHeight: "80px" }}
+                />
+              </div>
+              <div className="text-center">
+                <h1 className="text-3xl font-extrabold mb-1 tracking-tight" style={{ color: "#0a1f5c" }}>
+                  Portal Académico
+                </h1>
+                <p className="text-sm font-medium" style={{ color: "#1e3a8a" }}>Universidad Autónoma de Ica · 2026-1</p>
+                <p className="text-xs mt-0.5 text-slate-500">Estudios Generales</p>
+              </div>
             </div>
-            <div className="text-center">
-              <h1 className="text-3xl font-extrabold mb-1 tracking-tight" style={{ color: "#0a1f5c" }}>
-                Portal Académico
-              </h1>
-              <p className="text-sm font-medium" style={{ color: "#1e3a8a" }}>Universidad Autónoma de Ica · 2026-1</p>
-              <p className="text-xs mt-0.5 text-slate-500">Estudios Generales</p>
-            </div>
-          </div>
 
-          {/* Card */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl p-8">
+            {/* Formulario */}
+            <div className="bg-white/10 p-8">
             {/* Error */}
             {errorMsg && (
               <div className="w-full mb-5 p-3 rounded-lg bg-red-500/20 border border-red-400/30 text-red-200 text-sm font-medium text-center">
@@ -167,6 +169,7 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
+            </div>
           </div>
 
           <p className="mt-5 text-center text-xs text-white/40">
