@@ -73,23 +73,23 @@ export default function Login() {
           transition={{ duration: 0.45 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <img
-              src={`${import.meta.env.BASE_URL}logo.png`}
-              alt="Universidad Autónoma de Ica"
-              className="object-contain"
-              style={{ maxWidth: "260px", maxHeight: "80px" }}
-            />
-          </div>
-
-          {/* Title */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-extrabold text-white mb-1 tracking-tight">
-              Portal Académico
-            </h1>
-            <p className="text-sm text-white font-medium">Universidad Autónoma de Ica · 2026-1</p>
-            <p className="text-xs text-white/60 mt-0.5">Estudios Generales</p>
+          {/* Header card con logo y título */}
+          <div className="mb-6 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 shadow-2xl px-6 pt-6 pb-5">
+            <div className="flex justify-center mb-4">
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="Universidad Autónoma de Ica"
+                className="object-contain"
+                style={{ maxWidth: "260px", maxHeight: "80px" }}
+              />
+            </div>
+            <div className="text-center">
+              <h1 className="text-3xl font-extrabold mb-1 tracking-tight" style={{ color: "#0a1f5c" }}>
+                Portal Académico
+              </h1>
+              <p className="text-sm font-medium" style={{ color: "#1e3a8a" }}>Universidad Autónoma de Ica · 2026-1</p>
+              <p className="text-xs mt-0.5 text-slate-500">Estudios Generales</p>
+            </div>
           </div>
 
           {/* Card */}
