@@ -252,12 +252,6 @@ export default function ProblemasEstudiantes() {
                 size={220}
                 includeMargin
                 level="H"
-                imageSettings={{
-                  src: `${import.meta.env.BASE_URL}logo.png`,
-                  height: 44,
-                  width: 44,
-                  excavate: true,
-                }}
               />
             </div>
             <div className="flex-1 min-w-0">
