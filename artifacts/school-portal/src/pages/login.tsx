@@ -52,7 +52,7 @@ export default function Login() {
     <div
       className="min-h-screen w-full flex relative overflow-hidden"
       style={{
-        backgroundImage: `url(${import.meta.env.BASE_URL}campus-bg.jpg)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}campus-bg-new.png)`,
         backgroundSize: "cover",
         backgroundPosition: "center bottom",
         backgroundRepeat: "no-repeat",
