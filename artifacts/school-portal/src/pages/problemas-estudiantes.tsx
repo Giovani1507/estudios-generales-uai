@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { Download, RefreshCw, QrCode, Trash2, Loader2, Printer } from "lucide-react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -66,47 +66,168 @@ export default function ProblemasEstudiantes() {
     return /^[=+\-@\t\r]/.test(v) ? "'" + v : v;
   }
 
-  function exportExcel() {
-    const rows = data.map((r) => ({
-      "ID": r.id,
-      "Apellidos y Nombres": safeText(r.apellidosNombres),
-      "Carrera": safeText(r.carrera),
-      "Ciclo": safeText(r.ciclo),
-      "Sección": safeText(r.seccion),
-      "Tipo de Problema": PROBLEMA_LABEL[r.problema] || r.problema,
-      "Descripción": safeText(r.descripcion || ""),
-      "Fecha de Registro": new Date(r.createdAt).toLocaleString("es-PE"),
-    }));
+  async function exportExcel() {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Universidad Autónoma de Ica";
+    wb.created = new Date();
 
-    const ws = XLSX.utils.json_to_sheet(rows, {
-      header: [
-        "ID",
-        "Apellidos y Nombres",
-        "Carrera",
-        "Ciclo",
-        "Sección",
-        "Tipo de Problema",
-        "Descripción",
-        "Fecha de Registro",
-      ],
+    const ws = wb.addWorksheet("Reportes de Problemas", {
+      pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+      properties: { defaultRowHeight: 18 },
     });
 
-    ws["!cols"] = [
-      { wch: 6 },
-      { wch: 32 },
-      { wch: 28 },
-      { wch: 8 },
-      { wch: 10 },
-      { wch: 26 },
-      { wch: 50 },
-      { wch: 22 },
+    const COLS = [
+      { header: "N°", key: "n", width: 6 },
+      { header: "Apellidos y Nombres", key: "apellidosNombres", width: 34 },
+      { header: "Carrera", key: "carrera", width: 30 },
+      { header: "Ciclo", key: "ciclo", width: 8 },
+      { header: "Sección", key: "seccion", width: 10 },
+      { header: "Tipo de Problema", key: "problema", width: 28 },
+      { header: "Descripción", key: "descripcion", width: 50 },
+      { header: "Fecha de Registro", key: "fecha", width: 22 },
     ];
+    const totalCols = COLS.length;
+    const lastColLetter = String.fromCharCode(64 + totalCols);
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Reportes");
+    // Logo
+    try {
+      const logoRes = await fetch(`${import.meta.env.BASE_URL}logo.png`);
+      const logoBuf = await logoRes.arrayBuffer();
+      const logoId = wb.addImage({ buffer: logoBuf, extension: "png" });
+      ws.addImage(logoId, {
+        tl: { col: 0.15, row: 0.15 },
+        ext: { width: 90, height: 90 },
+        editAs: "absolute",
+      });
+    } catch {
+      /* ignore logo errors */
+    }
 
-    const fecha = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `reportes-problemas-${fecha}.xlsx`);
+    // Reserve logo rows
+    ws.getRow(1).height = 24;
+    ws.getRow(2).height = 24;
+    ws.getRow(3).height = 24;
+    ws.getRow(4).height = 24;
+
+    // Title block (right of logo)
+    ws.mergeCells(`B1:${lastColLetter}1`);
+    const t1 = ws.getCell("B1");
+    t1.value = "UNIVERSIDAD AUTÓNOMA DE ICA";
+    t1.font = { name: "Calibri", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    t1.alignment = { vertical: "middle", horizontal: "center" };
+    t1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A1F5C" } };
+
+    ws.mergeCells(`B2:${lastColLetter}2`);
+    const t2 = ws.getCell("B2");
+    t2.value = "Estudios Generales · Portal Académico";
+    t2.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+    t2.alignment = { vertical: "middle", horizontal: "center" };
+    t2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } };
+
+    ws.mergeCells(`B3:${lastColLetter}3`);
+    const t3 = ws.getCell("B3");
+    t3.value = "REPORTE DE PROBLEMAS DE ESTUDIANTES";
+    t3.font = { name: "Calibri", size: 13, bold: true, color: { argb: "FF0A1F5C" } };
+    t3.alignment = { vertical: "middle", horizontal: "center" };
+    t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF3C7" } };
+
+    ws.mergeCells(`B4:${lastColLetter}4`);
+    const t4 = ws.getCell("B4");
+    const ahora = new Date().toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
+    t4.value = `Total de reportes: ${data.length}    ·    Generado: ${ahora}`;
+    t4.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FF475569" } };
+    t4.alignment = { vertical: "middle", horizontal: "center" };
+    t4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+
+    // Set widths
+    COLS.forEach((c, i) => {
+      ws.getColumn(i + 1).width = c.width;
+    });
+
+    // Header row at row 6 (row 5 left blank as spacer)
+    ws.getRow(5).height = 6;
+    const headerRowIdx = 6;
+    const headerRow = ws.getRow(headerRowIdx);
+    COLS.forEach((c, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = c.header;
+      cell.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A1F5C" } };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF0A1F5C" } },
+        bottom: { style: "thin", color: { argb: "FF0A1F5C" } },
+        left: { style: "thin", color: { argb: "FFFFFFFF" } },
+        right: { style: "thin", color: { argb: "FFFFFFFF" } },
+      };
+    });
+    headerRow.height = 30;
+
+    // Data rows
+    data.forEach((r, idx) => {
+      const rowIdx = headerRowIdx + 1 + idx;
+      const row = ws.getRow(rowIdx);
+      const values = [
+        idx + 1,
+        safeText(r.apellidosNombres),
+        safeText(r.carrera),
+        safeText(r.ciclo),
+        safeText(r.seccion),
+        PROBLEMA_LABEL[r.problema] || r.problema,
+        safeText(r.descripcion || ""),
+        new Date(r.createdAt).toLocaleString("es-PE"),
+      ];
+      values.forEach((v, i) => {
+        const cell = row.getCell(i + 1);
+        cell.value = v;
+        cell.font = { name: "Calibri", size: 10, color: { argb: "FF1E293B" } };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: i === 0 || i === 3 || i === 4 ? "center" : "left",
+          wrapText: true,
+        };
+        const zebra = idx % 2 === 0 ? "FFFFFFFF" : "FFF8FAFC";
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: zebra } };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFE2E8F0" } },
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left: { style: "thin", color: { argb: "FFE2E8F0" } },
+          right: { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+      });
+      row.height = Math.max(20, Math.min(60, Math.ceil((r.descripcion?.length || 0) / 50) * 16 + 20));
+    });
+
+    // Freeze header
+    ws.views = [{ state: "frozen", ySplit: headerRowIdx }];
+
+    // Auto filter
+    ws.autoFilter = {
+      from: { row: headerRowIdx, column: 1 },
+      to: { row: headerRowIdx + data.length, column: totalCols },
+    };
+
+    // Footer
+    const footerIdx = headerRowIdx + data.length + 2;
+    ws.mergeCells(`A${footerIdx}:${lastColLetter}${footerIdx}`);
+    const f = ws.getCell(`A${footerIdx}`);
+    f.value = "Universidad Autónoma de Ica · Documento generado automáticamente desde el Portal Académico";
+    f.font = { name: "Calibri", size: 9, italic: true, color: { argb: "FF94A3B8" } };
+    f.alignment = { vertical: "middle", horizontal: "center" };
+
+    // Download
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `UAI-reportes-problemas-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function downloadQR() {
