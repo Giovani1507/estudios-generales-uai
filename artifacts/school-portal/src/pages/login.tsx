@@ -73,32 +73,30 @@ export default function Login() {
           transition={{ duration: 0.45 }}
           className="w-full max-w-md"
         >
-          {/* Marco unificado */}
-          <div className="rounded-3xl border border-white/30 shadow-2xl overflow-hidden backdrop-blur-md">
-            {/* Header con logo y título */}
-            <div className="bg-white/95 px-6 pt-6 pb-5">
-              <div className="flex justify-center mb-4">
-                <img
-                  src={`${import.meta.env.BASE_URL}logo.png`}
-                  alt="Universidad Autónoma de Ica"
-                  className="object-contain"
-                  style={{ maxWidth: "260px", maxHeight: "80px" }}
-                />
-              </div>
-              <div className="text-center">
-                <h1 className="text-3xl font-extrabold mb-1 tracking-tight" style={{ color: "#0a1f5c" }}>
-                  Portal Académico
-                </h1>
-                <p className="text-sm font-medium" style={{ color: "#1e3a8a" }}>Universidad Autónoma de Ica · 2026-1</p>
-                <p className="text-xs mt-0.5 text-slate-500">Estudios Generales</p>
-              </div>
+          {/* Marco blanco unificado */}
+          <div className="rounded-2xl bg-white shadow-2xl border border-slate-200 px-8 pt-8 pb-7">
+            {/* Logo */}
+            <div className="flex justify-center mb-3">
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="Universidad Autónoma de Ica"
+                className="object-contain"
+                style={{ maxWidth: "220px", maxHeight: "70px" }}
+              />
             </div>
 
-            {/* Formulario */}
-            <div className="bg-white/10 p-8">
+            {/* Título */}
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#0a1f5c" }}>
+                Portal Académico
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "#1e3a8a" }}>Universidad Autónoma de Ica · 2026-1</p>
+              <p className="text-xs mt-0.5" style={{ color: "#1e3a8a" }}>Estudios Generales</p>
+            </div>
+
             {/* Error */}
             {errorMsg && (
-              <div className="w-full mb-5 p-3 rounded-lg bg-red-500/20 border border-red-400/30 text-red-200 text-sm font-medium text-center">
+              <div className="w-full mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-medium text-center">
                 {errorMsg}
               </div>
             )}
@@ -110,18 +108,18 @@ export default function Login() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-white/90 text-sm">Usuario</FormLabel>
+                      <FormLabel className="font-semibold text-slate-800 text-sm">Usuario</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                           <Input
                             placeholder="Ingrese su usuario"
-                            className="pl-9 h-11 rounded-lg bg-white/15 border-white/25 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-white/50"
+                            className="pl-9 h-11 rounded-lg bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500"
                             {...field}
                           />
                         </div>
                       </FormControl>
-                      <FormMessage className="text-red-300" />
+                      <FormMessage className="text-red-600" />
                     </FormItem>
                   )}
                 />
@@ -130,27 +128,27 @@ export default function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-white/90 text-sm">Contraseña</FormLabel>
+                      <FormLabel className="font-semibold text-slate-800 text-sm">Contraseña</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                           <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-9 pr-10 h-11 rounded-lg bg-white/15 border-white/25 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-white/50"
+                            className="pl-9 pr-10 h-11 rounded-lg bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500"
                             {...field}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(v => !v)}
-                            className="absolute inset-y-0 right-0 flex items-center px-3 text-white/50 hover:text-white/90"
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700"
                             tabIndex={-1}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
                       </FormControl>
-                      <FormMessage className="text-red-300" />
+                      <FormMessage className="text-red-600" />
                     </FormItem>
                   )}
                 />
@@ -158,7 +156,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full h-12 mt-2 text-base font-bold rounded-xl text-white shadow-lg"
+                  className="w-full h-11 mt-2 text-base font-semibold rounded-lg text-white shadow-md"
                   style={{ background: "linear-gradient(135deg, #1e40af 0%, #1d4ed8 50%, #2563eb 100%)" }}
                 >
                   {loginMutation.isPending ? (
@@ -169,10 +167,9 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-            </div>
           </div>
 
-          <p className="mt-5 text-center text-xs text-white/40">
+          <p className="mt-5 text-center text-xs text-white/70">
             Sistema de acceso restringido · Universidad Autónoma de Ica © {new Date().getFullYear()}
           </p>
         </motion.div>
