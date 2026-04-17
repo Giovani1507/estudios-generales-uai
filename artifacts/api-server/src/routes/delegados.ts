@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { delegadosTable } from "@workspace/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -25,17 +25,38 @@ router.post("/", async (req, res) => {
   if (!ciclo?.trim())            return res.status(400).json({ error: "Ciclo es requerido" });
   if (!seccion?.trim())          return res.status(400).json({ error: "Sección es requerida" });
   const tipoVal = tipo === "SUB DELEGADO" ? "SUB DELEGADO" : "DELEGADO";
+  const nombreNorm = apellidosNombres.trim().replace(/\s+/g, " ").toUpperCase();
+  const correoNorm = correo?.trim().toLowerCase() || null;
   try {
+    // Verificar duplicados por nombre o correo
+    const existentes = await db
+      .select()
+      .from(delegadosTable)
+      .where(
+        correoNorm
+          ? sql`UPPER(REGEXP_REPLACE(TRIM(${delegadosTable.apellidosNombres}), '\\s+', ' ', 'g')) = ${nombreNorm} OR LOWER(${delegadosTable.correo}) = ${correoNorm}`
+          : sql`UPPER(REGEXP_REPLACE(TRIM(${delegadosTable.apellidosNombres}), '\\s+', ' ', 'g')) = ${nombreNorm}`
+      );
+
+    if (existentes.length > 0) {
+      const e = existentes[0];
+      const matchPorCorreo = correoNorm && e.correo?.toLowerCase() === correoNorm;
+      const motivo = matchPorCorreo
+        ? `Este correo ya fue registrado como ${e.tipo} en ${e.carrera} – Ciclo ${e.ciclo} – Sección ${e.seccion} (${e.apellidosNombres}).`
+        : `${e.apellidosNombres} ya fue registrado/a como ${e.tipo} en ${e.carrera} – Ciclo ${e.ciclo} – Sección ${e.seccion}.`;
+      return res.status(409).json({ error: motivo });
+    }
+
     const [row] = await db
       .insert(delegadosTable)
       .values({
         tipo:             tipoVal,
-        apellidosNombres: apellidosNombres.trim().toUpperCase(),
+        apellidosNombres: nombreNorm,
         carrera:          carrera.trim().toUpperCase(),
         ciclo:            ciclo.trim(),
         seccion:          seccion.trim().toUpperCase(),
         numero:           numero?.trim() || null,
-        correo:           correo?.trim().toLowerCase() || null,
+        correo:           correoNorm,
       })
       .returning();
     res.status(201).json(row);
