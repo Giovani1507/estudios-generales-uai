@@ -44,6 +44,8 @@ import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 import Seguridad from "@/pages/seguridad";
 import AsistenciaAdmin from "@/pages/asistencia-admin";
 import RegistroAsistencia from "@/pages/registro-asistencia";
+import ReportarProblema from "@/pages/reportar-problema";
+import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
 
 const queryClient = new QueryClient();
 
@@ -200,6 +202,11 @@ function AppRouter() {
         component={() => <ProtectedRoute component={AsistenciaAdmin} />}
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
+      <Route path="/reportar-problema" component={ReportarProblema} />
+      <Route
+        path="/problemas-estudiantes"
+        component={() => <ProtectedRoute component={ProblemasEstudiantes} />}
+      />
       {/* 404 */}
       <Route component={NotFound} />
     </Switch>

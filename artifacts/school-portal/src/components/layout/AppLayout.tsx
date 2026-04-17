@@ -99,6 +99,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador"],
   },
   {
+    title: "Reportes de Problemas",
+    url: "/problemas-estudiantes",
+    icon: AlertTriangle,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Seguridad",
     url: "/seguridad",
     icon: ShieldAlert,
@@ -117,6 +123,7 @@ function getPageTitle(pathname: string) {
   if (pathname === "/estudiantes/sin-vacante")   return "Estudiantes sin Vacante";
   if (pathname === "/estudiantes/delegados")     return "Delegados";
   if (pathname === "/horarios/semana")           return "Horario por Semana";
+  if (pathname === "/problemas-estudiantes")     return "Reportes de Problemas";
   const match = menuItems.find((item) => item.url === pathname);
   if (match) return match.title;
   if (pathname === "/login") return "Inicio de sesión";

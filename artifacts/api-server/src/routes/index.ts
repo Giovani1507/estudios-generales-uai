@@ -18,6 +18,7 @@ import sinMatriculaRouter from "./sin-matricula.js";
 import sinVacanteRouter from "./sin-vacante.js";
 import delegadosRouter from "./delegados.js";
 import asistenciaRouter from "./asistencia.js";
+import studentProblemsRouter from "./student-problems.js";
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use("/sin-matricula", sinMatriculaRouter);
 router.use("/sin-vacante", sinVacanteRouter);
 router.use("/delegados", delegadosRouter);
 router.use("/asistencia", asistenciaRouter);
+router.use("/student-problems", studentProblemsRouter);
 
 export default router;

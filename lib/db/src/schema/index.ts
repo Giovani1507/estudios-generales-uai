@@ -19,3 +19,4 @@ export * from "./estudiantes_sin_matricula";
 export * from "./estudiantes_sin_vacante";
 export * from "./delegados";
 export * from "./asistencia";
+export * from "./student_problems";
