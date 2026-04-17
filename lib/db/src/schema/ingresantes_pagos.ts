@@ -2,7 +2,7 @@ import { pgTable, serial, text } from "drizzle-orm/pg-core";
 
 export const ingresantesPagosTable = pgTable("ingresantes_pagos", {
   id:               serial("id").primaryKey(),
-  dni:              text("dni").notNull(),
+  dni:              text("dni").notNull().unique(),
   apellidosNombres: text("apellidos_nombres").notNull(),
   codigoEstudiante: text("codigo_estudiante"),
   carrera:          text("carrera"),
