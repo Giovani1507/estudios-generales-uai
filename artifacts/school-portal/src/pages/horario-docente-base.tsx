@@ -136,10 +136,29 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
   [data]);
 
+  /* Deduplicación de clases híbridas:
+     una misma clase registrada en sección HP (Híbrido Presencial) y HV (Híbrido Virtual)
+     es UNA sola clase dictada por el docente. La identificamos por:
+     docente + código de curso + carrera + ciclo + día + hora inicio + hora fin. */
+  const dedupKey = (r: FICARow) =>
+    `${r.docente.toUpperCase().trim()}|${r.codigo}|${r.carrera}|${r.ciclo}|${r.dia}|${r.hora}|${r.horaFin}`;
+
+  const dataCiclo12Unicas = useMemo(() => {
+    const seen = new Set<string>();
+    const out: FICARow[] = [];
+    for (const r of dataCiclo12) {
+      const k = dedupKey(r);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(r);
+    }
+    return out;
+  }, [dataCiclo12]);
+
   /* Docentes únicos ordenados */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number; horasAcad: number }>();
-    dataCiclo12.forEach(r => {
+    dataCiclo12Unicas.forEach(r => {
       if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0, horasAcad: 0 });
@@ -152,7 +171,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [dataCiclo12]);
+  }, [dataCiclo12Unicas]);
 
   const filteredTeachers = useMemo(() => {
     const q = search.toLowerCase();
@@ -161,14 +180,14 @@ export default function HorarioDocenteBase({ faculty }: Props) {
 
   const courses = useMemo(() => {
     if (!selected) return [];
-    return dataCiclo12
+    return dataCiclo12Unicas
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
-  }, [dataCiclo12, selected]);
+  }, [dataCiclo12Unicas, selected]);
 
   const totals = useMemo(() => {
     const sedeMap = new Map<string, number>();
@@ -423,7 +442,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     for (let i = 0; i < teachers.length; i++) {
       const t = teachers[i];
       setBulkProgress({ current: i + 1, total: teachers.length });
-      const teacherRows = dataCiclo12.filter(
+      const teacherRows = dataCiclo12Unicas.filter(
         r => r.docente?.toUpperCase().trim() === t.nombre,
       );
       if (teacherRows.length === 0) continue;
