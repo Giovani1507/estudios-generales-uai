@@ -179,16 +179,27 @@ export default function HorarioDocenteBase({ faculty }: Props) {
   }, [teachers, search]);
 
   /* Cursos del docente: TODAS las filas (incluye HP y HV por separado),
-     para que aparezcan en la grilla del horario y en el Excel descargado. */
+     para que aparezcan en la grilla del horario y en el Excel descargado.
+     Las filas HV duplicadas de su HP equivalente se marcan con horas en 0
+     para que la sumatoria visible coincida con el total real (sin doble conteo). */
   const courses = useMemo(() => {
     if (!selected) return [];
-    return dataCiclo12
+    const rows = dataCiclo12
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
+    const seen = new Set<string>();
+    return rows.map(r => {
+      const k = dedupKey(r);
+      if (seen.has(k)) {
+        return { ...r, horasT: 0, horasP: 0, horas: 0, horasAcad: 0 };
+      }
+      seen.add(k);
+      return r;
+    });
   }, [dataCiclo12, selected]);
 
   /* Totales: sí deduplica HP/HV (el docente dicta una sola clase física a la vez). */
