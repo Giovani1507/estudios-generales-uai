@@ -178,28 +178,38 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     return q ? teachers.filter(t => t.nombre.toLowerCase().includes(q)) : teachers;
   }, [teachers, search]);
 
+  /* Cursos del docente: TODAS las filas (incluye HP y HV por separado),
+     para que aparezcan en la grilla del horario y en el Excel descargado. */
   const courses = useMemo(() => {
     if (!selected) return [];
-    return dataCiclo12Unicas
+    return dataCiclo12
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
-  }, [dataCiclo12Unicas, selected]);
+  }, [dataCiclo12, selected]);
 
+  /* Totales: sí deduplica HP/HV (el docente dicta una sola clase física a la vez). */
   const totals = useMemo(() => {
+    const seen = new Set<string>();
+    const dedup = courses.filter(r => {
+      const k = dedupKey(r);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     const sedeMap = new Map<string, number>();
-    courses.forEach(r => {
+    dedup.forEach(r => {
       const l = localLabel(r.local);
       sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horasAcad) || 0));
     });
     return {
-      horasT:    courses.reduce((s, r) => s + (Number(r.horasT)    || 0), 0),
-      horasP:    courses.reduce((s, r) => s + (Number(r.horasP)    || 0), 0),
-      horas:     courses.reduce((s, r) => s + (Number(r.horas)     || 0), 0),
-      horasAcad: courses.reduce((s, r) => s + (Number(r.horasAcad) || 0), 0),
+      horasT:    dedup.reduce((s, r) => s + (Number(r.horasT)    || 0), 0),
+      horasP:    dedup.reduce((s, r) => s + (Number(r.horasP)    || 0), 0),
+      horas:     dedup.reduce((s, r) => s + (Number(r.horas)     || 0), 0),
+      horasAcad: dedup.reduce((s, r) => s + (Number(r.horasAcad) || 0), 0),
       sedeMap,
       carreras: [...new Set(courses.map(r => r.cod))],
     };
@@ -442,7 +452,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     for (let i = 0; i < teachers.length; i++) {
       const t = teachers[i];
       setBulkProgress({ current: i + 1, total: teachers.length });
-      const teacherRows = dataCiclo12Unicas.filter(
+      const teacherRows = dataCiclo12.filter(
         r => r.docente?.toUpperCase().trim() === t.nombre,
       );
       if (teacherRows.length === 0) continue;
