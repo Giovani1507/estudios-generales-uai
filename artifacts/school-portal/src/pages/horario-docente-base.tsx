@@ -136,29 +136,13 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     data.filter(r => r.ciclo === "1" || r.ciclo === "2"),
   [data]);
 
-  /* Deduplicación de clases híbridas:
-     una misma clase registrada en sección HP (Híbrido Presencial) y HV (Híbrido Virtual)
-     es UNA sola clase dictada por el docente. La identificamos por:
-     docente + código de curso + carrera + ciclo + día + hora inicio + hora fin. */
-  const dedupKey = (r: FICARow) =>
-    `${r.docente.toUpperCase().trim()}|${r.codigo}|${r.carrera}|${r.ciclo}|${r.dia}|${r.hora}|${r.horaFin}`;
-
-  const dataCiclo12Unicas = useMemo(() => {
-    const seen = new Set<string>();
-    const out: FICARow[] = [];
-    for (const r of dataCiclo12) {
-      const k = dedupKey(r);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(r);
-    }
-    return out;
-  }, [dataCiclo12]);
-
-  /* Docentes únicos ordenados */
+  /* Docentes únicos ordenados.
+     El JSON ya respeta el campo "TOTAL DE HORAS" del Excel (las filas HV
+     duplicadas vienen con horas=0 a propósito), por lo que sumar directamente
+     da el total real sin doble conteo. */
   const teachers = useMemo(() => {
     const map = new Map<string, { horasT: number; horasP: number; horas: number; horasAcad: number }>();
-    dataCiclo12Unicas.forEach(r => {
+    dataCiclo12.forEach(r => {
       if (!r.docente?.trim()) return;
       const k = r.docente.toUpperCase().trim();
       if (!map.has(k)) map.set(k, { horasT: 0, horasP: 0, horas: 0, horasAcad: 0 });
@@ -171,56 +155,35 @@ export default function HorarioDocenteBase({ faculty }: Props) {
     return Array.from(map.entries())
       .map(([n, h]) => ({ nombre: n, ...h }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [dataCiclo12Unicas]);
+  }, [dataCiclo12]);
 
   const filteredTeachers = useMemo(() => {
     const q = search.toLowerCase();
     return q ? teachers.filter(t => t.nombre.toLowerCase().includes(q)) : teachers;
   }, [teachers, search]);
 
-  /* Cursos del docente: TODAS las filas (incluye HP y HV por separado),
-     para que aparezcan en la grilla del horario y en el Excel descargado.
-     Las filas HV duplicadas de su HP equivalente se marcan con horas en 0
-     para que la sumatoria visible coincida con el total real (sin doble conteo). */
   const courses = useMemo(() => {
     if (!selected) return [];
-    const rows = dataCiclo12
+    return dataCiclo12
       .filter(r => r.docente.toUpperCase().trim() === selected)
       .sort((a, b) => {
         const da = DIA_ORDER[a.dia] || 9, db = DIA_ORDER[b.dia] || 9;
         if (da !== db) return da - db;
         return a.hora.localeCompare(b.hora);
       });
-    const seen = new Set<string>();
-    return rows.map(r => {
-      const k = dedupKey(r);
-      if (seen.has(k)) {
-        return { ...r, horasT: 0, horasP: 0, horas: 0, horasAcad: 0 };
-      }
-      seen.add(k);
-      return r;
-    });
   }, [dataCiclo12, selected]);
 
-  /* Totales: sí deduplica HP/HV (el docente dicta una sola clase física a la vez). */
   const totals = useMemo(() => {
-    const seen = new Set<string>();
-    const dedup = courses.filter(r => {
-      const k = dedupKey(r);
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
     const sedeMap = new Map<string, number>();
-    dedup.forEach(r => {
+    courses.forEach(r => {
       const l = localLabel(r.local);
       sedeMap.set(l, (sedeMap.get(l) ?? 0) + (Number(r.horasAcad) || 0));
     });
     return {
-      horasT:    dedup.reduce((s, r) => s + (Number(r.horasT)    || 0), 0),
-      horasP:    dedup.reduce((s, r) => s + (Number(r.horasP)    || 0), 0),
-      horas:     dedup.reduce((s, r) => s + (Number(r.horas)     || 0), 0),
-      horasAcad: dedup.reduce((s, r) => s + (Number(r.horasAcad) || 0), 0),
+      horasT:    courses.reduce((s, r) => s + (Number(r.horasT)    || 0), 0),
+      horasP:    courses.reduce((s, r) => s + (Number(r.horasP)    || 0), 0),
+      horas:     courses.reduce((s, r) => s + (Number(r.horas)     || 0), 0),
+      horasAcad: courses.reduce((s, r) => s + (Number(r.horasAcad) || 0), 0),
       sedeMap,
       carreras: [...new Set(courses.map(r => r.cod))],
     };
