@@ -120,11 +120,22 @@ export default function PlanificacionFICA() {
     return rows;
   }, [data, fCarrera, fCiclo, fSeccion, fTurno, fDocente, fCurso]);
 
-  const totals = useMemo(() => ({
-    horasT: filtered.reduce((s, r) => s + (r.horasT || 0), 0),
-    horasP: filtered.reduce((s, r) => s + (r.horasP || 0), 0),
-    horas:  filtered.reduce((s, r) => s + (r.horas  || 0), 0),
-  }), [filtered]);
+  /* Para los totales: deduplicar clases híbridas (HP + HV son la misma clase
+     dictada por el mismo docente al mismo tiempo, no se debe contar dos veces). */
+  const totals = useMemo(() => {
+    const seen = new Set<string>();
+    const dedup = filtered.filter((r) => {
+      const k = `${(r.docente || "").toUpperCase().trim()}|${r.codigo}|${r.carrera}|${r.ciclo}|${r.dia}|${r.hora}|${r.horaFin}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return {
+      horasT: dedup.reduce((s, r) => s + (r.horasT || 0), 0),
+      horasP: dedup.reduce((s, r) => s + (r.horasP || 0), 0),
+      horas:  dedup.reduce((s, r) => s + (r.horas  || 0), 0),
+    };
+  }, [filtered]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
