@@ -24,6 +24,11 @@ type PlanRow = {
 
 const PLAN_FILES = ["planificacion-fica-2026-1.json", "planificacion-fcs-2026-1.json"];
 
+// Carreras a excluir (no existen en la planificación oficial)
+const EXCLUDED_CARRERAS = new Set(["T3"]); // T3 = FARMACIA Y BIOQUÍMICA
+// Ciclos permitidos
+const ALLOWED_CICLOS = new Set(["1", "2"]);
+
 async function loadPlanificacion(): Promise<PlanRow[]> {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
   const out: PlanRow[] = [];
@@ -32,7 +37,11 @@ async function loadPlanificacion(): Promise<PlanRow[]> {
       const r = await fetch(`${base}/${f}`);
       if (!r.ok) continue;
       const arr = (await r.json()) as PlanRow[];
-      out.push(...arr);
+      for (const row of arr) {
+        if (EXCLUDED_CARRERAS.has(row.carrera)) continue;
+        if (!ALLOWED_CICLOS.has(String(row.ciclo))) continue;
+        out.push(row);
+      }
     } catch { /* ignore */ }
   }
   return out;
