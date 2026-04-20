@@ -3,8 +3,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical, Printer } from "lucide-react";
+import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical, Printer, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import * as ExcelJS from "exceljs";
 
 const NAVY = "#001F5F";
 const GOLD = "#C9A84C";
@@ -133,6 +134,102 @@ export default function HorarioSemana() {
   const totalDocentes  = new Set(filtered.map(r => r.docente)).size;
   const totalCarreras  = new Set(filtered.map(r => r.carreraFull)).size;
 
+  const exportExcel = async () => {
+    const filterLabel = [
+      facultad  !== "TODAS" ? `Facultad: ${facultad}` : null,
+      local     !== "TODOS" ? `Local: ${local}`        : null,
+      ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
+        : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
+      diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
+    ].filter(Boolean).join(" · ") || "Todos los filtros";
+
+    const NAVY_X = "FF001F5F";
+    const GOLD_X = "FFC9A84C";
+    const WHITE = "FFFFFFFF";
+    const sf = (a: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: a } });
+    const CTR = { horizontal: "center" as const, vertical: "middle" as const, wrapText: true };
+    const LEFT = { horizontal: "left" as const, vertical: "middle" as const, wrapText: true };
+    const THIN: Partial<ExcelJS.Borders> = {
+      top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" },
+    };
+
+    const wb = new ExcelJS.Workbook();
+    const headers = ["HORA INICIO", "HORA FIN", "CARRERA", "CICLO", "SECCIÓN", "CURSO", "TIPO", "DOCENTE", "MODALIDAD", "AULA", "LABORATORIO", "LOCAL"];
+    const widths = [12, 12, 38, 8, 10, 36, 8, 36, 14, 12, 16, 12];
+
+    const buildSheet = (name: string, rows: Row[]) => {
+      const ws = wb.addWorksheet(name.slice(0, 31), { views: [{ state: "frozen", ySplit: 3 }] });
+      ws.columns = widths.map(w => ({ width: w }));
+      const lastCol = headers.length;
+
+      // Banner
+      ws.mergeCells(1, 1, 1, lastCol);
+      const t = ws.getCell(1, 1);
+      t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — HORARIO POR SEMANA · 2026-I`;
+      t.font = { bold: true, size: 13, color: { argb: WHITE } };
+      t.fill = sf(NAVY_X); t.alignment = CTR; t.border = THIN;
+      ws.getRow(1).height = 26;
+
+      // Subtítulo filtros
+      ws.mergeCells(2, 1, 2, lastCol);
+      const s = ws.getCell(2, 1);
+      s.value = `Filtros: ${filterLabel}   ·   ${rows.length} clases`;
+      s.font = { italic: true, size: 10, color: { argb: "FF555555" } };
+      s.alignment = LEFT; s.border = THIN;
+      ws.getRow(2).height = 18;
+
+      // Encabezados
+      headers.forEach((h, i) => {
+        const c = ws.getRow(3).getCell(i + 1);
+        c.value = h; c.font = { bold: true, size: 10, color: { argb: WHITE } };
+        c.fill = sf(NAVY_X); c.alignment = CTR; c.border = THIN;
+      });
+      ws.getRow(3).height = 22;
+
+      let r = 4;
+      for (const row of rows) {
+        const rr = ws.getRow(r);
+        rr.getCell(1).value = padH(row.hora);
+        rr.getCell(2).value = padH(row.horaFin);
+        rr.getCell(3).value = row.carreraFull || row.carrera;
+        rr.getCell(4).value = row.ciclo;
+        rr.getCell(5).value = row.seccion;
+        rr.getCell(6).value = row.curso;
+        rr.getCell(7).value = row.tipo;
+        rr.getCell(8).value = row.docente;
+        rr.getCell(9).value = row.modalidad;
+        rr.getCell(10).value = row.aula || "";
+        rr.getCell(11).value = row.laboratorio || "";
+        rr.getCell(12).value = row.local;
+        for (let c = 1; c <= lastCol; c++) {
+          rr.getCell(c).border = THIN;
+          rr.getCell(c).font = { size: 10 };
+          rr.getCell(c).alignment = (c === 3 || c === 6 || c === 8) ? LEFT : CTR;
+        }
+        rr.height = 18;
+        r++;
+      }
+      // Auto-filter
+      ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: Math.max(3, r - 1), column: lastCol } };
+    };
+
+    // Hoja "Resumen" con todas las clases
+    buildSheet("Resumen", filtered);
+    // Hoja por día (solo días con clases)
+    for (const dia of diasConClases) {
+      const rows = byDay.get(dia) ?? [];
+      buildSheet(DIAS_LABEL[dia], rows);
+    }
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Horario_Semana_UAI_2026-1.xlsx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const printHorario = async () => {
     const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
     const logoUrl = `${window.location.origin}${base}/logo-uai.png`;
@@ -254,16 +351,27 @@ export default function HorarioSemana() {
           <h1 className="text-xl font-bold" style={{ color: NAVY }}>Horario por Semana</h1>
           <p className="text-xs text-muted-foreground">Vista semanal de clases · 2026-I</p>
         </div>
-        <Button
-          size="sm"
-          className="ml-auto text-white font-semibold"
-          style={{ background: NAVY }}
-          onClick={printHorario}
-          disabled={diasConClases.length === 0}
-        >
-          <Printer className="w-4 h-4 mr-1.5" />
-          Imprimir / PDF
-        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button
+            size="sm"
+            className="text-white font-semibold bg-emerald-600 hover:bg-emerald-700"
+            onClick={exportExcel}
+            disabled={diasConClases.length === 0}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+            Excel
+          </Button>
+          <Button
+            size="sm"
+            className="text-white font-semibold"
+            style={{ background: NAVY }}
+            onClick={printHorario}
+            disabled={diasConClases.length === 0}
+          >
+            <Printer className="w-4 h-4 mr-1.5" />
+            Imprimir / PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
