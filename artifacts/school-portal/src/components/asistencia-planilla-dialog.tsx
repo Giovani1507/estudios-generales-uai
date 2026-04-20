@@ -190,6 +190,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   const [saving, setSaving] = useState(false);
   const [planillas, setPlanillas] = useState<PlanillaRow[]>([]);
   const [parsed, setParsed] = useState<ParsedXlsx | null>(null);
+  const [sinCambios, setSinCambios] = useState(false);
   const [fileName, setFileName] = useState("");
   const [detail, setDetail] = useState<PlanillaDetail | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -214,7 +215,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   };
 
   useEffect(() => {
-    if (open) { setView("list"); setParsed(null); setDetail(null); setDirty(false); loadList(); }
+    if (open) { setView("list"); setParsed(null); setSinCambios(false); setDetail(null); setDirty(false); loadList(); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, curso.docente, curso.codigoCurso, curso.seccion]);
 
@@ -229,6 +230,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
         toast({ title: "Excel vacío", description: "No se encontraron alumnos en el archivo.", variant: "destructive" });
         return;
       }
+      setSinCambios(false);
       setParsed(p);
     } catch (err) {
       console.error(err);
@@ -248,6 +250,29 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
       );
 
       if (existente) {
+        // Traer el detalle anterior para comparar marcas
+        try {
+          const prevRes = await fetch(`${apiBase}/api/asistencia-planillas/${existente.id}`, { credentials: "include" });
+          if (prevRes.ok) {
+            const prev = (await prevRes.json()) as PlanillaDetail;
+            const norm = (a: PlanillaAlumno) => `${a.nombre.toUpperCase().trim()}::${a.marcas.map(m => (m || "").toUpperCase().trim()).join("|")}`;
+            const prevSet = new Set(prev.alumnos.map(norm));
+            const newSet  = new Set(parsed.alumnos.map(norm));
+            const iguales = prevSet.size === newSet.size && [...newSet].every(k => prevSet.has(k));
+            if (iguales) {
+              toast({
+                title: "⚠️ La asistencia no se ha actualizado",
+                description: "El Excel subido es idéntico al anterior. Comunícate con el docente.",
+                variant: "destructive",
+                duration: 7000,
+              });
+              setSinCambios(true);
+              setSaving(false);
+              return;
+            }
+          }
+        } catch { /* si falla la comparación, continuamos con el update normal */ }
+
         const res = await fetch(`${apiBase}/api/asistencia-planillas/${existente.id}`, {
           method: "PUT",
           credentials: "include",
@@ -405,6 +430,12 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
         <div className="rounded border-2 border-red-500 bg-red-50 p-3 text-center">
           <div className="text-red-700 font-bold uppercase tracking-wide text-sm">No hay asistencia</div>
           <div className="text-red-600 text-xs mt-1">El Excel no contiene marcas de asistencia para los alumnos.</div>
+        </div>
+      )}
+      {sinCambios && (
+        <div className="rounded border-2 border-red-500 bg-red-50 p-3 text-center">
+          <div className="text-red-700 font-bold uppercase tracking-wide text-sm">⚠️ La asistencia no se ha actualizado</div>
+          <div className="text-red-600 text-xs mt-1">El Excel subido es idéntico al anterior. Comunícate con el docente para que registre la nueva asistencia.</div>
         </div>
       )}
       <div className="border rounded max-h-[300px] overflow-auto">

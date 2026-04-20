@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2 } from "lucide-react";
+import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download } from "lucide-react";
+import * as ExcelJS from "exceljs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { AsistenciaPlanillaDialog, type CursoCtx } from "@/components/asistencia-planilla-dialog";
 
 type Row = {
@@ -26,6 +28,7 @@ function turnoFromHora(hora: string): string {
 }
 
 export default function PlanillasAsistencia() {
+  const { toast } = useToast();
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -33,6 +36,189 @@ export default function PlanillasAsistencia() {
   const [asistenciaCurso, setAsistenciaCurso] = useState<CursoCtx | null>(null);
   const [uploaded, setUploaded] = useState<Set<string>>(new Set());
   const [uploadedByDocente, setUploadedByDocente] = useState<Map<string, number>>(new Map());
+  const [exporting, setExporting] = useState(false);
+
+  const exportarPorCarrera = async () => {
+    setExporting(true);
+    try {
+      const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      const listRes = await fetch(`${base}/api/asistencia-planillas`, { credentials: "include" });
+      if (!listRes.ok) throw new Error("list");
+      const list = (await listRes.json()) as Array<{
+        id: number; docente: string|null; carrera: string|null; ciclo: string|null;
+        seccion: string|null; codigoCurso: string|null; nombreCurso: string|null;
+      }>;
+      const lista = list.filter(p => p.ciclo === "1" || p.ciclo === "2");
+      if (lista.length === 0) {
+        toast({ title: "Sin asistencias registradas", description: "Aún no hay planillas subidas.", variant: "destructive" });
+        return;
+      }
+
+      // Traer detalle de cada planilla (alumnos + totales)
+      const detalles = await Promise.all(lista.map(async p => {
+        const r = await fetch(`${base}/api/asistencia-planillas/${p.id}`, { credentials: "include" });
+        return r.ok ? await r.json() : null;
+      }));
+      const planillas = detalles.filter(Boolean) as Array<{
+        id: number; docente: string|null; carrera: string|null; ciclo: string|null;
+        seccion: string|null; codigoCurso: string|null; nombreCurso: string|null;
+        alumnos: Array<{ numero: string; nombre: string; marcas: string[]; porcentaje: number }>;
+        weeks: Array<{ label: string }>;
+      }>;
+
+      // Agrupar por carrera
+      const porCarrera = new Map<string, typeof planillas>();
+      for (const p of planillas) {
+        const k = (p.carrera || "SIN CARRERA").toUpperCase().trim();
+        if (!porCarrera.has(k)) porCarrera.set(k, []);
+        porCarrera.get(k)!.push(p);
+      }
+
+      const wb = new ExcelJS.Workbook();
+      const NAVY = "FF001F5F";
+      const GOLD = "FFC9A84C";
+      const WHITE = "FFFFFFFF";
+      const GREEN_BG = "FFDCFCE7";
+      const RED_BG   = "FFFEE2E2";
+      const sf = (a: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: a } });
+      const CTR = { horizontal: "center" as const, vertical: "middle" as const, wrapText: true };
+      const LEFT = { horizontal: "left" as const, vertical: "middle" as const, wrapText: true };
+      const THIN: Partial<ExcelJS.Borders> = {
+        top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" },
+      };
+
+      const sortedCarreras = Array.from(porCarrera.keys()).sort();
+      for (const carrera of sortedCarreras) {
+        const items = porCarrera.get(carrera)!;
+        // Ordenar: ciclo, sección, curso
+        items.sort((a, b) =>
+          (a.ciclo||"").localeCompare(b.ciclo||"") ||
+          (a.seccion||"").localeCompare(b.seccion||"") ||
+          (a.nombreCurso||"").localeCompare(b.nombreCurso||"")
+        );
+
+        const safeName = carrera.replace(/[\\/*?:[\]]/g, "").slice(0, 30) || "Carrera";
+        const ws = wb.addWorksheet(safeName, { views: [{ state: "frozen", ySplit: 2 }] });
+        ws.columns = [
+          { width: 5 },   // #
+          { width: 40 },  // Apellidos y Nombres
+          { width: 14 },  // Asistencias
+          { width: 14 },  // Inasistencias
+          { width: 12 },  // % Asistencia
+        ];
+
+        // Título de carrera
+        ws.mergeCells("A1:E1");
+        const t = ws.getCell("A1");
+        t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — ${carrera} — ASISTENCIA 2026-I`;
+        t.font = { bold: true, size: 13, color: { argb: WHITE } };
+        t.fill = sf(NAVY); t.alignment = CTR; t.border = THIN;
+        ws.getRow(1).height = 28;
+
+        let r = 3;
+        for (const p of items) {
+          // Encabezado de curso (Ciclo+Sección - Curso)
+          ws.mergeCells(r, 1, r, 5);
+          const head = ws.getCell(r, 1);
+          const label = `${carrera} ${p.ciclo || ""}${p.seccion || ""} — ${p.nombreCurso || p.codigoCurso || ""}`;
+          head.value = label.trim();
+          head.font = { bold: true, size: 11, color: { argb: NAVY } };
+          head.fill = sf(GOLD); head.alignment = LEFT; head.border = THIN;
+          ws.getRow(r).height = 22;
+          r++;
+
+          // Subtítulo docente
+          ws.mergeCells(r, 1, r, 5);
+          const sub = ws.getCell(r, 1);
+          sub.value = `Docente: ${p.docente || "—"}   ·   Semanas registradas: ${p.weeks?.length ?? 0}`;
+          sub.font = { italic: true, size: 9, color: { argb: "FF555555" } };
+          sub.alignment = LEFT; sub.border = THIN;
+          ws.getRow(r).height = 16;
+          r++;
+
+          // Encabezado de tabla
+          const heads = ["#", "Apellidos y Nombres", "Asistencias", "Inasistencias", "% Asist."];
+          heads.forEach((h, i) => {
+            const c = ws.getRow(r).getCell(i + 1);
+            c.value = h; c.font = { bold: true, size: 10, color: { argb: WHITE } };
+            c.fill = sf(NAVY); c.alignment = CTR; c.border = THIN;
+          });
+          ws.getRow(r).height = 18;
+          r++;
+
+          // Alumnos
+          p.alumnos.forEach((a, i) => {
+            const cols = a.marcas.length;
+            let asis = 0, inas = 0;
+            for (let k = 0; k < cols; k++) {
+              const m = (a.marcas[k] || "").toUpperCase();
+              if (m === "A") asis++;
+              else if (m === "F") inas++;
+            }
+            const total = asis + inas;
+            const porc = total > 0 ? (asis / total) * 100 : 0;
+
+            const row = ws.getRow(r);
+            row.getCell(1).value = i + 1;
+            row.getCell(2).value = a.nombre;
+            row.getCell(3).value = asis;
+            row.getCell(4).value = inas;
+            row.getCell(5).value = `${porc.toFixed(2)}%`;
+
+            row.getCell(1).alignment = CTR;
+            row.getCell(2).alignment = LEFT;
+            row.getCell(3).alignment = CTR;
+            row.getCell(4).alignment = CTR;
+            row.getCell(5).alignment = CTR;
+
+            row.getCell(3).fill = sf(GREEN_BG);
+            row.getCell(4).fill = sf(RED_BG);
+
+            for (let c = 1; c <= 5; c++) {
+              row.getCell(c).border = THIN;
+              row.getCell(c).font = { size: 10 };
+            }
+            row.height = 16;
+            r++;
+          });
+
+          // Totales del curso
+          const totalAsis = p.alumnos.reduce((s, a) => s + a.marcas.filter(m => (m||"").toUpperCase() === "A").length, 0);
+          const totalInas = p.alumnos.reduce((s, a) => s + a.marcas.filter(m => (m||"").toUpperCase() === "F").length, 0);
+          const tot = totalAsis + totalInas;
+          const totPorc = tot > 0 ? (totalAsis / tot) * 100 : 0;
+          const tRow = ws.getRow(r);
+          tRow.getCell(1).value = "";
+          tRow.getCell(2).value = `TOTAL (${p.alumnos.length} alumnos)`;
+          tRow.getCell(3).value = totalAsis;
+          tRow.getCell(4).value = totalInas;
+          tRow.getCell(5).value = `${totPorc.toFixed(2)}%`;
+          for (let c = 1; c <= 5; c++) {
+            tRow.getCell(c).font = { bold: true, size: 10, color: { argb: WHITE } };
+            tRow.getCell(c).fill = sf(NAVY);
+            tRow.getCell(c).alignment = c === 2 ? LEFT : CTR;
+            tRow.getCell(c).border = THIN;
+          }
+          tRow.height = 20;
+          r += 2; // espacio entre cursos
+        }
+      }
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Asistencia_por_Carrera_UAI_2026-1.xlsx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast({ title: "Excel generado", description: `${sortedCarreras.length} carreras exportadas.` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error al generar Excel", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const loadUploaded = async () => {
     try {
@@ -123,15 +309,27 @@ export default function PlanillasAsistencia() {
 
   return (
     <div className="p-6 space-y-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ClipboardCheck className="h-6 w-6 text-primary" />
-          Planillas de Asistencia
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Selecciona un docente, abre cualquiera de sus cursos e importa el Excel "Reporte de Asistencia de Estudiantes".
-          Al ver una planilla aparecerá también el horario por aula que se está formando para esos estudiantes.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[280px]">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <ClipboardCheck className="h-6 w-6 text-primary" />
+            Planillas de Asistencia
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Selecciona un docente, abre cualquiera de sus cursos e importa el Excel "Reporte de Asistencia de Estudiantes".
+            Al ver una planilla aparecerá también el horario por aula que se está formando para esos estudiantes.
+          </p>
+        </div>
+        <Button
+          onClick={exportarPorCarrera}
+          disabled={exporting}
+          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+        >
+          {exporting
+            ? <><Loader2 className="h-4 w-4 animate-spin" /> Generando…</>
+            : <><Download className="h-4 w-4" /> Excel por Carrera</>
+          }
+        </Button>
       </div>
 
       {loading ? (
