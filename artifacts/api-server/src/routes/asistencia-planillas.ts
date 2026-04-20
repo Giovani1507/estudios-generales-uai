@@ -10,13 +10,18 @@ router.use(requireAuth);
 
 const requireWriter = requireRole("administrador", "coordinador");
 
-/* Lista de planillas. Filtros opcionales: ?docente=...&codigoCurso=... */
+/* Lista de planillas. Filtros opcionales: ?docente=...&codigoCurso=...&carrera=...&ciclo=...&seccion=... */
 router.get("/", async (req, res) => {
   try {
-    const { docente, codigoCurso } = req.query as { docente?: string; codigoCurso?: string };
+    const { docente, codigoCurso, carrera, ciclo, seccion } = req.query as {
+      docente?: string; codigoCurso?: string; carrera?: string; ciclo?: string; seccion?: string;
+    };
     const conds = [];
     if (docente) conds.push(eq(asistenciaPlanillasTable.docente, String(docente).toUpperCase().trim()));
     if (codigoCurso) conds.push(eq(asistenciaPlanillasTable.codigoCurso, String(codigoCurso).trim()));
+    if (carrera) conds.push(eq(asistenciaPlanillasTable.carrera, String(carrera).trim()));
+    if (ciclo) conds.push(eq(asistenciaPlanillasTable.ciclo, String(ciclo).trim()));
+    if (seccion) conds.push(eq(asistenciaPlanillasTable.seccion, String(seccion).trim()));
     const rows = await db
       .select({
         id: asistenciaPlanillasTable.id,
@@ -65,11 +70,10 @@ router.post("/", requireWriter, async (req, res) => {
     codigoCurso, nombreCurso, encabezadoCrudo,
     weeks, alumnos, totales,
   } = req.body || {};
-  if (!docente?.trim()) return res.status(400).json({ error: "Docente es requerido" });
   if (!Array.isArray(alumnos)) return res.status(400).json({ error: "Lista de alumnos inválida" });
   try {
     const [row] = await db.insert(asistenciaPlanillasTable).values({
-      docente: String(docente).toUpperCase().trim(),
+      docente: docente ? String(docente).toUpperCase().trim() : null,
       carrera: carrera ?? null,
       ciclo: ciclo ?? null,
       seccion: seccion ?? null,

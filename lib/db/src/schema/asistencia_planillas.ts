@@ -2,7 +2,7 @@ import { pgTable, serial, text, jsonb, timestamp, integer } from "drizzle-orm/pg
 
 export const asistenciaPlanillasTable = pgTable("asistencia_planillas", {
   id:               serial("id").primaryKey(),
-  docente:          text("docente").notNull(),
+  docente:          text("docente"),
   carrera:          text("carrera"),
   ciclo:            text("ciclo"),
   seccion:          text("seccion"),
