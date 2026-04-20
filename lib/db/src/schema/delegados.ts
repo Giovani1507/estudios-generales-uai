@@ -9,6 +9,7 @@ export const delegadosTable = pgTable("delegados", {
   seccion:          text("seccion").notNull(),
   numero:           text("numero"),
   correo:           text("correo"),
+  sede:             text("sede"),
   registradoEn:     timestamp("registrado_en").notNull().defaultNow(),
 });
 

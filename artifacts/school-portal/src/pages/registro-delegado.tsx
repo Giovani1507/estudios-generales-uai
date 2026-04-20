@@ -37,6 +37,7 @@ export default function RegistroDelegado() {
     seccion: "",
     numero: "",
     correo: "",
+    sede: "",
   });
   const [saving,  setSaving]  = useState(false);
   const [success, setSuccess] = useState(false);
@@ -52,6 +53,7 @@ export default function RegistroDelegado() {
     if (!form.carrera)                 { setError("Selecciona tu carrera."); return; }
     if (!form.ciclo)                   { setError("Selecciona tu ciclo."); return; }
     if (!form.seccion.trim())          { setError("Ingresa tu sección."); return; }
+    if (!form.sede)                    { setError("Selecciona tu sede."); return; }
 
     setSaving(true);
     try {
@@ -100,11 +102,12 @@ export default function RegistroDelegado() {
             <p><span className="font-semibold text-slate-600">Carrera:</span> {form.carrera}</p>
             <p><span className="font-semibold text-slate-600">Ciclo:</span> {form.ciclo}</p>
             <p><span className="font-semibold text-slate-600">Sección:</span> {form.seccion.toUpperCase()}</p>
+            <p><span className="font-semibold text-slate-600">Sede:</span> {form.sede}</p>
           </div>
           <Button
             className="w-full text-white"
             style={{ background: NAVY }}
-            onClick={() => { setSuccess(false); setForm({ tipo: "DELEGADO", apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "" }); }}
+            onClick={() => { setSuccess(false); setForm({ tipo: "DELEGADO", apellidosNombres: "", carrera: "", ciclo: "", seccion: "", numero: "", correo: "", sede: "" }); }}
           >
             Registrar otro delegado
           </Button>
@@ -201,6 +204,19 @@ export default function RegistroDelegado() {
                 className="h-10"
               />
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold text-slate-600">Sede <span className="text-red-500">*</span></Label>
+            <select
+              value={form.sede}
+              onChange={set("sede")}
+              className="w-full h-10 rounded-md border border-input bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">— Seleccionar sede —</option>
+              <option value="ICA">Sede Ica</option>
+              <option value="FILIAL HUAURA">Filial Huaura</option>
+            </select>
           </div>
 
           <div className="space-y-1">

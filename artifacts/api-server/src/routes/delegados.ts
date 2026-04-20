@@ -19,7 +19,7 @@ router.get("/", async (_req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { tipo, apellidosNombres, carrera, ciclo, seccion, numero, correo } = req.body;
+  const { tipo, apellidosNombres, carrera, ciclo, seccion, numero, correo, sede } = req.body;
   if (!apellidosNombres?.trim()) return res.status(400).json({ error: "Apellidos y nombres es requerido" });
   if (!carrera?.trim())          return res.status(400).json({ error: "Carrera es requerida" });
   if (!ciclo?.trim())            return res.status(400).json({ error: "Ciclo es requerido" });
@@ -57,6 +57,7 @@ router.post("/", async (req, res) => {
         seccion:          seccion.trim().toUpperCase(),
         numero:           numero?.trim() || null,
         correo:           correoNorm,
+        sede:             sede?.trim() || null,
       })
       .returning();
     res.status(201).json(row);
