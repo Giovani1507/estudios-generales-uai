@@ -68,12 +68,26 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
   // Encabezado del curso (fila 5 → idx 4)
   const encabezadoCrudo = cell(4, 0);
 
-  // Encontrar fila de encabezados ("Nº" / "N°" / "Apellidos y Nombres")
+  // Encontrar fila de encabezados ("Nº" / "N°" / "Nª" / "No" + "Apellidos y Nombres")
+  // Algunos Excels usan "Nª" (ordinal femenino) o variantes raras, por eso aceptamos
+  // cualquier celda corta que empiece por "n" siempre que la siguiente diga "apellidos".
   let headerRow = -1;
-  for (let r = 5; r < Math.min(aoa.length, 12); r++) {
+  for (let r = 0; r < Math.min(aoa.length, 14); r++) {
     const v0 = cell(r, 0).toLowerCase();
     const v1 = cell(r, 1).toLowerCase();
-    if ((v0 === "n°" || v0 === "nº" || v0 === "no") && v1.includes("apellidos")) {
+    // Salvaguarda: solo aceptamos celdas cortas en la col 0 para evitar
+    // matchear oraciones como "Nota: los apellidos...".
+    const looksLikeNumeroHdr = v0.length <= 8 && (
+      v0 === "n°" || v0 === "nº" || v0 === "nª" || v0 === "no" || v0 === "n" ||
+      v0.startsWith("n°") || v0.startsWith("nº") || v0.startsWith("nª") ||
+      v0 === "#" || v0 === "num" || v0 === "número" || v0 === "numero"
+    );
+    if (looksLikeNumeroHdr && v1.includes("apellidos")) {
+      headerRow = r; break;
+    }
+    // Variante: si por sí sola "Apellidos y Nombres" aparece en col 1 (sin Nº),
+    // usamos esa fila igual.
+    if (!v0 && v1.includes("apellidos") && v1.includes("nombres")) {
       headerRow = r; break;
     }
   }
