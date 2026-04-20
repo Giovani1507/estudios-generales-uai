@@ -79,6 +79,8 @@ export default function PlanillasAsistencia() {
   const teachers = useMemo(() => {
     const map = new Map<string, { count: number; carreras: Set<string> }>();
     for (const r of data) {
+      // Solo ciclos 1 y 2
+      if (String(r.ciclo) !== "1" && String(r.ciclo) !== "2") continue;
       const k = r.docente?.toUpperCase().trim();
       if (!k) continue;
       if (!map.has(k)) map.set(k, { count: 0, carreras: new Set() });
@@ -99,7 +101,11 @@ export default function PlanillasAsistencia() {
   /* Cursos únicos del docente (agrupados por código + sección) */
   const cursos = useMemo(() => {
     if (!selected) return [];
-    const rows = data.filter((r) => r.docente?.toUpperCase().trim() === selected);
+    const rows = data.filter(
+      (r) =>
+        r.docente?.toUpperCase().trim() === selected &&
+        (String(r.ciclo) === "1" || String(r.ciclo) === "2"),
+    );
     const map = new Map<string, Row & { sesiones: number }>();
     for (const r of rows) {
       const k = `${r.codigo}|${r.seccion}|${r.carrera}|${r.ciclo}`;
