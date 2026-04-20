@@ -213,10 +213,12 @@ export default function RegistroDelegado() {
               onChange={set("sede")}
               className="w-full h-10 rounded-md border border-input bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">— Seleccionar sede —</option>
-              <option value="SEDE SUNAMPE">Sede Sunampe</option>
-              <option value="FILIAL HUAURA">Filial Huaura</option>
-              <option value="FILIAL PORUMA">Filial Poruma</option>
+              <option value="">— Seleccionar —</option>
+              <option value="SEDE">Sede</option>
+              <option value="SUNAMPE">Sunampe</option>
+              <option value="FILIAL">Filial</option>
+              <option value="HUAURA">Huaura</option>
+              <option value="PORUMA">Poruma</option>
             </select>
           </div>
 
