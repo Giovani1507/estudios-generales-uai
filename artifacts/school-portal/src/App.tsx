@@ -44,6 +44,7 @@ import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 import Seguridad from "@/pages/seguridad";
 import PlanillasAsistencia from "@/pages/planillas-asistencia";
 import ResultadosPlanillas from "@/pages/resultados-planillas";
+import ReporteAsistencia from "@/pages/reporte-asistencia";
 import RegistroAsistencia from "@/pages/registro-asistencia";
 import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
@@ -205,6 +206,10 @@ function AppRouter() {
       <Route
         path="/resultados-planillas"
         component={() => <ProtectedRoute component={ResultadosPlanillas} />}
+      />
+      <Route
+        path="/reporte-asistencia"
+        component={() => <ProtectedRoute component={ReporteAsistencia} />}
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />

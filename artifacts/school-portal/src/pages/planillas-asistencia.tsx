@@ -534,11 +534,14 @@ export default function PlanillasAsistencia() {
 
       const buildCursoWorkbook = (c: CursoInfo & { sede?: Sede }) => buildCursoWorkbookXLSX(c);
 
-      // Mapear cada curso a su sede usando el primer Row coincidente de la planificación
-      const sedeDeCurso = new Map<string, Sede>();
+      // Un mismo curso puede dictarse en varias sedes (ej. Biología MH 1A en
+      // PORUMA viernes y SUNAMPE lunes). Mapeamos a TODAS las sedes donde
+      // aparece para que no se pierda en el ZIP por carrera.
+      const sedesDeCurso = new Map<string, Set<Sede>>();
       for (const r of rowsPlan) {
         const k = `${(r.codigo || "").trim()}|${(r.docente || "").toUpperCase().trim()}|${(r.seccion || "").trim()}`;
-        if (!sedeDeCurso.has(k)) sedeDeCurso.set(k, sedeFromLocal(r.local));
+        if (!sedesDeCurso.has(k)) sedesDeCurso.set(k, new Set());
+        sedesDeCurso.get(k)!.add(sedeFromLocal(r.local));
       }
 
       // Armar ZIP: carpeta por SEDE → carpeta por (CARRERA CICLO-SECCION) → un Excel por curso
@@ -549,14 +552,18 @@ export default function PlanillasAsistencia() {
         a.seccion.localeCompare(b.seccion)
       );
 
-      // Pre-clasificar cursos por sede
+      // Pre-clasificar cursos por sede. Si un curso se dicta en varias sedes,
+      // aparece en CADA sede para no perderlo en ninguna carpeta.
       type CursoFull = CursoInfo & { sede: Sede };
       const cursosPorSede = new Map<Sede, CursoFull[]>();
       for (const s of SEDES) cursosPorSede.set(s, []);
       for (const g of grupos) {
         for (const ci of g.cursos.values()) {
-          const sede = sedeDeCurso.get(`${ci.codigoCurso}|${ci.docente}|${ci.seccion}`) || "SEDE";
-          cursosPorSede.get(sede)!.push({ ...ci, sede });
+          const sedes = sedesDeCurso.get(`${ci.codigoCurso}|${ci.docente}|${ci.seccion}`);
+          const lista = sedes && sedes.size > 0 ? Array.from(sedes) : (["SEDE"] as Sede[]);
+          for (const sede of lista) {
+            cursosPorSede.get(sede)!.push({ ...ci, sede });
+          }
         }
       }
 

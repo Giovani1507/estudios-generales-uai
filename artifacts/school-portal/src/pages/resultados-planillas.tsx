@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle, Search, Download, GraduationCap, BookOpen } from "lucide-react";
 import * as ExcelJS from "exceljs";
+import {
+  PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList,
+} from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,6 +166,27 @@ export default function ReporteJalados() {
     });
   }, [rows, search, sedeF, carreraF]);
 
+  // Datos para gráficos
+  const chartCarrera = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of filtered) m.set(r.carrera, (m.get(r.carrera) || 0) + 1);
+    return Array.from(m.entries())
+      .map(([carrera, jalados]) => ({ carrera, jalados }))
+      .sort((a, b) => b.jalados - a.jalados);
+  }, [filtered]);
+
+  const chartCurso = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of filtered) {
+      const k = r.curso || r.codigoCurso || "—";
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return Array.from(m.entries())
+      .map(([curso, jalados]) => ({ curso: curso.length > 22 ? curso.slice(0, 22) + "…" : curso, jalados }))
+      .sort((a, b) => b.jalados - a.jalados)
+      .slice(0, 8);
+  }, [filtered]);
+
   // Agrupar por carrera para visualización
   const grouped = useMemo(() => {
     const m = new Map<string, JaladoRow[]>();
@@ -237,6 +262,43 @@ export default function ReporteJalados() {
           <Download className="h-4 w-4" /> Excel
         </Button>
       </div>
+
+      {/* Gráficos */}
+      {filtered.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-border/50 shadow-sm p-4">
+            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Jalados por carrera</h3>
+            <p className="text-[11px] text-muted-foreground mb-2">Distribución de estudiantes desaprobados por inasistencia</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={chartCarrera} dataKey="jalados" nameKey="carrera" cx="50%" cy="50%" outerRadius={85} innerRadius={45} paddingAngle={3}
+                  label={({ carrera, jalados, percent }) => `${carrera}: ${jalados} (${(percent! * 100).toFixed(0)}%)`} labelLine={false}
+                >
+                  {chartCarrera.map((_, i) => (
+                    <Cell key={i} fill={["#b91c1c","#dc2626","#ef4444","#f87171","#fca5a5","#7f1d1d","#991b1b","#fee2e2"][i % 8]} stroke="#fff" strokeWidth={2} />
+                  ))}
+                </Pie>
+                <RTooltip formatter={(v: number) => [`${v} estudiantes`, "Jalados"]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="lg:col-span-2 bg-white rounded-xl border border-border/50 shadow-sm p-4">
+            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Top cursos con más jalados</h3>
+            <p className="text-[11px] text-muted-foreground mb-2">Cursos con mayor número de estudiantes desaprobados</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartCurso} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "#475569" }} allowDecimals={false} />
+                <YAxis type="category" dataKey="curso" tick={{ fontSize: 10, fill: "#475569" }} width={150} />
+                <RTooltip />
+                <Bar dataKey="jalados" fill="#b91c1c" radius={[0, 6, 6, 0]}>
+                  <LabelList dataKey="jalados" position="right" style={{ fill: "#b91c1c", fontSize: 11, fontWeight: 700 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-white rounded-lg border border-border/50 shadow-sm p-3 flex flex-wrap gap-3 items-center">
