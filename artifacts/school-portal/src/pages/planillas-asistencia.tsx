@@ -250,15 +250,10 @@ export default function PlanillasAsistencia() {
                           <td className="px-3 py-2 text-muted-foreground">{c.modalidad}</td>
                           <td className="px-3 py-2 text-center text-muted-foreground">{c.sesiones}</td>
                           <td className="px-3 py-2 text-right">
-                            {!isUploaded && (
-                              <div className="text-[10px] font-bold text-red-600 mb-1 uppercase tracking-wide">
-                                No hay asistencia
-                              </div>
-                            )}
                             <Button
                               size="sm"
                               variant={isUploaded ? "outline" : "default"}
-                              className={`h-7 px-2.5 gap-1.5 text-[10px] ${isUploaded ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50" : "bg-red-600 hover:bg-red-700 text-white"}`}
+                              className={`h-7 px-2.5 gap-1.5 text-[10px] ${isUploaded ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50" : ""}`}
                               onClick={() => setAsistenciaCurso({
                                 docente: selected,
                                 codigoCurso: c.codigo,

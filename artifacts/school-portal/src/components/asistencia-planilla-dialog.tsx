@@ -360,12 +360,21 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
     return Array.from(m.values());
   }, [horarioAula]);
 
+  const sinAsistencia = !!parsed && parsed.alumnos.length > 0 &&
+    parsed.alumnos.every(a => a.marcas.every(m => !m || !m.trim()));
+
   const previewParsed = parsed && (
     <div className="space-y-3">
       <div className="rounded border border-border/50 bg-muted/30 p-3 text-xs space-y-1">
         <div><span className="text-muted-foreground">Encabezado del Excel:</span> <span className="font-medium">{parsed.encabezadoCrudo}</span></div>
         <div><span className="text-muted-foreground">Semanas detectadas:</span> <span className="font-bold">{parsed.weeks.length}</span> · <span className="text-muted-foreground">Alumnos:</span> <span className="font-bold">{parsed.alumnos.length}</span></div>
       </div>
+      {sinAsistencia && (
+        <div className="rounded border-2 border-red-500 bg-red-50 p-3 text-center">
+          <div className="text-red-700 font-bold uppercase tracking-wide text-sm">No hay asistencia</div>
+          <div className="text-red-600 text-xs mt-1">El Excel no contiene marcas de asistencia para los alumnos.</div>
+        </div>
+      )}
       <div className="border rounded max-h-[300px] overflow-auto">
         <table className="w-full text-xs">
           <thead className="bg-muted/50 sticky top-0">
