@@ -24,6 +24,7 @@ type Delegado = {
   seccion: string;
   numero: string | null;
   correo: string | null;
+  sede: string | null;
   registradoEn: string;
 };
 
@@ -44,7 +45,7 @@ async function exportarExcel(rows: Delegado[]) {
 
   ws.columns = [
     { width: 4 }, { width: 14 }, { width: 36 }, { width: 30 }, { width: 8 },
-    { width: 10 }, { width: 15 }, { width: 28 }, { width: 18 },
+    { width: 10 }, { width: 16 }, { width: 15 }, { width: 28 }, { width: 18 },
   ];
 
   const sf  = (a: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: a } });
@@ -56,14 +57,14 @@ async function exportarExcel(rows: Delegado[]) {
   };
 
   ws.getRow(1).height = 28;
-  ws.mergeCells("A1:I1");
+  ws.mergeCells("A1:J1");
   const t = ws.getCell("A1");
   t.value = "UNIVERSIDAD AUTÓNOMA DE ICA — REGISTRO DE DELEGADOS 2026-I";
   t.font  = { bold: true, size: 13, color: { argb: WHITE } };
   t.fill  = sf(NAVY_A); t.alignment = CTR; t.border = THIN;
 
   ws.getRow(2).height = 6;
-  const headers = ["N°", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", "Registrado"];
+  const headers = ["N°", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Sede", "Celular", "Correo", "Registrado"];
   ws.getRow(3).height = 20;
   headers.forEach((h, i) => {
     const c = ws.getRow(3).getCell(i + 1);
@@ -75,7 +76,7 @@ async function exportarExcel(rows: Delegado[]) {
     const row = ws.getRow(4 + i); row.height = 17;
     const vals = [
       i + 1, r.tipo || "DELEGADO", r.apellidosNombres, r.carrera, r.ciclo, r.seccion,
-      r.numero || "—", r.correo || "—", fmtDate(r.registradoEn),
+      r.sede || "—", r.numero || "—", r.correo || "—", fmtDate(r.registradoEn),
     ];
     vals.forEach((v, ci) => {
       const c = row.getCell(ci + 1);
@@ -393,7 +394,7 @@ export default function DelegadosAdmin() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr style={{ background: NAVY }}>
-                      {["#", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Celular", "Correo", ""].map(h => (
+                      {["#", "Tipo", "Apellidos y Nombres", "Carrera", "Ciclo", "Sección", "Sede", "Celular", "Correo", ""].map(h => (
                         <th key={h} className="px-3 py-2 text-white font-semibold text-left whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -420,6 +421,7 @@ export default function DelegadosAdmin() {
                           </span>
                         </td>
                         <td className="px-3 py-2 text-center font-bold">{r.seccion}</td>
+                        <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{r.sede || "—"}</td>
                         <td className="px-3 py-2 font-mono">{r.numero || "—"}</td>
                         <td className="px-3 py-2 text-slate-500">{r.correo || "—"}</td>
                         <td className="px-3 py-2 text-center">
