@@ -214,8 +214,9 @@ export default function RegistroDelegado() {
               className="w-full h-10 rounded-md border border-input bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">— Seleccionar sede —</option>
-              <option value="ICA">Sede Ica</option>
+              <option value="SEDE SUNAMPE">Sede Sunampe</option>
               <option value="FILIAL HUAURA">Filial Huaura</option>
+              <option value="FILIAL PORUMA">Filial Poruma</option>
             </select>
           </div>
 
