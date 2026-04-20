@@ -93,11 +93,30 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
     }
   }
   const totalDataCols = semanaCols.reduce((s, n) => s + n, 0);
-  const lastCol = 2 + totalDataCols;
+  // Después de las semanas agregamos 3 columnas: Asistencias | Inasistencias | Estado
+  const SUMMARY_COLS = 3;
+  const lastCol = 2 + totalDataCols + SUMMARY_COLS;
+  const firstSummaryCol = 2 + totalDataCols + 1;
 
   const cols: Partial<ExcelJS.Column>[] = [{ width: 5 }, { width: 42 }];
   for (let i = 0; i < totalDataCols; i++) cols.push({ width: 12 });
+  cols.push({ width: 11 }, { width: 13 }, { width: 22 });
   ws.columns = cols as ExcelJS.Column[];
+
+  // Regla: una semana cuenta como 1 inasistencia si tiene AL MENOS una "F" (T y/o P).
+  //         una semana cuenta como 1 asistencia si tiene "A" y NINGUNA "F".
+  const contarSemana = (a: PlanillaDetalle["alumnos"][number], w: number): "A" | "F" | "" => {
+    let hasA = false, hasF = false;
+    for (let k = 0; k < semanaCols[w]; k++) {
+      const m = (a.marcas[w * 2 + k] || "").toUpperCase();
+      if (m === "F") hasF = true;
+      else if (m === "A") hasA = true;
+    }
+    if (hasF) return "F";
+    if (hasA) return "A";
+    return "";
+  };
+  const UMBRAL_DESAPROBADO = 6;
 
   const colLetter = (n: number) => {
     let s = "";
@@ -137,7 +156,7 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
   let cur = 3;
   for (let i = 0; i < N; i++) { semanaStartCol.push(cur); cur += semanaCols[i]; }
 
-  // Fila 5: Semana N
+  // Fila 5: Semana N (+ encabezados de resumen combinados verticalmente 5-7)
   const r5 = ws.getRow(5);
   r5.getCell(1).value = "N°";
   r5.getCell(2).value = "Apellidos y Nombres del Alumno";
@@ -146,6 +165,15 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
     if (cnt === 2) ws.mergeCells(5, start, 5, start + 1);
     r5.getCell(start).value = weeks[i]?.label || `Semana ${i + 1}`;
   }
+  // Combinar N°, Nombres y los 3 de resumen verticalmente 5..7
+  ws.mergeCells(5, 1, 7, 1);
+  ws.mergeCells(5, 2, 7, 2);
+  ws.mergeCells(5, firstSummaryCol,     7, firstSummaryCol);
+  ws.mergeCells(5, firstSummaryCol + 1, 7, firstSummaryCol + 1);
+  ws.mergeCells(5, firstSummaryCol + 2, 7, firstSummaryCol + 2);
+  ws.getCell(5, firstSummaryCol).value = "Asistencias";
+  ws.getCell(5, firstSummaryCol + 1).value = "Inasistencias";
+  ws.getCell(5, firstSummaryCol + 2).value = "Estado";
   for (let col = 1; col <= lastCol; col++) {
     const cell = r5.getCell(col);
     cell.font = { bold: true, size: 10, color: { argb: XLS_WHITE } };
@@ -153,14 +181,14 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
   }
   r5.height = 18;
 
-  // Fila 6: fecha
+  // Fila 6: fecha (solo bajo las semanas)
   const r6 = ws.getRow(6);
   for (let i = 0; i < N; i++) {
     const start = semanaStartCol[i];
     const fecha = weeks[i]?.fecha || "";
     for (let k = 0; k < semanaCols[i]; k++) r6.getCell(start + k).value = fecha;
   }
-  for (let col = 1; col <= lastCol; col++) {
+  for (let col = 3; col <= 2 + totalDataCols; col++) {
     const cell = r6.getCell(col);
     cell.font = { size: 9, color: { argb: "FF555555" } };
     cell.fill = xsf("FFF1F5F9"); cell.alignment = XCTR; cell.border = XTHIN;
@@ -175,17 +203,32 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
     if (semanaCols[i] === 1) r7.getCell(start).value = dia;
     else { r7.getCell(start).value = `${dia}\nT`; r7.getCell(start + 1).value = `${dia}\nP`; }
   }
-  for (let col = 1; col <= lastCol; col++) {
+  for (let col = 3; col <= 2 + totalDataCols; col++) {
     const cell = r7.getCell(col);
     cell.font = { size: 9, color: { argb: "FF555555" }, italic: true };
     cell.fill = xsf("FFF1F5F9"); cell.alignment = XCTR; cell.border = XTHIN;
   }
   r7.height = 24;
 
+  // Colores
+  const RED_ROW   = "FFFEE2E2"; // fondo rojo claro para alumnos jalados
+  const RED_TEXT  = "FFB91C1C";
+  const GREEN_TXT = "FF15803D";
+
   // Alumnos desde fila 8
   let r = 8;
   const alumnos = p?.alumnos ?? [];
+  let totalJalados = 0;
   alumnos.forEach((a, i) => {
+    let asis = 0, inas = 0;
+    for (let w = 0; w < N; w++) {
+      const v = contarSemana(a, w);
+      if (v === "A") asis++;
+      else if (v === "F") inas++;
+    }
+    const jalado = inas >= UMBRAL_DESAPROBADO;
+    if (jalado) totalJalados++;
+
     const row = ws.getRow(r);
     row.getCell(1).value = i + 1;
     row.getCell(2).value = a.nombre;
@@ -193,8 +236,13 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
     row.getCell(2).alignment = XLEFT;
     row.getCell(1).border = XTHIN;
     row.getCell(2).border = XTHIN;
-    row.getCell(1).font = { size: 10 };
-    row.getCell(2).font = { size: 10 };
+    row.getCell(1).font = { size: 10, bold: jalado, color: { argb: jalado ? RED_TEXT : "FF000000" } };
+    row.getCell(2).font = { size: 10, bold: jalado, color: { argb: jalado ? RED_TEXT : "FF000000" } };
+    if (jalado) {
+      row.getCell(1).fill = xsf(RED_ROW);
+      row.getCell(2).fill = xsf(RED_ROW);
+    }
+
     for (let w = 0; w < N; w++) {
       const start = semanaStartCol[w];
       for (let k = 0; k < semanaCols[w]; k++) {
@@ -204,14 +252,34 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
         cell.value = mark;
         cell.alignment = XCTR;
         cell.border = XTHIN;
-        cell.font = { size: 10, bold: mark === "F" };
+        cell.font = { size: 10, bold: mark === "F", color: { argb: jalado && mark !== "F" ? RED_TEXT : "FF000000" } };
         if (mark === "F") cell.fill = xsf(XLS_YELLOW_BG);
+        else if (jalado) cell.fill = xsf(RED_ROW);
       }
     }
+
+    // Asistencias / Inasistencias / Estado
+    const cAs = row.getCell(firstSummaryCol);
+    const cIn = row.getCell(firstSummaryCol + 1);
+    const cEs = row.getCell(firstSummaryCol + 2);
+    cAs.value = asis;
+    cIn.value = inas;
+    cEs.value = jalado ? "JALADO POR INASISTENCIA" : "—";
+    [cAs, cIn, cEs].forEach((c) => { c.alignment = XCTR; c.border = XTHIN; });
+    cAs.font = { size: 10, bold: true, color: { argb: GREEN_TXT } };
+    cIn.font = { size: 10, bold: true, color: { argb: inas > 0 ? RED_TEXT : "FF555555" } };
+    cEs.font = { size: 10, bold: true, color: { argb: jalado ? XLS_WHITE : "FF555555" } };
+    if (jalado) {
+      cEs.fill = xsf("FFB91C1C");
+      cAs.fill = xsf(RED_ROW);
+      cIn.fill = xsf(RED_ROW);
+    }
+
     row.height = 16;
     r++;
   });
 
+  // Si no hay alumnos, dejar 20 filas vacías como plantilla
   if (alumnos.length === 0) {
     for (let i = 0; i < 20; i++) {
       const row = ws.getRow(r);
@@ -222,6 +290,19 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
       row.height = 16;
       r++;
     }
+  }
+
+  // Pie con resumen del curso
+  if (alumnos.length > 0) {
+    const footRow = r + 1;
+    ws.mergeCells(footRow, 1, footRow, lastCol);
+    const fc = ws.getCell(footRow, 1);
+    fc.value = `Total alumnos: ${alumnos.length}   ·   Jalados por inasistencia (≥ ${UMBRAL_DESAPROBADO} faltas): ${totalJalados}   ·   Umbral de desaprobación: ${UMBRAL_DESAPROBADO} inasistencias`;
+    fc.alignment = XLEFT;
+    fc.font = { italic: true, size: 10, color: { argb: "FF333333" } };
+    fc.fill = xsf("FFF1F5F9");
+    fc.border = XTHIN;
+    ws.getRow(footRow).height = 18;
   }
 
   return await wb.xlsx.writeBuffer() as ArrayBuffer;

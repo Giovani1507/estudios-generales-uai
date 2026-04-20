@@ -192,6 +192,9 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   const [parsed, setParsed] = useState<ParsedXlsx | null>(null);
   const [sinCambios, setSinCambios] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState<number>(0);
+  const [dragOver, setDragOver] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [detail, setDetail] = useState<PlanillaDetail | null>(null);
   const [dirty, setDirty] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -219,10 +222,14 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, curso.docente, curso.codigoCurso, curso.seccion]);
 
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const handleFile = async (f: File) => {
+    if (!/\.(xlsx|xls)$/i.test(f.name)) {
+      toast({ title: "Archivo no válido", description: "Debe ser un Excel (.xlsx o .xls)", variant: "destructive" });
+      return;
+    }
     setFileName(f.name);
+    setFileSize(f.size);
+    setParsing(true);
     try {
       const buf = await f.arrayBuffer();
       const p = parseAttendanceXlsx(buf);
@@ -235,7 +242,21 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
     } catch (err) {
       console.error(err);
       toast({ title: "Error al leer Excel", description: "Verifica que el formato sea el reporte de asistencia.", variant: "destructive" });
+    } finally {
+      setParsing(false);
     }
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) handleFile(f);
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); e.stopPropagation();
+    setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleFile(f);
   };
 
   const saveImport = async () => {
@@ -546,12 +567,39 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
                   <ArrowLeft className="h-4 w-4 mr-1" /> Volver
                 </Button>
               </div>
-              <div className="border-2 border-dashed rounded p-6 text-center">
-                <FileSpreadsheet className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm font-medium mb-1">Selecciona el Excel de asistencia</p>
-                <p className="text-xs text-muted-foreground mb-3">Formato: "Reporte de Asistencia de Estudiantes" (.xlsx)</p>
-                <Input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={onFileChange} className="max-w-sm mx-auto" />
-                {fileName && <p className="text-xs text-muted-foreground mt-2">Archivo: {fileName}</p>}
+              <div
+                onClick={() => fileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={onDrop}
+                className={`relative cursor-pointer border-2 border-dashed rounded-xl p-8 text-center transition-all
+                  ${dragOver ? "border-primary bg-primary/5 scale-[1.01]" : "border-border bg-muted/20 hover:border-primary/60 hover:bg-muted/30"}
+                  ${parsing ? "opacity-60 pointer-events-none" : ""}`}
+              >
+                <Input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={onFileChange} className="hidden" />
+                <div className={`mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full ${dragOver ? "bg-primary text-white" : "bg-primary/10 text-primary"}`}>
+                  {parsing ? <Loader2 className="h-7 w-7 animate-spin" /> : <FileSpreadsheet className="h-7 w-7" />}
+                </div>
+                <p className="text-base font-semibold">
+                  {parsing ? "Procesando archivo…" : dragOver ? "Suelta aquí el archivo" : "Arrastra el Excel o haz click para elegirlo"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Formato esperado: "Reporte de Asistencia de Estudiantes" — .xlsx o .xls
+                </p>
+                {fileName && !parsing && (
+                  <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs">
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    <span className="font-medium truncate max-w-[280px]">{fileName}</span>
+                    {fileSize > 0 && <span className="text-emerald-600/80">· {(fileSize / 1024).toFixed(1)} KB</span>}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                      className="ml-1 underline underline-offset-2 hover:text-emerald-900"
+                    >
+                      cambiar
+                    </button>
+                  </div>
+                )}
               </div>
               {previewParsed}
               {parsed && (
