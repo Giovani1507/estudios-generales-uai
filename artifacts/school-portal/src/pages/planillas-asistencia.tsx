@@ -73,7 +73,7 @@ type PlanillaDetalle = {
   id: number; docente: string|null; carrera: string|null; ciclo: string|null;
   seccion: string|null; codigoCurso: string|null; nombreCurso: string|null;
   alumnos: Array<{ numero: string; nombre: string; marcas: string[]; porcentaje: number }>;
-  weeks: Array<{ label: string; fecha?: string; dia?: string }>;
+  weeks: Array<{ label: string; fecha?: string; dia?: string; slots?: 1 | 2 }>;
 };
 type CursoExportInfo = {
   codigoCurso: string;
@@ -96,10 +96,15 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
   const weeks = (p?.weeks ?? []) as Array<{ label: string; fecha?: string; dia?: string }>;
   const N = weeks.length > 0 ? weeks.length : 18;
 
-  // Detectar 1 o 2 columnas por semana (T/P)
+  // Detectar 1 o 2 columnas por semana (T/P).
+  // Prioridad: lo que diga la fuente (weeks[i].slots). Si no viene, fallback al
+  // método antiguo (mirar si algún alumno tiene marca en el slot P).
   const semanaCols: number[] = new Array(N).fill(1);
-  if (p && p.alumnos.length > 0) {
-    for (let w = 0; w < N; w++) {
+  for (let w = 0; w < N; w++) {
+    const declared = (weeks[w] as { slots?: 1 | 2 } | undefined)?.slots;
+    if (declared === 2 || declared === 1) {
+      semanaCols[w] = declared;
+    } else if (p && p.alumnos.length > 0) {
       for (const a of p.alumnos) {
         const m2 = (a.marcas[w * 2 + 1] || "").toUpperCase();
         if (m2 === "A" || m2 === "F") { semanaCols[w] = 2; break; }

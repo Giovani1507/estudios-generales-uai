@@ -40,7 +40,7 @@ type PlanillaRow = {
   updatedAt: string;
 };
 
-type PlanillaWeek = { label: string; fecha: string; dia: string };
+type PlanillaWeek = { label: string; fecha: string; dia: string; slots?: 1 | 2 };
 type PlanillaAlumno = { numero: string; nombre: string; marcas: string[]; porcentaje: number };
 type PlanillaTotales = { asistencias: number[]; inasistencias: number[] };
 
@@ -79,22 +79,66 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
   }
   if (headerRow === -1) headerRow = 6; // fallback (fila 7 → idx 6)
 
-  // Cada semana ocupa 2 columnas (cols 2..N), última col = % Asist.
-  const headers = aoa[headerRow] ?? [];
-  const lastCol = headers.length - 1;
-  const weeks: PlanillaWeek[] = [];
-  for (let c = 2; c < lastCol; c += 2) {
-    const label = cell(headerRow, c) || `Semana ${weeks.length + 1}`;
+  // Detectar última columna real con datos (la columna "% Asist." al final).
+  // Algunos Excels tienen filas de longitud variable, así que escaneamos varias filas.
+  const scanRows = [headerRow, headerRow + 1, headerRow + 2];
+  let lastCol = 0;
+  for (const rr of scanRows) lastCol = Math.max(lastCol, (aoa[rr] || []).length - 1);
+  // Recortar la columna final si parece ser "% Asist." (texto no numérico en celdas de datos).
+  // Solo asumimos eso si el header de la última col contiene "%" o "asist".
+  const lastHeader = cell(headerRow, lastCol).toLowerCase();
+  const hasPctCol = lastHeader.includes("%") || lastHeader.includes("asist");
+  const dataLastCol = hasPctCol ? lastCol : lastCol + 1; // exclusivo (loops c < dataLastCol)
+
+  // Cada COLUMNA de datos puede ser una semana propia o ser parte de un par T/P.
+  // Agrupamos columnas consecutivas que comparten la MISMA fecha (y "Semana N" si existe)
+  // como una sola semana con "slots" = nº de columnas.
+  type WeekDef = { label: string; fecha: string; dia: string; cols: number[] };
+  const weekDefs: WeekDef[] = [];
+  for (let c = 2; c < dataLastCol; c++) {
+    const label = cell(headerRow, c);
     const fecha = cell(headerRow + 1, c);
     const dia = cell(headerRow + 2, c);
-    weeks.push({ label, fecha, dia });
+    if (!fecha && !label) continue; // columna vacía
+    const last = weekDefs[weekDefs.length - 1];
+    // Misma fecha que la anterior → es parte del mismo "Semana N" (T/P split)
+    if (last && fecha && last.fecha === fecha && last.cols.length < 2) {
+      last.cols.push(c);
+      // Si esta columna tiene día propio (T/P), no pisamos el día base
+    } else {
+      weekDefs.push({
+        label: label || `Semana ${weekDefs.length + 1}`,
+        fecha,
+        dia: (dia || "").trim(),
+        cols: [c],
+      });
+    }
   }
+
+  const weeks: PlanillaWeek[] = weekDefs.map((w) => ({
+    label: w.label,
+    fecha: w.fecha,
+    dia: w.dia,
+    slots: (w.cols.length === 2 ? 2 : 1),
+  }));
 
   // Alumnos: empiezan después de las 3 filas de encabezado (header + fecha + día)
   const startRow = headerRow + 3;
   const alumnos: PlanillaAlumno[] = [];
   let asistencias: number[] = new Array(weeks.length * 2).fill(0);
   let inasistencias: number[] = new Array(weeks.length * 2).fill(0);
+
+  // Helper: dado un alumno (su fila), construir marcas planas length = weeks.length * 2.
+  // Si la semana tenía 1 sola columna en la fuente, dejamos slot P vacío.
+  const buildMarcas = (r: number): string[] => {
+    const out: string[] = [];
+    for (const w of weekDefs) {
+      const v1 = w.cols[0] !== undefined ? cell(r, w.cols[0]) : "";
+      const v2 = w.cols[1] !== undefined ? cell(r, w.cols[1]) : "";
+      out.push(v1, v2);
+    }
+    return out;
+  };
 
   for (let r = startRow; r < aoa.length; r++) {
     const numero = cell(r, 0);
@@ -104,9 +148,8 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
 
     // Filas de totales al final
     if (c1.includes("asistencia") && !nombre.includes(",") && !c0) {
-      // "Asistencias"
       asistencias = [];
-      for (let c = 2; c < lastCol; c++) {
+      for (let c = 2; c < dataLastCol; c++) {
         const n = Number(cell(r, c));
         asistencias.push(Number.isFinite(n) ? n : 0);
       }
@@ -114,7 +157,7 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
     }
     if (c1.includes("inasistencia") && !c0) {
       inasistencias = [];
-      for (let c = 2; c < lastCol; c++) {
+      for (let c = 2; c < dataLastCol; c++) {
         const n = Number(cell(r, c));
         inasistencias.push(Number.isFinite(n) ? n : 0);
       }
@@ -122,11 +165,8 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
     }
     if (!nombre || !numero) continue;
 
-    const marcas: string[] = [];
-    for (let c = 2; c < lastCol; c++) {
-      marcas.push(cell(r, c));
-    }
-    const porcStr = cell(r, lastCol);
+    const marcas = buildMarcas(r);
+    const porcStr = hasPctCol ? cell(r, lastCol) : "";
     const porcentaje = Number(porcStr.replace(",", ".")) || 0;
     alumnos.push({ numero, nombre, marcas, porcentaje });
   }
