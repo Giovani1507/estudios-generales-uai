@@ -42,7 +42,6 @@ import RegistroSinMatricula from "@/pages/registro-sin-matricula";
 import RegistroRectificacion from "@/pages/registro-rectificacion";
 import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 import Seguridad from "@/pages/seguridad";
-import AsistenciaAdmin from "@/pages/asistencia-admin";
 import PlanillasAsistencia from "@/pages/planillas-asistencia";
 import ResultadosPlanillas from "@/pages/resultados-planillas";
 import RegistroAsistencia from "@/pages/registro-asistencia";
@@ -198,10 +197,6 @@ function AppRouter() {
       <Route
         path="/seguridad"
         component={() => <ProtectedRoute component={Seguridad} />}
-      />
-      <Route
-        path="/asistencia"
-        component={() => <ProtectedRoute component={AsistenciaAdmin} />}
       />
       <Route
         path="/planillas-asistencia"
