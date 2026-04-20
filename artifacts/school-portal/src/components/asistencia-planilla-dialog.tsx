@@ -160,13 +160,27 @@ const MARCA_COLOR: Record<string, string> = {
   J: "bg-blue-100 text-blue-700 border-blue-300",
 };
 
+type HorarioRow = {
+  carrera: string; ciclo: string; seccion: string;
+  codigo: string; curso: string;
+  docente: string; modalidad: string;
+  dia: string; hora: string; horaFin: string;
+  local?: string; aula?: string; pabellon?: string; tipo?: string;
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
   curso: CursoCtx;
+  allRows?: HorarioRow[];
 }
 
-export function AsistenciaPlanillaDialog({ open, onClose, curso }: Props) {
+const DIA_ORDER: Record<string, number> = {
+  LUNES: 1, MARTES: 2, MIERCOLES: 3, "MIÉRCOLES": 3,
+  JUEVES: 4, VIERNES: 5, SABADO: 6, "SÁBADO": 6, DOMINGO: 7,
+};
+
+export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }: Props) {
   const { toast } = useToast();
   const [view, setView] = useState<"list" | "import" | "detail">("list");
   const [loading, setLoading] = useState(false);
@@ -320,6 +334,31 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso }: Props) {
       setSaving(false);
     }
   };
+
+  /* Horario del aula que se forma para los estudiantes de esta sección */
+  const horarioAula = useMemo<HorarioRow[]>(() => {
+    if (!curso.carrera || !curso.ciclo || !curso.seccion) return [];
+    return allRows
+      .filter(r =>
+        r.carrera === curso.carrera &&
+        r.ciclo === curso.ciclo &&
+        r.seccion === curso.seccion
+      )
+      .sort((a, b) => {
+        const da = DIA_ORDER[(a.dia || "").toUpperCase()] || 99;
+        const db = DIA_ORDER[(b.dia || "").toUpperCase()] || 99;
+        if (da !== db) return da - db;
+        return (a.hora || "").localeCompare(b.hora || "");
+      });
+  }, [allRows, curso.carrera, curso.ciclo, curso.seccion]);
+
+  const cursosUnicos = useMemo(() => {
+    const m = new Map<string, { codigo: string; curso: string; docente: string }>();
+    horarioAula.forEach(r => {
+      if (!m.has(r.codigo)) m.set(r.codigo, { codigo: r.codigo, curso: r.curso, docente: r.docente });
+    });
+    return Array.from(m.values());
+  }, [horarioAula]);
 
   const previewParsed = parsed && (
     <div className="space-y-3">
@@ -522,6 +561,52 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso }: Props) {
                 <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">J = Justificado</Badge>
                 <span>Edita una celda y pulsa "Guardar cambios".</span>
               </div>
+
+              {/* Horario por aula formado para estos estudiantes */}
+              {horarioAula.length > 0 && (
+                <div className="mt-4 border rounded-md overflow-hidden">
+                  <div className="bg-primary/5 px-3 py-2 border-b">
+                    <div className="text-xs font-semibold text-primary">
+                      Horario del aula que se está formando para estos estudiantes
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {curso.carrera} · Ciclo {curso.ciclo} · Sección {curso.seccion} · {cursosUnicos.length} cursos · {horarioAula.length} sesiones
+                    </div>
+                  </div>
+                  <div className="max-h-[40vh] overflow-auto">
+                    <table className="w-full text-[11px]">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-semibold">Día</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Hora</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Código</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Curso</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Docente</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Modalidad</th>
+                          <th className="px-2 py-1.5 text-left font-semibold">Aula</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {horarioAula.map((r, i) => (
+                          <tr key={i} className={i % 2 ? "bg-muted/20" : ""}>
+                            <td className="px-2 py-1 font-semibold">{r.dia}</td>
+                            <td className="px-2 py-1 font-mono whitespace-nowrap">{r.hora} – {r.horaFin}</td>
+                            <td className="px-2 py-1 font-mono text-muted-foreground">{r.codigo}</td>
+                            <td className="px-2 py-1">{r.curso}</td>
+                            <td className="px-2 py-1 text-muted-foreground">{r.docente}</td>
+                            <td className="px-2 py-1">
+                              <Badge variant="outline" className="text-[9px]">{r.modalidad}</Badge>
+                            </td>
+                            <td className="px-2 py-1 text-muted-foreground">
+                              {[r.local, r.pabellon, r.aula].filter(Boolean).join(" · ") || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
