@@ -50,12 +50,8 @@ export default function PlanillasAsistencia() {
         seccion: string|null; codigoCurso: string|null; nombreCurso: string|null;
       }>;
       const lista = list.filter(p => p.ciclo === "1" || p.ciclo === "2");
-      if (lista.length === 0) {
-        toast({ title: "Sin asistencias registradas", description: "Aún no hay planillas subidas.", variant: "destructive" });
-        return;
-      }
 
-      // Traer detalle de cada planilla (alumnos + totales)
+      // Traer detalle de cada planilla (alumnos + totales + semanas)
       const detalles = await Promise.all(lista.map(async p => {
         const r = await fetch(`${base}/api/asistencia-planillas/${p.id}`, { credentials: "include" });
         return r.ok ? await r.json() : null;
@@ -64,8 +60,16 @@ export default function PlanillasAsistencia() {
         id: number; docente: string|null; carrera: string|null; ciclo: string|null;
         seccion: string|null; codigoCurso: string|null; nombreCurso: string|null;
         alumnos: Array<{ numero: string; nombre: string; marcas: string[]; porcentaje: number }>;
-        weeks: Array<{ label: string }>;
+        weeks: Array<{ label: string; fecha?: string; dia?: string }>;
       }>;
+
+      // Indexar planillas por docente|codigoCurso|seccion
+      const planillaKey = (d: string, c: string, s: string) =>
+        `${(d||"").toUpperCase().trim()}|${(c||"").trim()}|${(s||"").trim()}`;
+      const planillaMap = new Map<string, typeof planillas[number]>();
+      for (const p of planillas) {
+        planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", p.seccion||""), p);
+      }
 
       const NAVY = "FF001F5F";
       const GOLD = "FFC9A84C";
@@ -83,120 +87,176 @@ export default function PlanillasAsistencia() {
       const sanitize = (s: string) =>
         (s || "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() || "SIN_NOMBRE";
 
-      type Planilla = typeof planillas[number];
+      const YELLOW_BG = "FFFFF59D";
 
-      // Agrupar por carrera + ciclo + sección (una carpeta por grupo)
-      const porGrupo = new Map<string, { carrera: string; ciclo: string; seccion: string; items: Planilla[] }>();
-      for (const p of planillas) {
-        const carrera = (p.carrera || "SIN CARRERA").toUpperCase().trim();
-        const ciclo = (p.ciclo || "").trim();
-        const seccion = (p.seccion || "").trim();
-        const k = `${carrera}|${ciclo}|${seccion}`;
-        if (!porGrupo.has(k)) porGrupo.set(k, { carrera, ciclo, seccion, items: [] });
-        porGrupo.get(k)!.items.push(p);
+      type Planilla = typeof planillas[number];
+      type CursoInfo = {
+        codigoCurso: string;
+        nombreCurso: string;
+        docente: string;
+        carrera: string;
+        carreraFull: string;
+        ciclo: string;
+        seccion: string;
+        planilla: Planilla | null;
+      };
+
+      // Agrupar por carrera + ciclo + sección a partir de la PLANIFICACIÓN (todas las carreras)
+      const porGrupo = new Map<string, {
+        carrera: string; carreraFull: string; ciclo: string; seccion: string;
+        cursos: Map<string, CursoInfo>;
+      }>();
+
+      const rowsPlan = data.filter(r => String(r.ciclo) === "1" || String(r.ciclo) === "2");
+      for (const r of rowsPlan) {
+        const carrera = (r.carrera || "SIN CARRERA").toUpperCase().trim();
+        const carreraFull = (r.carreraFull || r.carrera || "").toUpperCase().trim();
+        const ciclo = String(r.ciclo || "").trim();
+        const seccion = String(r.seccion || "").trim();
+        const gKey = `${carrera}|${ciclo}|${seccion}`;
+        if (!porGrupo.has(gKey)) {
+          porGrupo.set(gKey, { carrera, carreraFull, ciclo, seccion, cursos: new Map() });
+        }
+        const g = porGrupo.get(gKey)!;
+        const cKey = `${(r.codigo || "").trim()}|${(r.docente || "").toUpperCase().trim()}`;
+        if (!g.cursos.has(cKey)) {
+          const pl = planillaMap.get(planillaKey(r.docente || "", r.codigo || "", seccion)) || null;
+          g.cursos.set(cKey, {
+            codigoCurso: (r.codigo || "").trim(),
+            nombreCurso: r.curso || "",
+            docente: (r.docente || "").toUpperCase().trim(),
+            carrera, carreraFull, ciclo, seccion,
+            planilla: pl,
+          });
+        }
       }
 
-      // Construye un Excel para un solo curso (1 hoja) en el formato del reporte final
-      const buildCursoWorkbook = async (p: Planilla, carrera: string): Promise<ArrayBuffer> => {
+      // Construye un Excel por curso con vista SEMANA A SEMANA (A/F por semana, F en amarillo)
+      const buildCursoWorkbook = async (c: CursoInfo): Promise<ArrayBuffer> => {
         const wb = new ExcelJS.Workbook();
-        const shortCarrera = carrera.length > 25 ? carrera.slice(0, 25) : carrera;
-        const sheetName = sanitize(`${shortCarrera} ${p.ciclo || ""}${p.seccion || ""}`).slice(0, 31) || "Asistencia";
-        const ws = wb.addWorksheet(sheetName, { views: [{ state: "frozen", ySplit: 5 }] });
-        ws.columns = [
-          { width: 5 },   // #
-          { width: 42 },  // Apellidos y Nombres
-          { width: 14 },  // Asistencias
-          { width: 14 },  // Inasistencias
-          { width: 12 },  // % Asistencia
-        ];
+        const sheetName = sanitize(`${c.carrera} ${c.ciclo}${c.seccion}`).slice(0, 31) || "Asistencia";
+        const ws = wb.addWorksheet(sheetName, { views: [{ state: "frozen", xSplit: 2, ySplit: 6 }] });
 
-        // Fila 1: título institucional
-        ws.mergeCells("A1:E1");
+        const p = c.planilla;
+        const weeks = (p?.weeks ?? []) as Array<{ label: string; fecha?: string; dia?: string }>;
+        // Si no hay semanas registradas, generamos 18 columnas vacías para que el formato se vea
+        const N = weeks.length > 0 ? weeks.length : 18;
+
+        // Columnas: 1=N°, 2=Apellidos y Nombres, 3..= Semanas
+        const cols: Partial<ExcelJS.Column>[] = [
+          { width: 5 }, { width: 42 },
+        ];
+        for (let i = 0; i < N; i++) cols.push({ width: 14 });
+        ws.columns = cols as ExcelJS.Column[];
+
+        const lastCol = 2 + N;
+        const colLetter = (n: number) => {
+          let s = "";
+          while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+          return s;
+        };
+        const rng = (r1: number, c1: number, r2: number, c2: number) =>
+          `${colLetter(c1)}${r1}:${colLetter(c2)}${r2}`;
+
+        // Fila 1: banner institucional
+        ws.mergeCells(rng(1, 1, 1, lastCol));
         const t = ws.getCell("A1");
-        t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — ${carrera} — ASISTENCIA 2026-I`;
+        t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — ${c.carreraFull || c.carrera} — ASISTENCIA 2026-I`;
         t.font = { bold: true, size: 13, color: { argb: WHITE } };
         t.fill = sf(NAVY); t.alignment = CTR; t.border = THIN;
-        ws.getRow(1).height = 28;
+        ws.getRow(1).height = 26;
 
-        // Fila 3: encabezado de curso
-        ws.mergeCells("A3:E3");
+        // Fila 3: código + nombre del curso
+        ws.mergeCells(rng(3, 1, 3, lastCol));
         const head = ws.getCell("A3");
-        head.value = `${carrera} ${p.ciclo || ""}${p.seccion || ""} — ${p.nombreCurso || p.codigoCurso || ""}`;
+        head.value = `${c.codigoCurso ? c.codigoCurso + " — " : ""}${c.nombreCurso} · ${c.carrera} ${c.ciclo}${c.seccion}`;
         head.font = { bold: true, size: 12, color: { argb: NAVY } };
         head.fill = sf(GOLD); head.alignment = LEFT; head.border = THIN;
         ws.getRow(3).height = 22;
 
-        // Fila 4: subtítulo docente
-        ws.mergeCells("A4:E4");
+        // Fila 4: docente
+        ws.mergeCells(rng(4, 1, 4, lastCol));
         const sub = ws.getCell("A4");
-        sub.value = `Docente: ${p.docente || "—"}   ·   Semanas registradas: ${p.weeks?.length ?? 0}`;
+        sub.value = `Docente: ${c.docente || "—"}   ·   Semanas: ${weeks.length || 0}${p ? "" : "   ·   (Sin Excel subido aún)"}`;
         sub.font = { italic: true, size: 10, color: { argb: "FF555555" } };
         sub.alignment = LEFT;
         ws.getRow(4).height = 16;
 
-        // Fila 5: encabezado de tabla
-        const heads = ["#", "Apellidos y Nombres", "Asistencias", "Inasistencias", "% Asist."];
-        heads.forEach((h, i) => {
-          const c = ws.getRow(5).getCell(i + 1);
-          c.value = h; c.font = { bold: true, size: 10, color: { argb: WHITE } };
-          c.fill = sf(NAVY); c.alignment = CTR; c.border = THIN;
-        });
-        ws.getRow(5).height = 18;
+        // Fila 5: encabezado Semana N
+        const r5 = ws.getRow(5);
+        r5.getCell(1).value = "N°";
+        r5.getCell(2).value = "Apellidos y Nombres del Alumno";
+        for (let i = 0; i < N; i++) {
+          r5.getCell(3 + i).value = weeks[i]?.label || `Semana ${i + 1}`;
+        }
+        for (let col = 1; col <= lastCol; col++) {
+          const cell = r5.getCell(col);
+          cell.font = { bold: true, size: 10, color: { argb: WHITE } };
+          cell.fill = sf(NAVY); cell.alignment = CTR; cell.border = THIN;
+        }
+        r5.height = 18;
 
-        // Alumnos desde fila 6
-        let r = 6;
-        let totalAsis = 0, totalInas = 0;
-        p.alumnos.forEach((a, i) => {
-          let asis = 0, inas = 0;
-          for (const m0 of a.marcas) {
-            const m = (m0 || "").toUpperCase();
-            if (m === "A") asis++;
-            else if (m === "F") inas++;
-          }
-          totalAsis += asis; totalInas += inas;
-          const total = asis + inas;
-          const porc = total > 0 ? (asis / total) * 100 : 0;
+        // Fila 6: fechas + día (en dos líneas dentro de la misma celda)
+        const r6 = ws.getRow(6);
+        r6.getCell(1).value = "";
+        r6.getCell(2).value = "";
+        for (let i = 0; i < N; i++) {
+          const w = weeks[i];
+          const fecha = w?.fecha || "";
+          const dia = w?.dia || "";
+          r6.getCell(3 + i).value = [fecha, dia].filter(Boolean).join("\n");
+        }
+        for (let col = 1; col <= lastCol; col++) {
+          const cell = r6.getCell(col);
+          cell.font = { size: 9, color: { argb: "FF555555" } };
+          cell.fill = sf("FFF1F5F9"); cell.alignment = CTR; cell.border = THIN;
+        }
+        r6.height = 30;
 
+        // Alumnos desde fila 7. Cada semana: 2 marcas (T,P) en el detalle → colapsamos a una sola (F prevalece)
+        let r = 7;
+        const alumnos = p?.alumnos ?? [];
+        alumnos.forEach((a, i) => {
           const row = ws.getRow(r);
           row.getCell(1).value = i + 1;
           row.getCell(2).value = a.nombre;
-          row.getCell(3).value = asis;
-          row.getCell(4).value = inas;
-          row.getCell(5).value = `${porc.toFixed(2)}%`;
-
           row.getCell(1).alignment = CTR;
           row.getCell(2).alignment = LEFT;
-          row.getCell(3).alignment = CTR;
-          row.getCell(4).alignment = CTR;
-          row.getCell(5).alignment = CTR;
+          row.getCell(1).border = THIN;
+          row.getCell(2).border = THIN;
+          row.getCell(1).font = { size: 10 };
+          row.getCell(2).font = { size: 10 };
 
-          row.getCell(3).fill = sf(GREEN_BG);
-          row.getCell(4).fill = sf(RED_BG);
-
-          for (let c = 1; c <= 5; c++) {
-            row.getCell(c).border = THIN;
-            row.getCell(c).font = { size: 10 };
+          for (let w = 0; w < N; w++) {
+            // marcas están como pares [T,P] por semana
+            const m1 = (a.marcas[w * 2] || "").toUpperCase();
+            const m2 = (a.marcas[w * 2 + 1] || "").toUpperCase();
+            let mark = "";
+            if (m1 === "F" || m2 === "F") mark = "F";
+            else if (m1 === "A" || m2 === "A") mark = "A";
+            const cell = row.getCell(3 + w);
+            cell.value = mark;
+            cell.alignment = CTR;
+            cell.border = THIN;
+            cell.font = { size: 10, bold: mark === "F" };
+            if (mark === "F") cell.fill = sf(YELLOW_BG);
           }
           row.height = 16;
           r++;
         });
 
-        // Fila de TOTAL
-        const tot = totalAsis + totalInas;
-        const totPorc = tot > 0 ? (totalAsis / tot) * 100 : 0;
-        const tRow = ws.getRow(r);
-        tRow.getCell(1).value = "";
-        tRow.getCell(2).value = `TOTAL (${p.alumnos.length} alumnos)`;
-        tRow.getCell(3).value = totalAsis;
-        tRow.getCell(4).value = totalInas;
-        tRow.getCell(5).value = `${totPorc.toFixed(2)}%`;
-        for (let c = 1; c <= 5; c++) {
-          tRow.getCell(c).font = { bold: true, size: 10, color: { argb: WHITE } };
-          tRow.getCell(c).fill = sf(NAVY);
-          tRow.getCell(c).alignment = c === 2 ? LEFT : CTR;
-          tRow.getCell(c).border = THIN;
+        // Si no hay alumnos, dejar 20 filas vacías con bordes como plantilla
+        if (alumnos.length === 0) {
+          for (let i = 0; i < 20; i++) {
+            const row = ws.getRow(r);
+            row.getCell(1).value = i + 1;
+            row.getCell(1).alignment = CTR;
+            row.getCell(1).font = { size: 10, color: { argb: "FFAAAAAA" } };
+            for (let col = 1; col <= lastCol; col++) row.getCell(col).border = THIN;
+            row.height = 16;
+            r++;
+          }
         }
-        tRow.height = 20;
 
         return await wb.xlsx.writeBuffer() as ArrayBuffer;
       };
@@ -210,23 +270,25 @@ export default function PlanillasAsistencia() {
       );
 
       let totalCursos = 0;
+      let cursosConPlanilla = 0;
       for (const g of grupos) {
         const folderName = sanitize(`${g.carrera} ${g.ciclo}-${g.seccion}`);
         const folder = zip.folder(folderName);
         if (!folder) continue;
 
-        // Evitar nombres de archivo duplicados dentro de la misma carpeta
-        const usedNames = new Map<string, number>();
-        g.items.sort((a, b) => (a.nombreCurso || "").localeCompare(b.nombreCurso || "", "es"));
+        const cursosArr = Array.from(g.cursos.values())
+          .sort((a, b) => (a.nombreCurso || "").localeCompare(b.nombreCurso || "", "es"));
 
-        for (const p of g.items) {
-          const buf = await buildCursoWorkbook(p, g.carrera);
-          const baseName = sanitize(p.nombreCurso || p.codigoCurso || "Curso");
+        const usedNames = new Map<string, number>();
+        for (const ci of cursosArr) {
+          const buf = await buildCursoWorkbook(ci);
+          const baseName = sanitize(ci.nombreCurso || ci.codigoCurso || "Curso");
           const used = usedNames.get(baseName) || 0;
           const fileName = used === 0 ? `${baseName}.xlsx` : `${baseName} (${used + 1}).xlsx`;
           usedNames.set(baseName, used + 1);
           folder.file(fileName, buf);
           totalCursos++;
+          if (ci.planilla) cursosConPlanilla++;
         }
       }
 
