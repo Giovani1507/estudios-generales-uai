@@ -131,7 +131,10 @@ function parseAttendanceXlsx(buf: ArrayBuffer): ParsedXlsx {
     alumnos.push({ numero, nombre, marcas, porcentaje });
   }
 
-  return { encabezadoCrudo, weeks, alumnos, totales: { asistencias, inasistencias } };
+  // Recalcular totales A/F desde las marcas de cada alumno (fuente de verdad)
+  const recomputed = recompute(weeks, alumnos);
+  void asistencias; void inasistencias;
+  return { encabezadoCrudo, weeks, alumnos: recomputed.alumnos, totales: recomputed.totales };
 }
 
 /* ── Recalcula totales/porcentajes cuando se editan marcas ── */
@@ -237,30 +240,59 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
     if (!parsed) return;
     setSaving(true);
     try {
-      const body = {
-        docente: curso.docente,
-        carrera: curso.carrera ?? null,
-        ciclo: curso.ciclo ?? null,
-        seccion: curso.seccion ?? null,
-        turno: curso.turno ?? null,
-        sede: curso.sede ?? null,
-        modalidad: curso.modalidad ?? null,
-        dia: curso.dia ?? null,
-        codigoCurso: curso.codigoCurso,
-        nombreCurso: curso.nombreCurso,
-        encabezadoCrudo: parsed.encabezadoCrudo,
-        weeks: parsed.weeks,
-        alumnos: parsed.alumnos,
-        totales: parsed.totales,
-      };
-      const res = await fetch(`${apiBase}/api/asistencia-planillas`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      toast({ title: "Planilla guardada", description: `${parsed.alumnos.length} alumnos importados.` });
+      // Evitar duplicados: si ya existe planilla para mismo docente+curso+sección, ACTUALIZAR
+      const existente = planillas.find(p =>
+        (p.docente || "").toUpperCase().trim() === (curso.docente || "").toUpperCase().trim() &&
+        (p.codigoCurso || "") === (curso.codigoCurso || "") &&
+        (p.seccion || "") === (curso.seccion || "")
+      );
+
+      if (existente) {
+        const res = await fetch(`${apiBase}/api/asistencia-planillas/${existente.id}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            encabezadoCrudo: parsed.encabezadoCrudo,
+            weeks: parsed.weeks,
+            alumnos: parsed.alumnos,
+            totales: parsed.totales,
+            modalidad: curso.modalidad ?? null,
+            sede: curso.sede ?? null,
+            turno: curso.turno ?? null,
+            dia: curso.dia ?? null,
+            seccion: curso.seccion ?? null,
+          }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        toast({ title: "Asistencia actualizada", description: `${parsed.alumnos.length} alumnos · se reemplazó la planilla anterior.` });
+      } else {
+        const body = {
+          docente: curso.docente,
+          carrera: curso.carrera ?? null,
+          ciclo: curso.ciclo ?? null,
+          seccion: curso.seccion ?? null,
+          turno: curso.turno ?? null,
+          sede: curso.sede ?? null,
+          modalidad: curso.modalidad ?? null,
+          dia: curso.dia ?? null,
+          codigoCurso: curso.codigoCurso,
+          nombreCurso: curso.nombreCurso,
+          encabezadoCrudo: parsed.encabezadoCrudo,
+          weeks: parsed.weeks,
+          alumnos: parsed.alumnos,
+          totales: parsed.totales,
+        };
+        const res = await fetch(`${apiBase}/api/asistencia-planillas`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        toast({ title: "Asistencia registrada", description: `${parsed.alumnos.length} alumnos importados.` });
+      }
+
       setParsed(null);
       setFileName("");
       setView("list");
@@ -421,10 +453,17 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">Planillas guardadas ({planillas.length})</h3>
-                <Button size="sm" onClick={() => setView("import")} className="gap-1.5">
-                  <Upload className="h-4 w-4" /> Importar Excel
+                <Button size="sm" onClick={() => setView("import")} className="gap-1.5 bg-primary">
+                  <Upload className="h-4 w-4" /> Registrar asistencia
                 </Button>
               </div>
+              {planillas.length === 0 && !loading && (
+                <div className="flex justify-center">
+                  <Button size="lg" onClick={() => setView("import")} className="gap-2">
+                    <Upload className="h-5 w-5" /> Registrar asistencia
+                  </Button>
+                </div>
+              )}
               {loading ? (
                 <div className="py-12 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Cargando…

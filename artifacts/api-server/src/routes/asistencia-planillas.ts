@@ -100,7 +100,7 @@ router.put("/:id", requireWriter, async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "ID inválido" });
-    const { weeks, alumnos, totales, modalidad, sede, turno, dia, seccion } = req.body || {};
+    const { weeks, alumnos, totales, modalidad, sede, turno, dia, seccion, encabezadoCrudo } = req.body || {};
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (weeks !== undefined) patch.weeks = weeks;
     if (alumnos !== undefined) patch.alumnos = alumnos;
@@ -110,6 +110,7 @@ router.put("/:id", requireWriter, async (req, res) => {
     if (turno !== undefined) patch.turno = turno;
     if (dia !== undefined) patch.dia = dia;
     if (seccion !== undefined) patch.seccion = seccion;
+    if (encabezadoCrudo !== undefined) patch.encabezadoCrudo = encabezadoCrudo;
     const [row] = await db.update(asistenciaPlanillasTable).set(patch).where(eq(asistenciaPlanillasTable.id, id)).returning();
     if (!row) return res.status(404).json({ error: "Planilla no encontrada" });
     res.json(row);
