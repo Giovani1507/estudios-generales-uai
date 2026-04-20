@@ -316,21 +316,7 @@ export default function ResultadosPlanillas() {
         fechasCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
         fechasCell.alignment = { horizontal: "center", vertical: "middle" };
 
-        // Cabecera SEMANA n (merge 3 cols) y debajo T / P / TOTAL
-        for (let s = 0; s < SEMANAS; s++) {
-          const col = semStart + s * 3;
-          ws.mergeCells(headerTop + 0, col, headerTop + 0, col + 2);
-          // En realidad headerTop ya está mergeado a "FECHAS", así que metemos SEMANA en una fila intermedia.
-        }
-        // Reorganizamos: headerTop="FECHAS", headerMid=SEMANA n, headerBot=T/P/TOTAL
-        // Necesitamos una fila más, así que insertamos.
-        // Simplificación: dejamos fechasCell en headerTop, y "SEMANA n + T/P/TOTAL" ocupa headerBot+filas.
-        // Para no complicar, hacemos cabecera de 3 filas: 11=FECHAS, 12=SEMANA n, 13=T/P/TOTAL.
-        // (Desplazamos)
-        // — re-implementamos las cabeceras de semana correctamente abajo —
-
-        // Limpiar la doble cabecera previa: rehacemos
-        // (las celdas headerBot=12 de columnas semana las sobreescribimos)
+        // SEMANA n (merge 3 cols) en headerBot y T/P/TOTAL en tptRow
         for (let s = 0; s < SEMANAS; s++) {
           const col = semStart + s * 3;
           // SEMANA n en fila headerBot
@@ -363,15 +349,7 @@ export default function ResultadosPlanillas() {
           });
         }
 
-        // Las columnas fijas ahora deben extender su merge hasta tptRow (ocupan 3 filas)
-        fixedCols.forEach((label, idx) => {
-          const col = idx + 1;
-          // ya están mergeadas hasta headerBot — ampliamos el merge al tptRow
-          // ExcelJS no permite re-merge, así que mergeamos las celdas restantes (headerBot+1)
-          // Truco: mergeamos solo headerBot..tptRow para esa columna
-          ws.mergeCells(headerBot + 1, col, headerBot + 1, col); // no-op, aseguramos celda existe
-        });
-        // Re-pintamos las celdas vacías de la fila tptRow en las columnas fijas
+        // Pintamos la fila tptRow en las columnas fijas para que la cabecera se vea continua
         fixedCols.forEach((_, idx) => {
           const col = idx + 1;
           const cell = ws.getCell(tptRow, col);
