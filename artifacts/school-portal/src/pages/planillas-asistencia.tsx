@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight } from "lucide-react";
+import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,28 @@ export default function PlanillasAsistencia() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [asistenciaCurso, setAsistenciaCurso] = useState<CursoCtx | null>(null);
+  const [uploaded, setUploaded] = useState<Set<string>>(new Set());
+  const [uploadedByDocente, setUploadedByDocente] = useState<Map<string, number>>(new Map());
+
+  const loadUploaded = async () => {
+    try {
+      const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      const r = await fetch(`${base}/api/asistencia-planillas`, { credentials: "include" });
+      if (!r.ok) return;
+      const list = (await r.json()) as Array<{ docente: string | null; codigoCurso: string | null; seccion: string | null }>;
+      const set = new Set<string>();
+      const cnt = new Map<string, number>();
+      for (const p of list) {
+        if (!p.docente || !p.codigoCurso) continue;
+        const k = `${p.docente.toUpperCase().trim()}|${p.codigoCurso.trim()}|${p.seccion || ""}`;
+        set.add(k);
+        const dk = p.docente.toUpperCase().trim();
+        cnt.set(dk, (cnt.get(dk) || 0) + 1);
+      }
+      setUploaded(set);
+      setUploadedByDocente(cnt);
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     (async () => {
@@ -47,6 +69,7 @@ export default function PlanillasAsistencia() {
           } catch { /* ignore */ }
         }
         setData(all);
+        await loadUploaded();
       } finally {
         setLoading(false);
       }
@@ -149,6 +172,12 @@ export default function PlanillasAsistencia() {
                           <Badge key={c} variant="outline" className="text-[9px] px-1 py-0 h-4">{c}</Badge>
                         ))}
                         <span className="ml-1">{t.sesiones} ses.</span>
+                        {(uploadedByDocente.get(t.nombre) || 0) > 0 && (
+                          <span className="inline-flex items-center gap-0.5 ml-1 text-emerald-600 font-semibold">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {uploadedByDocente.get(t.nombre)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -180,6 +209,7 @@ export default function PlanillasAsistencia() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
+                        <th className="px-3 py-2 text-center font-semibold w-8"></th>
                         <th className="px-3 py-2 text-left font-semibold">Carrera</th>
                         <th className="px-3 py-2 text-center font-semibold">Ciclo</th>
                         <th className="px-3 py-2 text-center font-semibold">Sec</th>
@@ -191,8 +221,17 @@ export default function PlanillasAsistencia() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cursos.map((c, i) => (
-                        <tr key={i} className={i % 2 ? "bg-muted/20" : ""}>
+                      {cursos.map((c, i) => {
+                        const isUploaded = uploaded.has(`${selected}|${c.codigo}|${c.seccion}`);
+                        return (
+                        <tr key={i} className={`${i % 2 ? "bg-muted/20" : ""} ${isUploaded ? "bg-emerald-50/40" : ""}`}>
+                          <td className="px-3 py-2 text-center">
+                            {isUploaded && (
+                              <span title="Planilla subida">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 inline-block" />
+                              </span>
+                            )}
+                          </td>
                           <td className="px-3 py-2">
                             <Badge variant="outline" className="text-[10px]">{c.carrera}</Badge>
                           </td>
@@ -207,8 +246,8 @@ export default function PlanillasAsistencia() {
                           <td className="px-3 py-2 text-right">
                             <Button
                               size="sm"
-                              variant="default"
-                              className="h-7 px-2.5 gap-1.5 text-[10px]"
+                              variant={isUploaded ? "outline" : "default"}
+                              className={`h-7 px-2.5 gap-1.5 text-[10px] ${isUploaded ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50" : ""}`}
                               onClick={() => setAsistenciaCurso({
                                 docente: selected,
                                 codigoCurso: c.codigo,
@@ -223,12 +262,13 @@ export default function PlanillasAsistencia() {
                               })}
                               data-testid={`button-planilla-${i}`}
                             >
-                              <FileSpreadsheet className="h-3.5 w-3.5" />
-                              Planilla
+                              {isUploaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                              {isUploaded ? "Subida" : "Planilla"}
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -242,7 +282,7 @@ export default function PlanillasAsistencia() {
         <AsistenciaPlanillaDialog
           open={!!asistenciaCurso}
           curso={asistenciaCurso}
-          onClose={() => setAsistenciaCurso(null)}
+          onClose={() => { setAsistenciaCurso(null); loadUploaded(); }}
           allRows={data}
         />
       )}
