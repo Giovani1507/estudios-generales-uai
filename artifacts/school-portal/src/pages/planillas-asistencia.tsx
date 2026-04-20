@@ -79,6 +79,8 @@ export default function PlanillasAsistencia() {
   const teachers = useMemo(() => {
     const map = new Map<string, { count: number; carreras: Set<string> }>();
     for (const r of data) {
+      // Solo ciclos 1 y 2
+      if (String(r.ciclo) !== "1" && String(r.ciclo) !== "2") continue;
       const k = r.docente?.toUpperCase().trim();
       if (!k) continue;
       if (!map.has(k)) map.set(k, { count: 0, carreras: new Set() });
