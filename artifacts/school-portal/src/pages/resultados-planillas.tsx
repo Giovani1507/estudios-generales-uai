@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Loader2, GraduationCap, BookOpen, Users, ChevronRight, ClipboardCheck, User as UserIcon } from "lucide-react";
+import { Search, Loader2, GraduationCap, BookOpen, Users, ChevronRight, ClipboardCheck, User as UserIcon, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import ExcelJS from "exceljs";
 
 type PlanillaSummary = {
   id: number;
@@ -46,9 +49,11 @@ async function loadCarreraFullMap(): Promise<Map<string, string>> {
 }
 
 export default function ResultadosPlanillas() {
+  const { toast } = useToast();
   const [planillas, setPlanillas] = useState<PlanillaSummary[]>([]);
   const [carreraFull, setCarreraFull] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [search, setSearch] = useState("");
   const [openCarrera, setOpenCarrera] = useState<string | null>(null);
   const [openCurso, setOpenCurso] = useState<string | null>(null);
@@ -145,6 +150,147 @@ export default function ResultadosPlanillas() {
   const totalPlanillas = planillas.length;
   const totalAlumnosGlobal = planillas.reduce((acc, p) => acc + (p.totalAlumnos || 0), 0);
 
+  const downloadAll = async () => {
+    if (planillas.length === 0) return;
+    setDownloading(true);
+    try {
+      // Cargar el detalle (alumnos) de TODAS las planillas en paralelo
+      const details = await Promise.all(
+        planillas.map(async (p) => {
+          const cached = detailById.get(p.id);
+          if (cached) return cached;
+          const r = await fetch(`${apiBase}/api/asistencia-planillas/${p.id}`, { credentials: "include" });
+          if (!r.ok) return { ...p, alumnos: [] as Alumno[] };
+          return (await r.json()) as PlanillaDetail;
+        })
+      );
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Portal Académico UAI";
+      wb.created = new Date();
+
+      // ── Hoja 1: Resumen ─────────────────────────────────────────────
+      const wsRes = wb.addWorksheet("Resumen");
+      wsRes.columns = [
+        { header: "Carrera",        key: "carrera",        width: 14 },
+        { header: "Carrera Full",   key: "carreraFull",    width: 38 },
+        { header: "Ciclo",          key: "ciclo",          width: 8  },
+        { header: "Sección",        key: "seccion",        width: 10 },
+        { header: "Código Curso",   key: "codigoCurso",    width: 14 },
+        { header: "Curso",          key: "nombreCurso",    width: 38 },
+        { header: "Docente",        key: "docente",        width: 38 },
+        { header: "Modalidad",      key: "modalidad",      width: 14 },
+        { header: "Total Alumnos",  key: "totalAlumnos",   width: 14 },
+        { header: "Promedio % Asist.", key: "promedio",    width: 18 },
+        { header: "Actualizado",    key: "updatedAt",      width: 22 },
+      ];
+      wsRes.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      wsRes.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      details.forEach((d) => {
+        const prom = d.alumnos.length > 0
+          ? d.alumnos.reduce((a, x) => a + (x.porcentaje || 0), 0) / d.alumnos.length
+          : 0;
+        wsRes.addRow({
+          carrera: d.carrera ?? "",
+          carreraFull: carreraFull.get(d.carrera || "") || d.carreraFull || "",
+          ciclo: d.ciclo ?? "",
+          seccion: d.seccion ?? "",
+          codigoCurso: d.codigoCurso ?? "",
+          nombreCurso: d.nombreCurso ?? "",
+          docente: d.docente ?? "",
+          modalidad: d.modalidad ?? "",
+          totalAlumnos: d.alumnos.length,
+          promedio: Math.round(prom * 100) / 100,
+          updatedAt: new Date(d.updatedAt).toLocaleString("es-PE"),
+        });
+      });
+
+      // ── Hoja 2: Detalle de alumnos (todos en una sola tabla) ────────
+      const wsDet = wb.addWorksheet("Alumnos");
+      wsDet.columns = [
+        { header: "Carrera",      key: "carrera",     width: 14 },
+        { header: "Carrera Full", key: "carreraFull", width: 38 },
+        { header: "Ciclo",        key: "ciclo",       width: 8  },
+        { header: "Sección",      key: "seccion",     width: 10 },
+        { header: "Código",       key: "codigo",      width: 14 },
+        { header: "Curso",        key: "curso",       width: 38 },
+        { header: "Docente",      key: "docente",     width: 38 },
+        { header: "N°",           key: "numero",      width: 6  },
+        { header: "Apellidos y Nombres", key: "nombre", width: 42 },
+        { header: "% Asist.",     key: "porcentaje",  width: 12 },
+      ];
+      wsDet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      wsDet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      details.forEach((d) => {
+        const cFull = carreraFull.get(d.carrera || "") || d.carreraFull || "";
+        d.alumnos.forEach((a) => {
+          wsDet.addRow({
+            carrera: d.carrera ?? "",
+            carreraFull: cFull,
+            ciclo: d.ciclo ?? "",
+            seccion: d.seccion ?? "",
+            codigo: d.codigoCurso ?? "",
+            curso: d.nombreCurso ?? "",
+            docente: d.docente ?? "",
+            numero: a.numero,
+            nombre: a.nombre,
+            porcentaje: Math.round((a.porcentaje || 0) * 100) / 100,
+          });
+        });
+      });
+      wsDet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: wsDet.columns.length } };
+
+      // ── Hoja por carrera (resumen y alumnos juntos) ─────────────────
+      const carreras = Array.from(new Set(details.map(d => d.carrera || "—"))).sort();
+      for (const carr of carreras) {
+        const carrDetails = details.filter(d => (d.carrera || "—") === carr);
+        if (carrDetails.length === 0) continue;
+        const safeName = (carreraFull.get(carr) || carr).slice(0, 28).replace(/[\\/*?:[\]]/g, "_");
+        const ws = wb.addWorksheet(safeName || carr);
+        ws.addRow([carreraFull.get(carr) || carr]).font = { bold: true, size: 13 };
+        ws.addRow([]);
+        for (const d of carrDetails) {
+          ws.addRow([
+            `${d.codigoCurso || ""} · ${d.nombreCurso || ""}`,
+            `Docente: ${d.docente || "—"}`,
+            `Sección: ${d.seccion || "—"}`,
+            `Ciclo: ${d.ciclo || "—"}`,
+            `Alumnos: ${d.alumnos.length}`,
+          ]).font = { bold: true };
+          const head = ws.addRow(["N°", "Apellidos y Nombres", "% Asist."]);
+          head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+          d.alumnos.forEach(a => {
+            ws.addRow([a.numero, a.nombre, `${(a.porcentaje || 0).toFixed(2)}%`]);
+          });
+          ws.addRow([]);
+        }
+        ws.columns = [
+          { width: 8 }, { width: 42 }, { width: 14 }, { width: 14 }, { width: 14 },
+        ];
+      }
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const ts = new Date().toISOString().slice(0, 10);
+      a.download = `Resultados_Planillas_${ts}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Excel generado", description: `${planillas.length} planillas · ${details.reduce((a, d) => a + d.alumnos.length, 0)} alumnos.` });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error al generar Excel", variant: "destructive" });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -157,10 +303,20 @@ export default function ResultadosPlanillas() {
             Todas las planillas subidas, organizadas por carrera y curso. Despliega un curso para ver al docente y a sus estudiantes.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="text-xs">{totalPlanillas} planillas</Badge>
           <Badge variant="outline" className="text-xs">{totalAlumnosGlobal} alumnos</Badge>
           <Badge variant="outline" className="text-xs">{filtered.length} carreras</Badge>
+          <Button
+            size="sm"
+            onClick={downloadAll}
+            disabled={downloading || planillas.length === 0}
+            className="gap-1.5"
+            data-testid="button-descargar-excel"
+          >
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Descargar Excel
+          </Button>
         </div>
       </div>
 
