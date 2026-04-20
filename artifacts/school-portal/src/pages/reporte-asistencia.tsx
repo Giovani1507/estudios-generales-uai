@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Search, Download, GraduationCap, BookOpen, ClipboardCheck,
   CheckCircle2, XCircle, TrendingUp, Users,
 } from "lucide-react";
 import * as ExcelJS from "exceljs";
+import html2canvas from "html2canvas";
 import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LabelList,
@@ -54,6 +55,10 @@ const COLORS = {
 export default function ReporteAsistencia() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const pieRef = useRef<HTMLDivElement | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const cursoRef = useRef<HTMLDivElement | null>(null);
   const [rows, setRows] = useState<AlumnoStat[]>([]);
   const [search, setSearch] = useState("");
   const [sedeF, setSedeF] = useState<string>("TODAS");
@@ -165,17 +170,43 @@ export default function ReporteAsistencia() {
     };
   }, [filtered]);
 
-  // Datos para el gráfico de barras por carrera
+  // Datos para el gráfico de barras: asistencias e inasistencias por carrera
   const barCarrera = useMemo(() => {
-    const m = new Map<string, { aprob: number; desap: number }>();
+    const m = new Map<string, { asis: number; inas: number }>();
     for (const r of filtered) {
-      if (!m.has(r.carrera)) m.set(r.carrera, { aprob: 0, desap: 0 });
+      if (!m.has(r.carrera)) m.set(r.carrera, { asis: 0, inas: 0 });
       const v = m.get(r.carrera)!;
-      if (r.estado === "APROBADO") v.aprob++; else v.desap++;
+      v.asis += r.asistencias;
+      v.inas += r.inasistencias;
     }
     return Array.from(m.entries())
-      .map(([carrera, v]) => ({ carrera, Aprobados: v.aprob, Desaprobados: v.desap }))
+      .map(([carrera, v]) => ({ carrera, Asistencias: v.asis, Inasistencias: v.inas }))
       .sort((a, b) => a.carrera.localeCompare(b.carrera, "es"));
+  }, [filtered]);
+
+  // Totales globales para gráfico de torta de asistencia
+  const totalesAsistencia = useMemo(() => {
+    let asis = 0, inas = 0;
+    for (const r of filtered) { asis += r.asistencias; inas += r.inasistencias; }
+    return { asis, inas, total: asis + inas };
+  }, [filtered]);
+
+  // Top 10 cursos con menor % asistencia
+  const chartCursos = useMemo(() => {
+    const m = new Map<string, { sum: number; n: number }>();
+    for (const r of filtered) {
+      const k = r.curso || r.codigoCurso || "—";
+      if (!m.has(k)) m.set(k, { sum: 0, n: 0 });
+      const v = m.get(k)!;
+      v.sum += r.pctAsistencia; v.n++;
+    }
+    return Array.from(m.entries())
+      .map(([curso, v]) => ({
+        curso: curso.length > 28 ? curso.slice(0, 28) + "…" : curso,
+        pct: v.n > 0 ? +(v.sum / v.n).toFixed(1) : 0,
+      }))
+      .sort((a, b) => a.pct - b.pct)
+      .slice(0, 10);
   }, [filtered]);
 
   // Agrupar por carrera+ciclo+seccion para visualización
@@ -189,9 +220,89 @@ export default function ReporteAsistencia() {
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], "es"));
   }, [filtered]);
 
+  const captureChart = async (el: HTMLElement | null): Promise<string | null> => {
+    if (!el) return null;
+    try {
+      const canvas = await html2canvas(el, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      return canvas.toDataURL("image/png");
+    } catch (e) {
+      console.warn("captureChart failed", e);
+      return null;
+    }
+  };
+
   const exportXLSX = async () => {
+    setExporting(true);
+    try {
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet("Reporte de Asistencia");
+
+    // Hoja 1 — Gráficos
+    const ws0 = wb.addWorksheet("Gráficos");
+    ws0.columns = Array.from({ length: 14 }, () => ({ width: 12 }));
+    let titleRow = ws0.getRow(1);
+    titleRow.getCell(1).value = "REPORTE DE ASISTENCIA · 2026-1";
+    titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: "FF001F5F" } };
+    ws0.mergeCells(1, 1, 1, 14);
+    titleRow.alignment = { horizontal: "center" };
+    titleRow.height = 26;
+
+    // Resumen numérico
+    const summary = [
+      ["Estudiantes evaluados", stats.total],
+      ["Aprobados", `${stats.aprob} (${stats.pctAprob.toFixed(1)}%)`],
+      ["Desaprobados", `${stats.desap} (${stats.pctDesap.toFixed(1)}%)`],
+      ["Total marcas asistencia", totalesAsistencia.asis],
+      ["Total marcas inasistencia", totalesAsistencia.inas],
+      ["% Asistencia promedio", `${stats.promPctAsis.toFixed(1)}%`],
+      ["% Inasistencia promedio", `${stats.promPctIna.toFixed(1)}%`],
+    ];
+    summary.forEach((row, i) => {
+      const r = ws0.getRow(3 + i);
+      r.getCell(1).value = row[0];
+      r.getCell(1).font = { bold: true };
+      r.getCell(2).value = row[1] as string | number;
+      ws0.mergeCells(3 + i, 1, 3 + i, 3);
+      ws0.mergeCells(3 + i, 4, 3 + i, 6);
+    });
+
+    // Capturar gráficas
+    const [pieImg, barImg, cursoImg] = await Promise.all([
+      captureChart(pieRef.current),
+      captureChart(barRef.current),
+      captureChart(cursoRef.current),
+    ]);
+
+    let imgRow = 12;
+    const placeImg = (dataUrl: string | null, label: string, width: number, height: number) => {
+      const lbl = ws0.getRow(imgRow);
+      lbl.getCell(1).value = label;
+      lbl.getCell(1).font = { bold: true, size: 12, color: { argb: "FF001F5F" } };
+      ws0.mergeCells(imgRow, 1, imgRow, 14);
+      imgRow++;
+      if (!dataUrl) {
+        ws0.getRow(imgRow).getCell(1).value = "(no se pudo capturar el gráfico)";
+        imgRow += 2;
+        return;
+      }
+      const id = wb.addImage({ base64: dataUrl, extension: "png" });
+      ws0.addImage(id, {
+        tl: { col: 0, row: imgRow - 1 },
+        ext: { width, height },
+      });
+      imgRow += Math.ceil(height / 20) + 2;
+    };
+
+    placeImg(pieImg, "Asistencia vs Inasistencia (global)", 480, 320);
+    placeImg(barImg, "Asistencia / Inasistencia por carrera", 760, 320);
+    placeImg(cursoImg, "% Asistencia promedio por curso (Top 10)", 760, 360);
+
+    // Hoja 2 — Detalle
+    const ws = wb.addWorksheet("Detalle");
     ws.columns = [
       { width: 6 }, { width: 36 }, { width: 28 }, { width: 12 }, { width: 8 }, { width: 8 },
       { width: 11 }, { width: 12 }, { width: 11 }, { width: 12 }, { width: 22 }, { width: 32 }, { width: 12 },
@@ -241,6 +352,12 @@ export default function ReporteAsistencia() {
     a.download = `Reporte_Asistencia_2026-1.xlsx`;
     a.click();
     URL.revokeObjectURL(a.href);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error al exportar", description: "No se pudo generar el archivo Excel.", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -254,8 +371,8 @@ export default function ReporteAsistencia() {
   }
 
   const pieData = [
-    { name: "Aprobados", value: stats.aprob, color: COLORS.green },
-    { name: "Desaprobados", value: stats.desap, color: COLORS.red },
+    { name: "Asistencia", value: totalesAsistencia.asis, color: COLORS.green },
+    { name: "Inasistencia", value: totalesAsistencia.inas, color: COLORS.red },
   ];
 
   return (
@@ -272,38 +389,42 @@ export default function ReporteAsistencia() {
             <b className="text-red-600 ml-1">≥ {UMBRAL} inasistencias</b>.
           </p>
         </div>
-        <Button onClick={exportXLSX} disabled={filtered.length === 0} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
-          <Download className="h-4 w-4" /> Excel
+        <Button onClick={exportXLSX} disabled={filtered.length === 0 || exporting} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exporting ? "Generando…" : "Excel con gráficos"}
         </Button>
       </div>
 
       {/* Cards de KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard title="Estudiantes" value={stats.total.toString()} icon={<Users className="h-5 w-5" />} accent="navy" />
-        <KpiCard title="Aprobados" value={stats.aprob.toString()} suffix={`(${stats.pctAprob.toFixed(1)}%)`} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" />
-        <KpiCard title="Desaprobados" value={stats.desap.toString()} suffix={`(${stats.pctDesap.toFixed(1)}%)`} icon={<XCircle className="h-5 w-5" />} accent="red" />
+        <KpiCard title="Asistencias" value={totalesAsistencia.asis.toString()} suffix={totalesAsistencia.total > 0 ? `(${((totalesAsistencia.asis / totalesAsistencia.total) * 100).toFixed(1)}%)` : ""} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" />
+        <KpiCard title="Inasistencias" value={totalesAsistencia.inas.toString()} suffix={totalesAsistencia.total > 0 ? `(${((totalesAsistencia.inas / totalesAsistencia.total) * 100).toFixed(1)}%)` : ""} icon={<XCircle className="h-5 w-5" />} accent="red" />
         <KpiCard title="% Asist. promedio" value={`${stats.promPctAsis.toFixed(1)}%`} suffix={`Inas: ${stats.promPctIna.toFixed(1)}%`} icon={<TrendingUp className="h-5 w-5" />} accent="gold" />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ChartCard title="Aprobados vs Desaprobados" subtitle="Distribución general de estudiantes">
-          {stats.total === 0 ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value" labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent! * 100).toFixed(1)}%)`}
-                >
-                  {pieData.map((e, i) => <Cell key={i} fill={e.color} stroke="#fff" strokeWidth={2} />)}
-                </Pie>
-                <RTooltip formatter={(v: number, n: string) => [`${v} estudiantes`, n]} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </ChartCard>
+        <div ref={pieRef}>
+          <ChartCard title="Asistencia vs Inasistencia" subtitle="Distribución global de marcas registradas">
+            {totalesAsistencia.total === 0 ? <EmptyChart /> : (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value" labelLine={false}
+                    label={({ name, value, percent }) => `${name}: ${value} (${(percent! * 100).toFixed(1)}%)`}
+                    isAnimationActive={false}
+                  >
+                    {pieData.map((e, i) => <Cell key={i} fill={e.color} stroke="#fff" strokeWidth={2} />)}
+                  </Pie>
+                  <RTooltip formatter={(v: number, n: string) => [`${v} marcas`, n]} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </ChartCard>
+        </div>
 
-        <div className="lg:col-span-2">
-          <ChartCard title="Aprobados / Desaprobados por carrera" subtitle="Cantidad de estudiantes por estado">
+        <div className="lg:col-span-2" ref={barRef}>
+          <ChartCard title="Asistencia / Inasistencia por carrera" subtitle="Total de marcas por carrera">
             {barCarrera.length === 0 ? <EmptyChart /> : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={barCarrera} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
@@ -312,17 +433,36 @@ export default function ReporteAsistencia() {
                   <YAxis tick={{ fontSize: 11, fill: "#475569" }} allowDecimals={false} />
                   <RTooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Aprobados" stackId="a" fill={COLORS.green} radius={[0, 0, 0, 0]}>
-                    <LabelList dataKey="Aprobados" position="center" style={{ fill: "#fff", fontSize: 11, fontWeight: 700 }} />
+                  <Bar dataKey="Asistencias" stackId="a" fill={COLORS.green} radius={[0, 0, 0, 0]} isAnimationActive={false}>
+                    <LabelList dataKey="Asistencias" position="center" style={{ fill: "#fff", fontSize: 11, fontWeight: 700 }} />
                   </Bar>
-                  <Bar dataKey="Desaprobados" stackId="a" fill={COLORS.red} radius={[6, 6, 0, 0]}>
-                    <LabelList dataKey="Desaprobados" position="center" style={{ fill: "#fff", fontSize: 11, fontWeight: 700 }} />
+                  <Bar dataKey="Inasistencias" stackId="a" fill={COLORS.red} radius={[6, 6, 0, 0]} isAnimationActive={false}>
+                    <LabelList dataKey="Inasistencias" position="center" style={{ fill: "#fff", fontSize: 11, fontWeight: 700 }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </ChartCard>
         </div>
+      </div>
+
+      {/* Gráfico extra: % asistencia promedio por curso */}
+      <div ref={cursoRef}>
+        <ChartCard title="% Asistencia promedio por curso (Top 10)" subtitle="Cursos con menor desempeño en asistencia">
+          {chartCursos.length === 0 ? <EmptyChart /> : (
+            <ResponsiveContainer width="100%" height={Math.max(220, chartCursos.length * 32)}>
+              <BarChart data={chartCursos} layout="vertical" margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: "#475569" }} />
+                <YAxis type="category" dataKey="curso" tick={{ fontSize: 10, fill: "#475569" }} width={200} />
+                <RTooltip formatter={(v: number) => [`${v}%`, "% Asistencia"]} />
+                <Bar dataKey="pct" fill={COLORS.green} radius={[0, 6, 6, 0]} isAnimationActive={false}>
+                  <LabelList dataKey="pct" position="right" formatter={(v: number) => `${v}%`} style={{ fill: COLORS.navy, fontSize: 11, fontWeight: 700 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
       </div>
 
       {/* Filtros */}
