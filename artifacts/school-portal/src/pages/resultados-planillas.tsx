@@ -56,6 +56,8 @@ export default function ResultadosPlanillas() {
   const [downloading, setDownloading] = useState(false);
   const [search, setSearch] = useState("");
   const [openCarrera, setOpenCarrera] = useState<string | null>(null);
+  const [openCiclo, setOpenCiclo] = useState<string | null>(null);
+  const [openSeccion, setOpenSeccion] = useState<string | null>(null);
   const [openCurso, setOpenCurso] = useState<string | null>(null);
   const [detailById, setDetailById] = useState<Map<number, PlanillaDetail>>(new Map());
   const [loadingDetail, setLoadingDetail] = useState<number | null>(null);
@@ -82,10 +84,21 @@ export default function ResultadosPlanillas() {
       nombre: string;
       planillas: PlanillaSummary[];
     };
+    type SeccionGroup = {
+      seccion: string;
+      cursos: Map<string, CursoGroup>;
+      totalAlumnos: number;
+    };
+    type CicloGroup = {
+      ciclo: string;
+      secciones: Map<string, SeccionGroup>;
+      totalAlumnos: number;
+      totalCursos: number;
+    };
     type CarreraGroup = {
       carrera: string;
       carreraFull: string;
-      cursos: Map<string, CursoGroup>;
+      ciclos: Map<string, CicloGroup>;
       totalAlumnos: number;
     };
     const carrMap = new Map<string, CarreraGroup>();
@@ -95,22 +108,51 @@ export default function ResultadosPlanillas() {
         carrMap.set(cKey, {
           carrera: cKey,
           carreraFull: carreraFull.get(cKey) || cKey,
-          cursos: new Map(),
+          ciclos: new Map(),
           totalAlumnos: 0,
         });
       }
       const cg = carrMap.get(cKey)!;
-      const codigo = p.codigoCurso || "—";
-      if (!cg.cursos.has(codigo)) {
-        cg.cursos.set(codigo, { codigo, nombre: p.nombreCurso || codigo, planillas: [] });
+      const cicloKey = p.ciclo || "—";
+      if (!cg.ciclos.has(cicloKey)) {
+        cg.ciclos.set(cicloKey, { ciclo: cicloKey, secciones: new Map(), totalAlumnos: 0, totalCursos: 0 });
       }
-      cg.cursos.get(codigo)!.planillas.push(p);
+      const ig = cg.ciclos.get(cicloKey)!;
+      const seccKey = p.seccion || "—";
+      if (!ig.secciones.has(seccKey)) {
+        ig.secciones.set(seccKey, { seccion: seccKey, cursos: new Map(), totalAlumnos: 0 });
+      }
+      const sg = ig.secciones.get(seccKey)!;
+      const codigo = p.codigoCurso || "—";
+      if (!sg.cursos.has(codigo)) {
+        sg.cursos.set(codigo, { codigo, nombre: p.nombreCurso || codigo, planillas: [] });
+        ig.totalCursos += 1;
+      }
+      sg.cursos.get(codigo)!.planillas.push(p);
+      sg.totalAlumnos += p.totalAlumnos || 0;
+      ig.totalAlumnos += p.totalAlumnos || 0;
       cg.totalAlumnos += p.totalAlumnos || 0;
     }
+
+    const cicloOrder = (s: string) => {
+      const n = parseInt(s, 10);
+      return Number.isNaN(n) ? 999 : n;
+    };
+
     return Array.from(carrMap.values())
       .map(g => ({
         ...g,
-        cursosArr: Array.from(g.cursos.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+        ciclosArr: Array.from(g.ciclos.values())
+          .map(ic => ({
+            ...ic,
+            seccionesArr: Array.from(ic.secciones.values())
+              .map(sc => ({
+                ...sc,
+                cursosArr: Array.from(sc.cursos.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+              }))
+              .sort((a, b) => a.seccion.localeCompare(b.seccion, "es")),
+          }))
+          .sort((a, b) => cicloOrder(a.ciclo) - cicloOrder(b.ciclo)),
       }))
       .sort((a, b) => a.carreraFull.localeCompare(b.carreraFull, "es"));
   }, [planillas, carreraFull]);
@@ -121,16 +163,26 @@ export default function ResultadosPlanillas() {
     return grouped
       .map(g => ({
         ...g,
-        cursosArr: g.cursosArr.filter(c =>
-          c.nombre.toLowerCase().includes(q) ||
-          c.codigo.toLowerCase().includes(q) ||
-          c.planillas.some(p => (p.docente || "").toLowerCase().includes(q)),
-        ),
+        ciclosArr: g.ciclosArr
+          .map(ic => ({
+            ...ic,
+            seccionesArr: ic.seccionesArr
+              .map(sc => ({
+                ...sc,
+                cursosArr: sc.cursosArr.filter(c =>
+                  c.nombre.toLowerCase().includes(q) ||
+                  c.codigo.toLowerCase().includes(q) ||
+                  c.planillas.some(p => (p.docente || "").toLowerCase().includes(q)),
+                ),
+              }))
+              .filter(sc => sc.cursosArr.length > 0 || sc.seccion.toLowerCase().includes(q)),
+          }))
+          .filter(ic => ic.seccionesArr.length > 0),
       }))
       .filter(g =>
         g.carrera.toLowerCase().includes(q) ||
         g.carreraFull.toLowerCase().includes(q) ||
-        g.cursosArr.length > 0,
+        g.ciclosArr.length > 0,
       );
   }, [grouped, search]);
 
@@ -344,15 +396,16 @@ export default function ResultadosPlanillas() {
       ) : (
         <div className="space-y-3">
           {filtered.map((g) => {
-            const isOpen = openCarrera === g.carrera;
+            const carreraOpen = openCarrera === g.carrera;
+            const totalCursos = g.ciclosArr.reduce((a, ic) => a + ic.totalCursos, 0);
             return (
               <div key={g.carrera} className="bg-white rounded-lg border border-border/50 shadow-sm overflow-hidden">
                 <button
-                  onClick={() => { setOpenCarrera(isOpen ? null : g.carrera); setOpenCurso(null); }}
+                  onClick={() => { setOpenCarrera(carreraOpen ? null : g.carrera); setOpenCiclo(null); setOpenSeccion(null); setOpenCurso(null); }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
                   data-testid={`button-resultado-carrera-${g.carrera}`}
                 >
-                  <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${carreraOpen ? "rotate-90" : ""}`} />
                   <GraduationCap className="h-5 w-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm flex items-center gap-2 flex-wrap">
@@ -360,102 +413,147 @@ export default function ResultadosPlanillas() {
                       <Badge variant="outline" className="text-[10px] font-mono">{g.carrera}</Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {g.cursosArr.length} cursos · {g.totalAlumnos} alumnos
+                      {g.ciclosArr.length} ciclos · {totalCursos} cursos · {g.totalAlumnos} alumnos
                     </div>
                   </div>
                 </button>
 
-                {isOpen && (
+                {carreraOpen && (
                   <div className="border-t bg-muted/10">
-                    {g.cursosArr.map((c) => {
-                      const cursoKey = `${g.carrera}|${c.codigo}`;
-                      const cursoOpen = openCurso === cursoKey;
+                    {g.ciclosArr.map((ic) => {
+                      const cicloKey = `${g.carrera}|${ic.ciclo}`;
+                      const cicloOpen = openCiclo === cicloKey;
                       return (
-                        <div key={cursoKey} className="border-b last:border-b-0">
+                        <div key={cicloKey} className="border-b last:border-b-0">
                           <button
-                            onClick={() => setOpenCurso(cursoOpen ? null : cursoKey)}
-                            className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-muted/30 transition-colors text-left"
-                            data-testid={`button-resultado-curso-${c.codigo}`}
+                            onClick={() => { setOpenCiclo(cicloOpen ? null : cicloKey); setOpenSeccion(null); setOpenCurso(null); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-blue-50/50 transition-colors text-left bg-blue-50/20"
+                            data-testid={`button-resultado-ciclo-${ic.ciclo}`}
                           >
-                            <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${cursoOpen ? "rotate-90" : ""}`} />
-                            <BookOpen className="h-4 w-4 text-primary/70 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
-                                <Badge variant="outline" className="text-[10px] font-mono">{c.codigo}</Badge>
-                                <span>{c.nombre}</span>
-                              </div>
-                              <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                                {c.planillas.map((p) => (
-                                  <span key={p.id} className="inline-flex items-center gap-1">
-                                    <UserIcon className="h-3 w-3" />
-                                    {p.docente || "—"}
-                                    {p.seccion && <span className="font-mono text-muted-foreground">· {p.seccion}</span>}
-                                    <Badge variant="outline" className="text-[9px] gap-1 ml-1">
-                                      <Users className="h-2.5 w-2.5" />{p.totalAlumnos}
-                                    </Badge>
-                                  </span>
-                                ))}
-                              </div>
+                            <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${cicloOpen ? "rotate-90" : ""}`} />
+                            <Badge className="bg-blue-600 hover:bg-blue-600 text-white text-[10px]">CICLO {ic.ciclo}</Badge>
+                            <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+                              {ic.seccionesArr.length} sección(es) · {ic.totalCursos} cursos · {ic.totalAlumnos} alumnos
                             </div>
                           </button>
 
-                          {cursoOpen && (
-                            <div className="px-5 pb-3 pt-0 space-y-3 bg-white">
-                              {c.planillas.map((p) => {
-                                const detail = detailById.get(p.id);
+                          {cicloOpen && (
+                            <div className="bg-white">
+                              {ic.seccionesArr.map((sc) => {
+                                const seccKey = `${cicloKey}|${sc.seccion}`;
+                                const seccOpen = openSeccion === seccKey;
                                 return (
-                                  <div key={p.id} className="border rounded-md overflow-hidden">
-                                    <div
-                                      className="bg-primary/5 px-3 py-2 text-xs flex items-center justify-between cursor-pointer hover:bg-primary/10"
-                                      onClick={() => loadDetail(p.id)}
-                                      data-testid={`button-load-detail-${p.id}`}
+                                  <div key={seccKey} className="border-t">
+                                    <button
+                                      onClick={() => { setOpenSeccion(seccOpen ? null : seccKey); setOpenCurso(null); }}
+                                      className="w-full flex items-center gap-3 px-8 py-2 hover:bg-amber-50/50 transition-colors text-left bg-amber-50/20"
+                                      data-testid={`button-resultado-seccion-${sc.seccion}`}
                                     >
-                                      <div>
-                                        <div className="font-semibold text-primary">
-                                          {p.docente || "—"}
-                                        </div>
-                                        <div className="text-[10px] text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
-                                          {p.seccion && <span>Sección {p.seccion}</span>}
-                                          {p.ciclo && <span>· Ciclo {p.ciclo}</span>}
-                                          {p.modalidad && <span>· {p.modalidad}</span>}
-                                          <span>· {p.totalAlumnos} alumnos</span>
-                                          <span>· Actualizado {new Date(p.updatedAt).toLocaleString("es-PE")}</span>
-                                        </div>
+                                      <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${seccOpen ? "rotate-90" : ""}`} />
+                                      <Badge variant="outline" className="bg-amber-100 border-amber-300 text-amber-900 text-[10px] font-mono">SECCIÓN {sc.seccion}</Badge>
+                                      <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+                                        {sc.cursosArr.length} cursos · {sc.totalAlumnos} alumnos
                                       </div>
-                                      {loadingDetail === p.id && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                                    </div>
-                                    {detail ? (
-                                      <div className="max-h-[40vh] overflow-auto">
-                                        <table className="w-full text-[11px]">
-                                          <thead className="bg-muted/40 sticky top-0">
-                                            <tr>
-                                              <th className="px-2 py-1.5 text-left w-10">#</th>
-                                              <th className="px-2 py-1.5 text-left">Apellidos y Nombres</th>
-                                              <th className="px-2 py-1.5 text-right w-24">% Asist.</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {detail.alumnos.length === 0 ? (
-                                              <tr>
-                                                <td colSpan={3} className="px-2 py-3 text-center text-muted-foreground">
-                                                  Sin alumnos en esta planilla.
-                                                </td>
-                                              </tr>
-                                            ) : (
-                                              detail.alumnos.map((a, i) => (
-                                                <tr key={i} className={i % 2 ? "bg-muted/20" : ""}>
-                                                  <td className="px-2 py-1 font-mono text-muted-foreground">{a.numero}</td>
-                                                  <td className="px-2 py-1">{a.nombre}</td>
-                                                  <td className="px-2 py-1 text-right font-bold">{(a.porcentaje || 0).toFixed(2)}%</td>
-                                                </tr>
-                                              ))
-                                            )}
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    ) : (
-                                      <div className="px-3 py-2 text-[11px] text-muted-foreground">
-                                        Click para ver la lista de estudiantes.
+                                    </button>
+
+                                    {seccOpen && (
+                                      <div className="border-t bg-muted/5">
+                                        {sc.cursosArr.map((c) => {
+                                          const cursoKey = `${seccKey}|${c.codigo}`;
+                                          const cursoOpen = openCurso === cursoKey;
+                                          return (
+                                            <div key={cursoKey} className="border-b last:border-b-0">
+                                              <button
+                                                onClick={() => setOpenCurso(cursoOpen ? null : cursoKey)}
+                                                className="w-full flex items-center gap-3 px-11 py-2 hover:bg-muted/30 transition-colors text-left"
+                                                data-testid={`button-resultado-curso-${c.codigo}`}
+                                              >
+                                                <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${cursoOpen ? "rotate-90" : ""}`} />
+                                                <BookOpen className="h-4 w-4 text-primary/70 shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                                                    <Badge variant="outline" className="text-[10px] font-mono">{c.codigo}</Badge>
+                                                    <span>{c.nombre}</span>
+                                                  </div>
+                                                  <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                                                    {c.planillas.map((p) => (
+                                                      <span key={p.id} className="inline-flex items-center gap-1">
+                                                        <UserIcon className="h-3 w-3" />
+                                                        {p.docente || "—"}
+                                                        <Badge variant="outline" className="text-[9px] gap-1 ml-1">
+                                                          <Users className="h-2.5 w-2.5" />{p.totalAlumnos}
+                                                        </Badge>
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </button>
+
+                                              {cursoOpen && (
+                                                <div className="px-11 pb-3 pt-0 space-y-3 bg-white">
+                                                  {c.planillas.map((p) => {
+                                                    const detail = detailById.get(p.id);
+                                                    return (
+                                                      <div key={p.id} className="border rounded-md overflow-hidden">
+                                                        <div
+                                                          className="bg-primary/5 px-3 py-2 text-xs flex items-center justify-between cursor-pointer hover:bg-primary/10"
+                                                          onClick={() => loadDetail(p.id)}
+                                                          data-testid={`button-load-detail-${p.id}`}
+                                                        >
+                                                          <div>
+                                                            <div className="font-semibold text-primary">
+                                                              {p.docente || "—"}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
+                                                              {p.modalidad && <span>{p.modalidad}</span>}
+                                                              <span>· {p.totalAlumnos} alumnos</span>
+                                                              <span>· Actualizado {new Date(p.updatedAt).toLocaleString("es-PE")}</span>
+                                                            </div>
+                                                          </div>
+                                                          {loadingDetail === p.id && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                                                        </div>
+                                                        {detail ? (
+                                                          <div className="max-h-[40vh] overflow-auto">
+                                                            <table className="w-full text-[11px]">
+                                                              <thead className="bg-muted/40 sticky top-0">
+                                                                <tr>
+                                                                  <th className="px-2 py-1.5 text-left w-10">#</th>
+                                                                  <th className="px-2 py-1.5 text-left">Apellidos y Nombres</th>
+                                                                  <th className="px-2 py-1.5 text-right w-24">% Asist.</th>
+                                                                </tr>
+                                                              </thead>
+                                                              <tbody>
+                                                                {detail.alumnos.length === 0 ? (
+                                                                  <tr>
+                                                                    <td colSpan={3} className="px-2 py-3 text-center text-muted-foreground">
+                                                                      Sin alumnos en esta planilla.
+                                                                    </td>
+                                                                  </tr>
+                                                                ) : (
+                                                                  detail.alumnos.map((a, i) => (
+                                                                    <tr key={i} className={i % 2 ? "bg-muted/20" : ""}>
+                                                                      <td className="px-2 py-1 font-mono text-muted-foreground">{a.numero}</td>
+                                                                      <td className="px-2 py-1">{a.nombre}</td>
+                                                                      <td className="px-2 py-1 text-right font-bold">{(a.porcentaje || 0).toFixed(2)}%</td>
+                                                                    </tr>
+                                                                  ))
+                                                                )}
+                                                              </tbody>
+                                                            </table>
+                                                          </div>
+                                                        ) : (
+                                                          <div className="px-3 py-2 text-[11px] text-muted-foreground">
+                                                            Click para ver la lista de estudiantes.
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                     )}
                                   </div>
