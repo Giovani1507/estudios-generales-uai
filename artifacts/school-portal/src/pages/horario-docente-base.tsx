@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Download, User, BookOpen, X, Clock, MapPin, GraduationCap, PackageOpen, Loader2 } from "lucide-react";
+import { Search, Download, User, BookOpen, X, Clock, MapPin, GraduationCap, PackageOpen, Loader2, ClipboardCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
+import { AsistenciaPlanillaDialog, type CursoCtx } from "@/components/asistencia-planilla-dialog";
 
 type FICARow = {
   carrera: string; carreraFull: string; cod: string; ciclo: string; seccion: string;
@@ -89,6 +90,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [dropOpen, setDropOpen] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [asistenciaCurso, setAsistenciaCurso] = useState<CursoCtx | null>(null);
 
   const jsonFile     = faculty === "FICA" ? "planificacion-fica-2026-1.json" : "planificacion-fcs-2026-1.json";
   const facultyLabel = faculty === "FICA"
@@ -632,6 +634,7 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Tipo</th>
                     <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Total H.</th>
                     <th className="px-3 py-3 text-left font-semibold whitespace-nowrap min-w-[200px]">Curso</th>
+                    <th className="px-3 py-3 text-center font-semibold whitespace-nowrap">Asistencia</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -675,6 +678,29 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                       <td className="px-3 py-2 font-medium max-w-[240px]">
                         <span className="line-clamp-2">{row.curso}</span>
                       </td>
+                      <td className="px-3 py-2 text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 gap-1 text-[10px]"
+                          onClick={() => setAsistenciaCurso({
+                            docente: selected || "",
+                            codigoCurso: (row as any).codigo || row.curso,
+                            nombreCurso: row.curso,
+                            carrera: row.carrera,
+                            ciclo: row.ciclo,
+                            seccion: row.seccion,
+                            turno: row.turno,
+                            sede: row.local,
+                            modalidad: row.modalidad,
+                            dia: row.dia,
+                          })}
+                          data-testid={`button-asistencia-${idx}`}
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          Asistencia
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                   <tr className="border-t-2 border-primary/30 bg-primary/5 font-semibold">
@@ -683,12 +709,21 @@ export default function HorarioDocenteBase({ faculty }: Props) {
                     </td>
                     <td className="px-3 py-2.5 text-center text-primary font-bold text-sm">{totals.horasAcad}</td>
                     <td className="px-3 py-2.5"></td>
+                    <td className="px-3 py-2.5"></td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </>
+      )}
+
+      {asistenciaCurso && (
+        <AsistenciaPlanillaDialog
+          open={!!asistenciaCurso}
+          curso={asistenciaCurso}
+          onClose={() => setAsistenciaCurso(null)}
+        />
       )}
     </div>
   );
