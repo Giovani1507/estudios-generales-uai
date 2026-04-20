@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -251,6 +255,8 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   const [parsing, setParsing] = useState(false);
   const [detail, setDetail] = useState<PlanillaDetail | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<PlanillaRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   /* Cargar planillas existentes para este docente + curso (+ sección si está) */
@@ -421,7 +427,6 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   };
 
   const deletePlanilla = async (id: number) => {
-    if (!confirm("¿Eliminar esta planilla de asistencia?")) return;
     try {
       const res = await fetch(`${apiBase}/api/asistencia-planillas/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) throw new Error(String(res.status));
@@ -601,7 +606,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
                             <Button size="sm" variant="outline" onClick={() => openDetail(p.id)} className="h-7 gap-1">
                               <Eye className="h-3.5 w-3.5" /> Ver
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => deletePlanilla(p.id)} className="h-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50">
+                            <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(p)} className="h-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </td>
@@ -796,6 +801,42 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
           <Button variant="outline" onClick={onClose}>Cerrar</Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => { if (!o && !deleting) setConfirmDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-rose-700 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> ¿Eliminar planilla de asistencia?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminarán definitivamente las marcas
+              de asistencia de <span className="font-semibold text-foreground">{confirmDelete?.nombreCurso || confirmDelete?.codigoCurso || "esta planilla"}</span>
+              {confirmDelete?.seccion ? <> — sección <span className="font-semibold text-foreground">{confirmDelete.seccion}</span></> : null}
+              {confirmDelete?.docente ? <> del docente <span className="font-semibold text-foreground">{confirmDelete.docente}</span></> : null}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!confirmDelete) return;
+                setDeleting(true);
+                try {
+                  await deletePlanilla(confirmDelete.id);
+                  setConfirmDelete(null);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-600"
+            >
+              {deleting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Eliminando…</>) : (<><Trash2 className="h-4 w-4 mr-2" /> Sí, eliminar</>)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
