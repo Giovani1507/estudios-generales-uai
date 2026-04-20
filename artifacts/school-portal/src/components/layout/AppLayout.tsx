@@ -93,6 +93,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Planillas de Asistencia",
+    url: "/planillas-asistencia",
+    icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,

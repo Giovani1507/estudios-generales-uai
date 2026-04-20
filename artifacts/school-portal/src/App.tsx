@@ -43,6 +43,7 @@ import RegistroRectificacion from "@/pages/registro-rectificacion";
 import RectificacionesAdmin from "@/pages/rectificaciones-admin";
 import Seguridad from "@/pages/seguridad";
 import AsistenciaAdmin from "@/pages/asistencia-admin";
+import PlanillasAsistencia from "@/pages/planillas-asistencia";
 import RegistroAsistencia from "@/pages/registro-asistencia";
 import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
@@ -200,6 +201,10 @@ function AppRouter() {
       <Route
         path="/asistencia"
         component={() => <ProtectedRoute component={AsistenciaAdmin} />}
+      />
+      <Route
+        path="/planillas-asistencia"
+        component={() => <ProtectedRoute component={PlanillasAsistencia} />}
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />
