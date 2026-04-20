@@ -182,73 +182,302 @@ export default function ResultadosPlanillas() {
       wb.creator = "Portal Académico UAI";
       wb.created = new Date();
 
-      // Hoja 1: Plantilla completa (carrera/ciclo/sección/curso)
-      const ws = wb.addWorksheet("Plantilla");
-      ws.columns = [
-        { header: "Carrera",       key: "carrera",     width: 12 },
-        { header: "Carrera Full",  key: "carreraFull", width: 36 },
-        { header: "Ciclo",         key: "ciclo",       width: 8  },
-        { header: "Sección",       key: "seccion",     width: 10 },
-        { header: "Sección Label", key: "label",       width: 30 },
-        { header: "Código",        key: "codigo",      width: 14 },
-        { header: "Curso",         key: "curso",       width: 40 },
-        { header: "Docente(s)",    key: "docentes",    width: 42 },
-        { header: "Modalidad",     key: "modalidad",   width: 14 },
-        { header: "Horas",         key: "horas",       width: 8  },
+      // Intentar cargar el logo (opcional)
+      let logoId: number | null = null;
+      try {
+        const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+        const r = await fetch(`${base}/uai-logo.png`);
+        if (r.ok) {
+          const buf = await r.arrayBuffer();
+          logoId = wb.addImage({ buffer: buf, extension: "png" });
+        }
+      } catch { /* sin logo */ }
+
+      const usedNames = new Set<string>();
+      const sheetName = (raw: string) => {
+        let n = raw.replace(/[\\/*?:[\]]/g, " ").slice(0, 31).trim();
+        if (!n) n = "Hoja";
+        let candidate = n, i = 2;
+        while (usedNames.has(candidate.toLowerCase())) {
+          const suf = ` (${i++})`;
+          candidate = n.slice(0, 31 - suf.length) + suf;
+        }
+        usedNames.add(candidate.toLowerCase());
+        return candidate;
+      };
+
+      const SEMANAS = 16;
+      const STUDENT_ROWS = 40;
+
+      const buildSheet = (
+        carreraFull: string,
+        ciclo: string,
+        seccion: string,
+        codigo: string,
+        curso: string,
+        docente: string,
+        modalidad: string,
+      ) => {
+        const sectionLabel = `${ciclo}${seccion}`;
+        const ws = wb.addWorksheet(sheetName(`${carreraFull.slice(0, 10)} ${sectionLabel} ${codigo}`));
+        ws.pageSetup = {
+          orientation: "landscape",
+          paperSize: 9,
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 1,
+          margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 },
+        };
+
+        // Cabecera fija (columnas A..G) + 16 semanas × 3 cols (T,P,TOTAL) + OBSERVACIONES
+        const fixedCols = ["N°", "APELLIDOS Y NOMBRES", "CICLO", "SECCION", "LOCAL", "PROGRAMA", "CURSO"];
+        const totalCols = fixedCols.length + SEMANAS * 3 + 1;
+
+        // Logo (si está disponible) en A1:B4
+        if (logoId !== null) {
+          ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 110, height: 70 } });
+        }
+
+        // Filas de cabecera institucional
+        ws.mergeCells(1, 3, 1, totalCols);
+        const r1 = ws.getCell(1, 3);
+        r1.value = "UNIVERSIDAD AUTONOMA DE ICA";
+        r1.font = { bold: true, size: 13 };
+        r1.alignment = { horizontal: "center", vertical: "middle" };
+
+        ws.mergeCells(2, 3, 2, totalCols);
+        const r2 = ws.getCell(2, 3);
+        r2.value = "GENERACIÓN QUE INSPIRA EL CAMBIO";
+        r2.font = { italic: true, size: 10 };
+        r2.alignment = { horizontal: "center" };
+
+        ws.mergeCells(3, 1, 3, totalCols);
+        const r3 = ws.getCell(3, 1);
+        r3.value = "DEPARTAMENTO ACADÉMICO DE ESTUDIOS GENERALES";
+        r3.font = { bold: true, size: 11 };
+        r3.alignment = { horizontal: "center" };
+        r3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E7FF" } };
+
+        ws.mergeCells(4, 1, 4, totalCols);
+        const r4 = ws.getCell(4, 1);
+        r4.value = "REPORTE DE ASISTENCIAS, INASISTENCIAS DE ESTUDIANTES DEL DEPARTAMENTO DE ESTUDIOS GENERALES";
+        r4.font = { bold: true, size: 11, color: { argb: "FF7F1D1D" } };
+        r4.alignment = { horizontal: "center" };
+        r4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+
+        // Datos del curso (fila 5 y 6)
+        const halfCol = Math.max(8, Math.floor(totalCols / 2));
+        const setLabel = (row: number, col: number, label: string, value: string, valueColSpan: number) => {
+          const lbl = ws.getCell(row, col);
+          lbl.value = label;
+          lbl.font = { bold: true, size: 9 };
+          ws.mergeCells(row, col + 1, row, col + valueColSpan);
+          const val = ws.getCell(row, col + 1);
+          val.value = value;
+          val.font = { size: 9 };
+          val.alignment = { horizontal: "left", vertical: "middle" };
+          val.border = { bottom: { style: "thin" } };
+        };
+        setLabel(5, 1, "PROGRAMA ACADÉMICO:", carreraFull, 4);
+        setLabel(5, halfCol, "CICLO:", `${ciclo}${seccion}`, 3);
+        setLabel(6, 1, "SEDE:", "CHINCHA", 4);
+        setLabel(6, halfCol, "HORA DE INICIO:", "", 3);
+        setLabel(7, 1, "FECHA:", "", 4);
+        setLabel(7, halfCol, "HORA DE TERMINO:", "", 3);
+        setLabel(8, 1, "DOCENTE:", docente, 4);
+        setLabel(9, 1, "CURSO:", curso, 4);
+        setLabel(9, halfCol, "MODALIDAD:", modalidad, 3);
+
+        // Cabecera de la tabla — 2 filas
+        const headerTop = 11;
+        const headerBot = 12;
+
+        // Columnas fijas (merge vertical en cabecera)
+        fixedCols.forEach((label, idx) => {
+          const col = idx + 1;
+          ws.mergeCells(headerTop, col, headerBot, col);
+          const cell = ws.getCell(headerTop, col);
+          cell.value = label;
+          cell.font = { bold: true, size: 9, color: { argb: "FFFFFFFF" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+          cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+          cell.border = {
+            top: { style: "thin" }, bottom: { style: "thin" },
+            left: { style: "thin" }, right: { style: "thin" },
+          };
+        });
+
+        // "FECHAS" header agrupado
+        const semStart = fixedCols.length + 1;
+        ws.mergeCells(headerTop, semStart, headerTop, semStart + SEMANAS * 3 - 1);
+        const fechasCell = ws.getCell(headerTop, semStart);
+        fechasCell.value = "FECHAS";
+        fechasCell.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+        fechasCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+        fechasCell.alignment = { horizontal: "center", vertical: "middle" };
+
+        // Cabecera SEMANA n (merge 3 cols) y debajo T / P / TOTAL
+        for (let s = 0; s < SEMANAS; s++) {
+          const col = semStart + s * 3;
+          ws.mergeCells(headerTop + 0, col, headerTop + 0, col + 2);
+          // En realidad headerTop ya está mergeado a "FECHAS", así que metemos SEMANA en una fila intermedia.
+        }
+        // Reorganizamos: headerTop="FECHAS", headerMid=SEMANA n, headerBot=T/P/TOTAL
+        // Necesitamos una fila más, así que insertamos.
+        // Simplificación: dejamos fechasCell en headerTop, y "SEMANA n + T/P/TOTAL" ocupa headerBot+filas.
+        // Para no complicar, hacemos cabecera de 3 filas: 11=FECHAS, 12=SEMANA n, 13=T/P/TOTAL.
+        // (Desplazamos)
+        // — re-implementamos las cabeceras de semana correctamente abajo —
+
+        // Limpiar la doble cabecera previa: rehacemos
+        // (las celdas headerBot=12 de columnas semana las sobreescribimos)
+        for (let s = 0; s < SEMANAS; s++) {
+          const col = semStart + s * 3;
+          // SEMANA n en fila headerBot
+          ws.mergeCells(headerBot, col, headerBot, col + 2);
+          const semCell = ws.getCell(headerBot, col);
+          semCell.value = `SEMANA ${s + 1}`;
+          semCell.font = { bold: true, size: 8, color: { argb: "FFFFFFFF" } };
+          semCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } };
+          semCell.alignment = { horizontal: "center", vertical: "middle", textRotation: 90 };
+          semCell.border = {
+            top: { style: "thin" }, bottom: { style: "thin" },
+            left: { style: "thin" }, right: { style: "thin" },
+          };
+        }
+
+        // Fila headerBot+1 = T / P / TOTAL para cada semana
+        const tptRow = headerBot + 1;
+        for (let s = 0; s < SEMANAS; s++) {
+          const col = semStart + s * 3;
+          (["T", "P", "TOTAL"] as const).forEach((lab, k) => {
+            const cell = ws.getCell(tptRow, col + k);
+            cell.value = lab;
+            cell.font = { bold: true, size: 8, color: { argb: "FFFFFFFF" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E40AF" } };
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.border = {
+              top: { style: "thin" }, bottom: { style: "thin" },
+              left: { style: "thin" }, right: { style: "thin" },
+            };
+          });
+        }
+
+        // Las columnas fijas ahora deben extender su merge hasta tptRow (ocupan 3 filas)
+        fixedCols.forEach((label, idx) => {
+          const col = idx + 1;
+          // ya están mergeadas hasta headerBot — ampliamos el merge al tptRow
+          // ExcelJS no permite re-merge, así que mergeamos las celdas restantes (headerBot+1)
+          // Truco: mergeamos solo headerBot..tptRow para esa columna
+          ws.mergeCells(headerBot + 1, col, headerBot + 1, col); // no-op, aseguramos celda existe
+        });
+        // Re-pintamos las celdas vacías de la fila tptRow en las columnas fijas
+        fixedCols.forEach((_, idx) => {
+          const col = idx + 1;
+          const cell = ws.getCell(tptRow, col);
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+          cell.border = {
+            top: { style: "thin" }, bottom: { style: "thin" },
+            left: { style: "thin" }, right: { style: "thin" },
+          };
+        });
+
+        // Columna OBSERVACIONES al final
+        const obsCol = totalCols;
+        ws.mergeCells(headerTop, obsCol, tptRow, obsCol);
+        const obsCell = ws.getCell(headerTop, obsCol);
+        obsCell.value = "OBSERVACIONES";
+        obsCell.font = { bold: true, size: 9, color: { argb: "FFFFFFFF" } };
+        obsCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+        obsCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        obsCell.border = {
+          top: { style: "thin" }, bottom: { style: "thin" },
+          left: { style: "thin" }, right: { style: "thin" },
+        };
+
+        // Filas de estudiantes (vacías, listas para llenar)
+        const dataStart = tptRow + 1;
+        for (let i = 0; i < STUDENT_ROWS; i++) {
+          const r = dataStart + i;
+          const numCell = ws.getCell(r, 1);
+          numCell.value = String(i + 1).padStart(2, "0");
+          numCell.alignment = { horizontal: "center" };
+          numCell.font = { size: 9 };
+          // Pre-rellenamos los datos repetidos (CICLO/SECCION/LOCAL/PROGRAMA/CURSO)
+          ws.getCell(r, 3).value = ciclo;
+          ws.getCell(r, 4).value = seccion;
+          ws.getCell(r, 5).value = "CHINCHA";
+          ws.getCell(r, 6).value = carreraFull.slice(0, 8).toUpperCase();
+          ws.getCell(r, 7).value = curso;
+          for (let c = 1; c <= totalCols; c++) {
+            const cell = ws.getCell(r, c);
+            if (!cell.font) cell.font = { size: 9 };
+            cell.border = {
+              top: { style: "thin", color: { argb: "FFD1D5DB" } },
+              bottom: { style: "thin", color: { argb: "FFD1D5DB" } },
+              left: { style: "thin", color: { argb: "FFD1D5DB" } },
+              right: { style: "thin", color: { argb: "FFD1D5DB" } },
+            };
+            if (c >= 3 && c <= 7) cell.alignment = { horizontal: "center", vertical: "middle" };
+          }
+        }
+
+        // Anchos de columna
+        ws.getColumn(1).width = 4;    // N°
+        ws.getColumn(2).width = 32;   // APELLIDOS Y NOMBRES
+        ws.getColumn(3).width = 6;    // CICLO
+        ws.getColumn(4).width = 7;    // SECCION
+        ws.getColumn(5).width = 9;    // LOCAL
+        ws.getColumn(6).width = 11;   // PROGRAMA
+        ws.getColumn(7).width = 18;   // CURSO
+        for (let s = 0; s < SEMANAS; s++) {
+          const col = semStart + s * 3;
+          ws.getColumn(col).width = 3;
+          ws.getColumn(col + 1).width = 3;
+          ws.getColumn(col + 2).width = 5;
+        }
+        ws.getColumn(obsCol).width = 18;
+
+        // Altura de cabeceras
+        ws.getRow(headerBot).height = 50;
+        ws.getRow(tptRow).height = 16;
+
+        // Vista
+        ws.views = [{ state: "frozen", xSplit: 2, ySplit: tptRow }];
+      };
+
+      // Hoja índice
+      const idx = wb.addWorksheet("Índice");
+      idx.columns = [
+        { header: "Carrera", key: "carrera", width: 36 },
+        { header: "Ciclo.Sección", key: "secc", width: 14 },
+        { header: "Código", key: "codigo", width: 14 },
+        { header: "Curso", key: "curso", width: 40 },
+        { header: "Docente", key: "docente", width: 36 },
       ];
-      ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-      ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      idx.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      idx.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      usedNames.add("índice");
+
+      // Generar una hoja por (carrera × ciclo × sección × curso)
+      let count = 0;
       for (const g of grouped) {
         for (const ic of g.ciclosArr) {
           for (const sc of ic.seccionesArr) {
             for (const c of sc.cursosArr) {
-              ws.addRow({
-                carrera: g.carrera,
-                carreraFull: g.carreraFull,
-                ciclo: ic.ciclo,
-                seccion: sc.seccion,
-                label: `${g.carreraFull} ${ic.ciclo}.${sc.seccion}`,
+              const docente = Array.from(c.docentes).join(" / ") || "—";
+              buildSheet(g.carreraFull, ic.ciclo, sc.seccion, c.codigo, c.curso, docente, c.modalidad || "PRESENCIAL");
+              idx.addRow({
+                carrera: g.carreraFull,
+                secc: `${ic.ciclo}.${sc.seccion}`,
                 codigo: c.codigo,
                 curso: c.curso,
-                docentes: Array.from(c.docentes).join(" / "),
-                modalidad: c.modalidad || "",
-                horas: c.horas || "",
+                docente,
               });
+              count++;
             }
           }
         }
-      }
-      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ws.columns.length } };
-
-      // Hoja por carrera con bloques por ciclo.sección
-      for (const g of grouped) {
-        const safeName = g.carreraFull.slice(0, 28).replace(/[\\/*?:[\]]/g, "_");
-        const wsC = wb.addWorksheet(safeName || g.carrera);
-        wsC.addRow([g.carreraFull]).font = { bold: true, size: 14 };
-        wsC.addRow([]);
-        for (const ic of g.ciclosArr) {
-          for (const sc of ic.seccionesArr) {
-            const title = wsC.addRow([`${g.carreraFull} ${ic.ciclo}.${sc.seccion}`]);
-            title.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 12 };
-            title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
-            const head = wsC.addRow(["Código", "Curso", "Docente(s)", "Modalidad", "Horas"]);
-            head.font = { bold: true };
-            head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE5E7EB" } };
-            for (const c of sc.cursosArr) {
-              wsC.addRow([
-                c.codigo,
-                c.curso,
-                Array.from(c.docentes).join(" / "),
-                c.modalidad || "",
-                c.horas || "",
-              ]);
-            }
-            wsC.addRow([]);
-          }
-        }
-        wsC.columns = [
-          { width: 14 }, { width: 42 }, { width: 42 }, { width: 14 }, { width: 8 },
-        ];
       }
 
       const buf = await wb.xlsx.writeBuffer();
@@ -256,11 +485,11 @@ export default function ResultadosPlanillas() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Plantilla_Cursos_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = `Plantillas_Asistencia_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast({ title: "Excel generado", description: `${totals.secciones} secciones · ${totals.cursos} cursos.` });
+      toast({ title: "Excel generado", description: `${count} plantillas listas para usar.` });
     } catch (err) {
       console.error(err);
       toast({ title: "Error al generar Excel", variant: "destructive" });
