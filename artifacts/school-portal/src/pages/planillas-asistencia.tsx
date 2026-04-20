@@ -36,6 +36,20 @@ const sedeFromLocal = (local?: string): Sede => {
   return "SEDE";
 };
 
+const DIAS = ["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"] as const;
+const normDia = (d?: string): typeof DIAS[number] | "" => {
+  const x = (d || "").toUpperCase().trim()
+    .replace(/Á/g, "A").replace(/É/g, "E").replace(/Í/g, "I").replace(/Ó/g, "O").replace(/Ú/g, "U");
+  if (x.startsWith("LUN")) return "LUNES";
+  if (x.startsWith("MAR")) return "MARTES";
+  if (x.startsWith("MIE")) return "MIÉRCOLES";
+  if (x.startsWith("JUE")) return "JUEVES";
+  if (x.startsWith("VIE")) return "VIERNES";
+  if (x.startsWith("SAB")) return "SÁBADO";
+  if (x.startsWith("DOM")) return "DOMINGO";
+  return "";
+};
+
 function turnoFromHora(hora: string): string {
   const h = parseInt((hora || "").split(":")[0]);
   return Number.isFinite(h) && h < 18 ? "DIURNO" : "NOCTURNO";
@@ -105,15 +119,13 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
 
   // Regla: una semana cuenta como 1 inasistencia si tiene AL MENOS una "F" (T y/o P).
   //         una semana cuenta como 1 asistencia si tiene "A" y NINGUNA "F".
+  // OJO: SIEMPRE inspeccionamos ambos slots (T y P) aunque semanaCols[w]==1, así
+  // capturamos faltas aisladas que existan en P sin desplegar columna doble.
   const contarSemana = (a: PlanillaDetalle["alumnos"][number], w: number): "A" | "F" | "" => {
-    let hasA = false, hasF = false;
-    for (let k = 0; k < semanaCols[w]; k++) {
-      const m = (a.marcas[w * 2 + k] || "").toUpperCase();
-      if (m === "F") hasF = true;
-      else if (m === "A") hasA = true;
-    }
-    if (hasF) return "F";
-    if (hasA) return "A";
+    const m1 = (a.marcas[w * 2]     || "").toUpperCase().trim();
+    const m2 = (a.marcas[w * 2 + 1] || "").toUpperCase().trim();
+    if (m1 === "F" || m2 === "F") return "F";
+    if (m1 === "A" || m2 === "A") return "A";
     return "";
   };
   const UMBRAL_DESAPROBADO = 6;
@@ -292,8 +304,52 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
     }
   }
 
-  // Pie con resumen del curso
+  // Pie con totales por semana (estilo planilla del docente) + resumen general
   if (alumnos.length > 0) {
+    // Calcular totales por semana
+    const asisPorSemana = new Array(N).fill(0);
+    const inasPorSemana = new Array(N).fill(0);
+    for (const a of alumnos) {
+      for (let w = 0; w < N; w++) {
+        const v = contarSemana(a, w);
+        if (v === "A") asisPorSemana[w]++;
+        else if (v === "F") inasPorSemana[w]++;
+      }
+    }
+
+    const fillSummaryRow = (rowIdx: number, label: string, vals: number[], bg: string, fg: string) => {
+      const row = ws.getRow(rowIdx);
+      // Mergear N° + Apellidos para el label
+      ws.mergeCells(rowIdx, 1, rowIdx, 2);
+      const lc = row.getCell(1);
+      lc.value = label;
+      lc.font = { bold: true, size: 10, color: { argb: fg } };
+      lc.alignment = { horizontal: "right", vertical: "middle" };
+      lc.fill = xsf(bg); lc.border = XTHIN;
+      // Valores por semana (un total por SEMANA, mergeando T y P si semanaCols==2)
+      for (let w = 0; w < N; w++) {
+        const start = semanaStartCol[w], cnt = semanaCols[w];
+        if (cnt === 2) ws.mergeCells(rowIdx, start, rowIdx, start + 1);
+        const c = row.getCell(start);
+        c.value = vals[w];
+        c.font = { bold: true, size: 10, color: { argb: fg } };
+        c.alignment = XCTR; c.fill = xsf(bg); c.border = XTHIN;
+      }
+      // Las 3 columnas resumen totales
+      const totalSum = vals.reduce((s, n) => s + n, 0);
+      const cTot = row.getCell(firstSummaryCol);
+      ws.mergeCells(rowIdx, firstSummaryCol, rowIdx, firstSummaryCol + 2);
+      cTot.value = totalSum;
+      cTot.font = { bold: true, size: 10, color: { argb: fg } };
+      cTot.alignment = XCTR; cTot.fill = xsf(bg); cTot.border = XTHIN;
+      row.height = 18;
+    };
+
+    fillSummaryRow(r,     "Asistencias",   asisPorSemana, "FFE6F4EA", "FF15803D");
+    fillSummaryRow(r + 1, "Inasistencias", inasPorSemana, "FFFEE2E2", "FFB91C1C");
+    r += 2;
+
+    // Texto resumen general
     const footRow = r + 1;
     ws.mergeCells(footRow, 1, footRow, lastCol);
     const fc = ws.getCell(footRow, 1);
@@ -319,6 +375,7 @@ export default function PlanillasAsistencia() {
   const [uploadedByDocente, setUploadedByDocente] = useState<Map<string, number>>(new Map());
   const [exporting, setExporting] = useState(false);
   const [sedeFiltro, setSedeFiltro] = useState<"TODAS" | Sede>("TODAS");
+  const [diaFiltro, setDiaFiltro] = useState<"TODOS" | typeof DIAS[number]>("TODOS");
   const [exportingCurso, setExportingCurso] = useState<string | null>(null);
 
   const exportarCurso = async (c: Row & { sesiones: number }) => {
@@ -572,31 +629,49 @@ export default function PlanillasAsistencia() {
   }, []);
 
   const teachers = useMemo(() => {
-    const map = new Map<string, { count: number; carreras: Set<string>; sedes: Set<Sede> }>();
+    const map = new Map<string, { count: number; carreras: Set<string>; sedes: Set<Sede>; dias: Set<typeof DIAS[number]> }>();
     for (const r of data) {
       // Solo ciclos 1 y 2
       if (String(r.ciclo) !== "1" && String(r.ciclo) !== "2") continue;
       const k = r.docente?.toUpperCase().trim();
       if (!k) continue;
-      if (!map.has(k)) map.set(k, { count: 0, carreras: new Set(), sedes: new Set() });
+      if (!map.has(k)) map.set(k, { count: 0, carreras: new Set(), sedes: new Set(), dias: new Set() });
       const v = map.get(k)!;
       v.count++;
       v.carreras.add(r.carrera);
       v.sedes.add(sedeFromLocal(r.local));
+      const d = normDia(r.dia);
+      if (d) v.dias.add(d);
     }
     return Array.from(map.entries())
-      .map(([n, v]) => ({ nombre: n, sesiones: v.count, carreras: Array.from(v.carreras), sedes: Array.from(v.sedes) }))
+      .map(([n, v]) => ({
+        nombre: n, sesiones: v.count,
+        carreras: Array.from(v.carreras),
+        sedes: Array.from(v.sedes),
+        dias: Array.from(v.dias),
+      }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [data]);
+
+  // Conteo de docentes por día (para mostrar en pills)
+  const conteoPorDia = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of teachers) {
+      if (sedeFiltro !== "TODAS" && !t.sedes.includes(sedeFiltro)) continue;
+      for (const d of t.dias) m.set(d, (m.get(d) || 0) + 1);
+    }
+    return m;
+  }, [teachers, sedeFiltro]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return teachers.filter((t) => {
       if (sedeFiltro !== "TODAS" && !t.sedes.includes(sedeFiltro)) return false;
+      if (diaFiltro !== "TODOS" && !t.dias.includes(diaFiltro)) return false;
       if (q && !t.nombre.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [teachers, search, sedeFiltro]);
+  }, [teachers, search, sedeFiltro, diaFiltro]);
 
   // Agrupar docentes filtrados por sede
   const teachersGrouped = useMemo(() => {
@@ -688,6 +763,45 @@ export default function PlanillasAsistencia() {
                     {s}
                   </button>
                 ))}
+              </div>
+              <div className="flex flex-wrap gap-1 items-center">
+                <span className="text-[10px] font-bold text-muted-foreground mr-0.5">DÍA:</span>
+                <button
+                  onClick={() => setDiaFiltro("TODOS")}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                    diaFiltro === "TODOS"
+                      ? "bg-amber-500 text-white border-amber-500"
+                      : "bg-white text-muted-foreground border-border hover:bg-muted/40"
+                  }`}
+                >
+                  TODOS
+                </button>
+                {DIAS.map((d) => {
+                  const cnt = conteoPorDia.get(d) || 0;
+                  const active = diaFiltro === d;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setDiaFiltro(d)}
+                      disabled={cnt === 0 && !active}
+                      title={`${cnt} docente${cnt === 1 ? "" : "s"} dictan ${d.toLowerCase()}`}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors flex items-center gap-1 ${
+                        active
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : cnt === 0
+                            ? "bg-muted/30 text-muted-foreground/50 border-border cursor-not-allowed"
+                            : "bg-white text-muted-foreground border-border hover:bg-amber-50 hover:border-amber-300"
+                      }`}
+                    >
+                      {d.slice(0, 3)}
+                      {cnt > 0 && (
+                        <span className={`text-[9px] px-1 rounded ${active ? "bg-white/30" : "bg-amber-100 text-amber-700"}`}>
+                          {cnt}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />

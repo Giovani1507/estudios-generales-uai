@@ -93,9 +93,9 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Resultados de Planillas",
+    title: "Jalados por Inasistencia",
     url: "/resultados-planillas",
-    icon: ClipboardList,
+    icon: AlertTriangle,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
