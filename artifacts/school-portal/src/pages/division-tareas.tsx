@@ -1,0 +1,545 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Loader2, Users, Shuffle, Plus, Trash2, Download, Search, Sparkles,
+  UserCheck, AlertTriangle,
+} from "lucide-react";
+import * as ExcelJS from "exceljs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+
+const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
+type PlanRow = {
+  local: string; facultad: string; carrera: string; carreraFull: string;
+  ciclo: string; seccion: string; codigo: string; curso: string;
+  modalidad: string; modalidadCurso?: string; docente: string; dia: string; hora: string; horaFin: string;
+};
+
+type Unidad = {
+  key: string;          // unique id
+  docente: string;
+  curso: string;
+  codigo: string;
+  carrera: string;
+  ciclo: string;
+  seccion: string;
+  sede: string;
+  modalidad: string;
+  dia: string;
+  hora: string;
+  facultad: string;
+};
+
+type Worker = { id: string; nombre: string; monto: number };
+
+const sedeNorm = (v?: string | null) => {
+  const s = (v || "").toUpperCase().trim();
+  if (s === "PRINCIPAL" || s === "ICA" || s === "") return "SEDE";
+  return s;
+};
+
+const COLORES_WORKER = [
+  { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-300", dot: "bg-emerald-500" },
+  { bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-300",     dot: "bg-sky-500" },
+  { bg: "bg-violet-50",  text: "text-violet-700",  border: "border-violet-300",  dot: "bg-violet-500" },
+  { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-300",   dot: "bg-amber-500" },
+  { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-300",    dot: "bg-rose-500" },
+];
+
+const newId = () => Math.random().toString(36).slice(2, 9);
+
+const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
+  const a = [...arr];
+  let s = seed >>> 0;
+  const rand = () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+export default function DivisionTareas() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
+  const [yaSubidas, setYaSubidas] = useState<Set<string>>(new Set());
+
+  // Filtros
+  const [sedeF, setSedeF] = useState<string>("TODAS");
+  const [facultadF, setFacultadF] = useState<"TODAS" | "FCS" | "FICA">("TODAS");
+  const [excluirSubidas, setExcluirSubidas] = useState(true);
+  const [tipoUnidad, setTipoUnidad] = useState<"PLANILLA" | "DOCENTE">("PLANILLA");
+  const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000));
+
+  // Workers (compañeros)
+  const [workers, setWorkers] = useState<Worker[]>([
+    { id: newId(), nombre: "Giovanni", monto: 56 },
+    { id: newId(), nombre: "Valery",   monto: 56 },
+  ]);
+
+  // Resultado
+  const [asignaciones, setAsignaciones] = useState<Record<string, Unidad[]>>({});
+  const [sobrantes, setSobrantes] = useState<Unidad[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const base = apiBase + "/";
+        const [fica, fcs, subidas] = await Promise.all([
+          fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.json()),
+          fetch(`${base}planificacion-fcs-2026-1.json`).then(r => r.json()),
+          fetch(`${apiBase}/api/asistencia-planillas`, { credentials: "include" })
+            .then(r => r.ok ? r.json() : []).catch(() => []),
+        ]);
+
+        // dedupe planificación a unidades únicas (codigo+seccion+sede+docente)
+        const map = new Map<string, Unidad>();
+        const all: PlanRow[] = [
+          ...(Array.isArray(fica) ? fica : Object.values(fica)) as PlanRow[],
+          ...(Array.isArray(fcs)  ? fcs  : Object.values(fcs))  as PlanRow[],
+        ];
+        for (const r of all) {
+          if (!r || !r.docente || !r.codigo) continue;
+          const sede = sedeNorm(r.local);
+          const docente = String(r.docente).toUpperCase().trim();
+          const key = `${docente}|${r.codigo}|${r.seccion}|${sede}`;
+          if (!map.has(key)) {
+            map.set(key, {
+              key,
+              docente,
+              curso: r.curso || "",
+              codigo: r.codigo,
+              carrera: r.carreraFull || r.carrera || "",
+              ciclo: String(r.ciclo || ""),
+              seccion: r.seccion || "",
+              sede,
+              modalidad: r.modalidad || r.modalidadCurso || "",
+              dia: r.dia || "",
+              hora: r.hora || "",
+              facultad: r.facultad || "",
+            });
+          }
+        }
+        setUnidades(Array.from(map.values()));
+
+        // Ya subidas: marcar (codigo+seccion+docente+sede)
+        const ya = new Set<string>();
+        for (const p of subidas as Array<{ docente: string | null; codigoCurso: string | null; seccion: string | null; sede: string | null }>) {
+          const k = `${(p.docente || "").toUpperCase().trim()}|${p.codigoCurso || ""}|${p.seccion || ""}|${sedeNorm(p.sede)}`;
+          ya.add(k);
+        }
+        setYaSubidas(ya);
+      } catch (e) {
+        console.error(e);
+        toast({ title: "Error al cargar", description: "No se pudo cargar la planificación.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sedes = useMemo(() => Array.from(new Set(unidades.map(u => u.sede))).sort(), [unidades]);
+
+  const candidatos = useMemo(() => {
+    let base = unidades;
+    if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
+    if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
+    if (excluirSubidas && yaSubidas.size > 0) base = base.filter(u => !yaSubidas.has(u.key));
+
+    if (tipoUnidad === "DOCENTE") {
+      // Una unidad por docente único en el subconjunto filtrado
+      const seen = new Set<string>();
+      const out: Unidad[] = [];
+      for (const u of base) {
+        if (seen.has(u.docente)) continue;
+        seen.add(u.docente);
+        out.push(u);
+      }
+      return out;
+    }
+    return base;
+  }, [unidades, sedeF, facultadF, excluirSubidas, yaSubidas, tipoUnidad]);
+
+  const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
+  const tieneAsignacion = Object.keys(asignaciones).length > 0;
+
+  const updateWorker = (id: string, patch: Partial<Worker>) => {
+    setWorkers(ws => ws.map(w => w.id === id ? { ...w, ...patch } : w));
+  };
+
+  const addWorker = () => setWorkers(ws => [...ws, { id: newId(), nombre: "", monto: 0 }]);
+  const removeWorker = (id: string) => setWorkers(ws => ws.filter(w => w.id !== id));
+
+  const balanceAuto = () => {
+    if (workers.length === 0) return;
+    const n = workers.length;
+    const base = Math.floor(candidatos.length / n);
+    const rest = candidatos.length - base * n;
+    setWorkers(ws => ws.map((w, i) => ({ ...w, monto: base + (i < rest ? 1 : 0) })));
+  };
+
+  const repartir = () => {
+    if (workers.length === 0) {
+      toast({ title: "Sin compañeros", description: "Agrega al menos una persona.", variant: "destructive" });
+      return;
+    }
+    const conNombre = workers.filter(w => (w.nombre || "").trim());
+    if (conNombre.length !== workers.length) {
+      toast({ title: "Falta nombre", description: "Completa el nombre de todos.", variant: "destructive" });
+      return;
+    }
+    const totalReq = workers.reduce((s, w) => s + Math.max(0, Math.floor(w.monto || 0)), 0);
+    if (totalReq === 0) {
+      toast({ title: "Cantidad inválida", description: "Indica cuántos a cada uno (>0).", variant: "destructive" });
+      return;
+    }
+    if (totalReq > candidatos.length) {
+      toast({
+        title: "No alcanzan",
+        description: `Pediste ${totalReq} pero solo hay ${candidatos.length} disponibles. Ajusta los montos o quita el filtro de "ya subidas".`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pool = seededShuffle(candidatos, seed);
+    const out: Record<string, Unidad[]> = {};
+    let cursor = 0;
+    for (const w of workers) {
+      const n = Math.max(0, Math.floor(w.monto || 0));
+      out[w.id] = pool.slice(cursor, cursor + n);
+      cursor += n;
+    }
+    const sob = pool.slice(cursor);
+    setAsignaciones(out);
+    setSobrantes(sob);
+    toast({
+      title: "Reparto listo",
+      description: `${totalReq} unidades asignadas a ${workers.length} persona(s).`,
+    });
+  };
+
+  const reShuffle = () => {
+    setSeed(Math.floor(Math.random() * 1_000_000));
+    // Repartir con nueva semilla en el siguiente click; o repartir directo:
+    setTimeout(() => repartir(), 0);
+  };
+
+  const limpiar = () => { setAsignaciones({}); setSobrantes([]); };
+
+  const exportXLSX = async () => {
+    const wb = new ExcelJS.Workbook();
+    const resumen = wb.addWorksheet("Resumen");
+    resumen.columns = [{ width: 30 }, { width: 18 }, { width: 18 }];
+    resumen.getRow(1).values = ["DIVISIÓN DE TAREAS · 2026-1"];
+    resumen.getRow(1).font = { bold: true, size: 14, color: { argb: "FF001F5F" } };
+    resumen.mergeCells(1, 1, 1, 3);
+    resumen.getRow(2).values = [`Sede: ${sedeF}   ·   Facultad: ${facultadF}   ·   Tipo: ${tipoUnidad === "PLANILLA" ? "Planillas (curso/sección)" : "Docente único"}`];
+    resumen.mergeCells(2, 1, 2, 3);
+    resumen.getRow(4).values = ["Compañero", "Asignados", "Solicitados"];
+    resumen.getRow(4).eachCell(c => {
+      c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+      c.alignment = { horizontal: "center" };
+    });
+    workers.forEach((w, i) => {
+      const r = resumen.getRow(5 + i);
+      r.getCell(1).value = w.nombre;
+      r.getCell(2).value = (asignaciones[w.id] || []).length;
+      r.getCell(3).value = w.monto;
+    });
+
+    const writeSheet = (name: string, list: Unidad[]) => {
+      const ws = wb.addWorksheet(name.slice(0, 30));
+      ws.columns = [
+        { width: 6 }, { width: 36 }, { width: 12 }, { width: 30 }, { width: 22 },
+        { width: 8 }, { width: 8 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 8 },
+      ];
+      ws.getRow(1).values = ["N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Día", "Hora"];
+      ws.getRow(1).eachCell(c => {
+        c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+        c.alignment = { horizontal: "center", wrapText: true };
+        c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+      });
+      list.forEach((u, i) => {
+        const r = ws.getRow(i + 2);
+        r.values = [i + 1, u.docente, u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, u.dia, u.hora];
+        r.eachCell(c => {
+          c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+          c.font = { size: 10 };
+        });
+      });
+    };
+
+    workers.forEach(w => writeSheet(w.nombre || "Sin nombre", asignaciones[w.id] || []));
+    if (sobrantes.length > 0) writeSheet("Sobrantes", sobrantes);
+
+    const buf = await wb.xlsx.writeBuffer() as ArrayBuffer;
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Division_Tareas_${sedeF}_2026-1.xlsx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50/30 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" /> Cargando planificación…
+        </div>
+      </div>
+    );
+  }
+
+  const filtroBusqueda = (list: Unidad[]) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(u =>
+      `${u.docente} ${u.curso} ${u.codigo} ${u.carrera} ${u.seccion} ${u.sede}`.toLowerCase().includes(q)
+    );
+  };
+
+  return (
+    <div className="p-6 space-y-6 min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50/30">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[260px]">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-[#001f5f]">
+            <Users className="h-6 w-6 text-emerald-600" />
+            División de Tareas — Subida de Asistencia
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Reparte aleatoriamente las planillas pendientes entre tus compañeros para subir asistencia.
+            Filtra por sede, indica el monto que le toca a cada uno y obtén la asignación sin choques.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={limpiar} disabled={!tieneAsignacion} className="gap-2">
+            <Trash2 className="h-4 w-4" /> Limpiar
+          </Button>
+          <Button onClick={exportXLSX} disabled={!tieneAsignacion} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Download className="h-4 w-4" /> Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white rounded-xl border border-border/50 shadow-sm p-4 space-y-3">
+        <h3 className="text-sm font-bold text-[#001f5f] flex items-center gap-1.5">
+          <Sparkles className="h-4 w-4 text-emerald-600" /> Configuración del reparto
+        </h3>
+        <div className="flex flex-wrap items-center gap-3">
+          <PillGroup label="Sede" value={sedeF} onChange={setSedeF} options={["TODAS", ...sedes]} />
+          <PillGroup label="Facultad" value={facultadF} onChange={(v) => setFacultadF(v as "TODAS" | "FCS" | "FICA")} options={["TODAS", "FCS", "FICA"]} />
+          <PillGroup label="Tipo" value={tipoUnidad} onChange={(v) => setTipoUnidad(v as "PLANILLA" | "DOCENTE")} options={["PLANILLA", "DOCENTE"]} labelMap={{ PLANILLA: "Por planilla (curso/sec)", DOCENTE: "Por docente único" }} />
+          <label className="flex items-center gap-1.5 text-xs ml-2 cursor-pointer select-none">
+            <input type="checkbox" checked={excluirSubidas} onChange={(e) => setExcluirSubidas(e.target.checked)} />
+            Excluir las que <b>ya están subidas</b>
+          </label>
+          <div className="ml-auto flex items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              <UserCheck className="h-3.5 w-3.5" />
+              {candidatos.length} disponibles
+            </Badge>
+            {yaSubidas.size > 0 && (
+              <Badge variant="secondary" className="text-[10px]">
+                {yaSubidas.size} ya subidas
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Compañeros */}
+        <div className="border-t border-border/40 pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Compañeros</h4>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={balanceAuto} className="h-7 text-xs gap-1">
+                <Sparkles className="h-3.5 w-3.5" /> Repartir 50/50
+              </Button>
+              <Button variant="ghost" size="sm" onClick={addWorker} className="h-7 text-xs gap-1">
+                <Plus className="h-3.5 w-3.5" /> Agregar
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {workers.map((w, idx) => {
+              const c = COLORES_WORKER[idx % COLORES_WORKER.length];
+              return (
+                <div key={w.id} className={`flex items-center gap-2 p-2 rounded-lg border ${c.border} ${c.bg}`}>
+                  <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
+                  <Input
+                    value={w.nombre}
+                    onChange={(e) => updateWorker(w.id, { nombre: e.target.value })}
+                    placeholder="Nombre"
+                    className="h-8 text-sm flex-1 bg-white"
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    value={w.monto}
+                    onChange={(e) => updateWorker(w.id, { monto: parseInt(e.target.value) || 0 })}
+                    placeholder="Monto"
+                    className="h-8 text-sm w-20 bg-white text-center font-bold"
+                  />
+                  <Button variant="ghost" size="sm" onClick={() => removeWorker(w.id)} className="h-7 w-7 p-0 text-rose-600 hover:text-rose-700">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-border/40">
+            <div className="text-xs text-muted-foreground">
+              Total a repartir: <b className={totalSolicitado > candidatos.length ? "text-rose-600" : "text-[#001f5f]"}>{totalSolicitado}</b> / {candidatos.length} disponibles
+            </div>
+            <div className="flex gap-2">
+              {tieneAsignacion && (
+                <Button variant="outline" onClick={reShuffle} className="gap-2 h-9 text-sm">
+                  <Shuffle className="h-4 w-4" /> Volver a sortear
+                </Button>
+              )}
+              <Button onClick={repartir} className="gap-2 h-9 bg-[#001f5f] hover:bg-[#002b8a] text-white">
+                <Shuffle className="h-4 w-4" /> Asignar al azar
+              </Button>
+            </div>
+          </div>
+          {totalSolicitado > candidatos.length && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Estás pidiendo más unidades de las que hay disponibles con los filtros actuales.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Resultado */}
+      {tieneAsignacion && (
+        <>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en las asignaciones…" className="pl-8 h-9 bg-white" />
+            </div>
+            <Badge className="bg-[#001f5f] text-white border-0">Sede: {sedeF}</Badge>
+            {sobrantes.length > 0 && <Badge className="bg-amber-500 text-white border-0">{sobrantes.length} sobrantes</Badge>}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {workers.map((w, idx) => {
+              const c = COLORES_WORKER[idx % COLORES_WORKER.length];
+              const lista = filtroBusqueda(asignaciones[w.id] || []);
+              const total = (asignaciones[w.id] || []).length;
+              return (
+                <div key={w.id} className="bg-white rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                  <div className={`px-4 py-3 ${c.bg} border-b ${c.border} flex items-center justify-between gap-2`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-3 w-3 rounded-full ${c.dot}`} />
+                      <h3 className={`text-sm font-bold ${c.text}`}>{w.nombre || "Sin nombre"}</h3>
+                    </div>
+                    <Badge className={`${c.dot} text-white border-0`}>{total} asignadas</Badge>
+                  </div>
+                  <div className="max-h-[420px] overflow-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/30 sticky top-0">
+                        <tr>
+                          <th className="px-2 py-1.5 text-center w-8">#</th>
+                          <th className="px-2 py-1.5 text-left">Docente</th>
+                          <th className="px-2 py-1.5 text-left">Curso</th>
+                          <th className="px-2 py-1.5 text-center">Sec</th>
+                          <th className="px-2 py-1.5 text-center">Sede</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lista.length === 0 && (
+                          <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Sin resultados</td></tr>
+                        )}
+                        {lista.map((u, i) => (
+                          <tr key={u.key} className="border-t border-border/30 hover:bg-slate-50/60">
+                            <td className="px-2 py-1.5 text-center text-muted-foreground">{i + 1}</td>
+                            <td className="px-2 py-1.5 font-medium">{u.docente}</td>
+                            <td className="px-2 py-1.5">
+                              <div className="line-clamp-1">{u.curso}</div>
+                              <div className="text-[10px] text-muted-foreground font-mono">{u.codigo} · {u.carrera}</div>
+                            </td>
+                            <td className="px-2 py-1.5 text-center font-semibold">C{u.ciclo}-{u.seccion}</td>
+                            <td className="px-2 py-1.5 text-center">
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-semibold">{u.sede}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {sobrantes.length > 0 && (
+            <div className="bg-white rounded-xl border border-amber-300 shadow-sm overflow-hidden">
+              <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-300 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-amber-700 flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4" /> Sobrantes (no asignadas)
+                </h3>
+                <Badge className="bg-amber-500 text-white border-0">{sobrantes.length}</Badge>
+              </div>
+              <div className="max-h-[260px] overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/30 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">Docente</th>
+                      <th className="px-2 py-1.5 text-left">Curso</th>
+                      <th className="px-2 py-1.5 text-center">Sec</th>
+                      <th className="px-2 py-1.5 text-center">Sede</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtroBusqueda(sobrantes).map((u) => (
+                      <tr key={u.key} className="border-t border-border/30">
+                        <td className="px-2 py-1.5">{u.docente}</td>
+                        <td className="px-2 py-1.5">{u.curso} <span className="text-muted-foreground">({u.codigo})</span></td>
+                        <td className="px-2 py-1.5 text-center">C{u.ciclo}-{u.seccion}</td>
+                        <td className="px-2 py-1.5 text-center">{u.sede}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function PillGroup({ label, value, onChange, options, labelMap }: {
+  label: string; value: string; onChange: (v: string) => void; options: string[]; labelMap?: Record<string, string>;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground">{label}:</span>
+      {options.map(o => (
+        <button
+          key={o}
+          onClick={() => onChange(o)}
+          className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors ${value === o ? "bg-[#001f5f] border-[#001f5f] text-white" : "bg-white text-muted-foreground border-border hover:bg-muted/40"}`}
+        >
+          {labelMap?.[o] || o}
+        </button>
+      ))}
+    </div>
+  );
+}

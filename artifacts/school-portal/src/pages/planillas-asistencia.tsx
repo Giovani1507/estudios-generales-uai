@@ -985,7 +985,7 @@ export default function PlanillasAsistencia() {
                               data-testid={`button-planilla-${i}`}
                             >
                               {isUploaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-                              {isUploaded ? "Subida" : "Planilla"}
+                              {isUploaded ? "Subida" : "Asistencia"}
                             </Button>
                           </td>
                         </tr>

@@ -252,7 +252,7 @@ export default function ReporteJalados() {
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <AlertTriangle className="h-6 w-6 text-red-600" />
-            Reporte de Estudiantes Jalados por Inasistencia
+            Reporte de Estudiantes Desaprobado por Inasistencia
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Lista consolidada de alumnos con <b className="text-red-600">{UMBRAL} o más inasistencias</b> en las planillas subidas (2026-1).
@@ -267,7 +267,7 @@ export default function ReporteJalados() {
       {filtered.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-border/50 shadow-sm p-4">
-            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Jalados por carrera</h3>
+            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Desaprobados por carrera</h3>
             <p className="text-[11px] text-muted-foreground mb-2">Distribución de estudiantes desaprobados por inasistencia</p>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -283,7 +283,7 @@ export default function ReporteJalados() {
             </ResponsiveContainer>
           </div>
           <div className="lg:col-span-2 bg-white rounded-xl border border-border/50 shadow-sm p-4">
-            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Top cursos con más jalados</h3>
+            <h3 className="text-sm font-bold text-[#001f5f] mb-1">Top cursos con más desaprobados</h3>
             <p className="text-[11px] text-muted-foreground mb-2">Cursos con mayor número de estudiantes desaprobados</p>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartCurso} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>

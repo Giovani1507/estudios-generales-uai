@@ -45,6 +45,7 @@ import Seguridad from "@/pages/seguridad";
 import PlanillasAsistencia from "@/pages/planillas-asistencia";
 import ResultadosPlanillas from "@/pages/resultados-planillas";
 import ReporteAsistencia from "@/pages/reporte-asistencia";
+import DivisionTareas from "@/pages/division-tareas";
 import RegistroAsistencia from "@/pages/registro-asistencia";
 import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
@@ -210,6 +211,10 @@ function AppRouter() {
       <Route
         path="/reporte-asistencia"
         component={() => <ProtectedRoute component={ReporteAsistencia} />}
+      />
+      <Route
+        path="/division-tareas"
+        component={() => <ProtectedRoute component={DivisionTareas} />}
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />

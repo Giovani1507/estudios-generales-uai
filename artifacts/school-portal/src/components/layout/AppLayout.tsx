@@ -93,7 +93,7 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Jalados por Inasistencia",
+    title: "Desaprobado por Inasistencia",
     url: "/resultados-planillas",
     icon: AlertTriangle,
     roles: ["administrador", "coordinador", "administrativo"],
@@ -102,6 +102,12 @@ const menuItems: MenuItem[] = [
     title: "Reporte de Asistencia",
     url: "/reporte-asistencia",
     icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "División de Tareas",
+    url: "/division-tareas",
+    icon: Users,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
