@@ -28,6 +28,9 @@ type Unidad = {
   sede: string;
   modalidad: string;
   dia: string;
+  // Todos los días en los que se dicta esta planilla (normalizados),
+  // porque un mismo curso-sección puede tener clases en varios días.
+  dias: string[];
   hora: string;
   facultad: string;
 };
@@ -229,8 +232,10 @@ export default function DivisionTareas() {
             .then(r => r.ok ? r.json() : []).catch(() => []),
         ]);
 
-        // dedupe planificación a unidades únicas (codigo+seccion+sede+docente)
-        const map = new Map<string, Unidad>();
+        // dedupe planificación a unidades únicas (codigo+seccion+sede+docente).
+        // Cada unidad acumula TODOS los días en que se dicta (un curso puede
+        // dictarse Lun y Mar, por eso `dias` es un set).
+        const map = new Map<string, Unidad & { _dias: Set<string> }>();
         const all: PlanRow[] = [
           ...(Array.isArray(fica) ? fica : Object.values(fica)) as PlanRow[],
           ...(Array.isArray(fcs)  ? fcs  : Object.values(fcs))  as PlanRow[],
@@ -252,12 +257,20 @@ export default function DivisionTareas() {
               sede,
               modalidad: r.modalidad || r.modalidadCurso || "",
               dia: r.dia || "",
+              dias: [],
               hora: r.hora || "",
               facultad: r.facultad || "",
+              _dias: new Set<string>(),
             });
           }
+          const d = normDia(r.dia);
+          if (d) map.get(key)!._dias.add(d);
         }
-        setUnidades(Array.from(map.values()));
+        const arr: Unidad[] = Array.from(map.values()).map(u => {
+          const { _dias, ...rest } = u;
+          return { ...rest, dias: Array.from(_dias) };
+        });
+        setUnidades(arr);
 
         // Ya subidas: marcar (codigo+seccion+docente+sede)
         const ya = new Set<string>();
@@ -284,7 +297,7 @@ export default function DivisionTareas() {
     if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
     if (ciclosF.size > 0) base = base.filter(u => ciclosF.has(String(u.ciclo).trim()));
-    if (diaF !== "TODOS") base = base.filter(u => normDia(u.dia) === diaF);
+    if (diaF !== "TODOS") base = base.filter(u => u.dias.includes(diaF));
     return base;
   }, [unidades, sedeF, facultadF, ciclosF, diaF]);
 
