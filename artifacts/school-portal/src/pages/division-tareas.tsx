@@ -56,6 +56,14 @@ const normDia = (d?: string | null): string => {
   return "";
 };
 
+// Convierte secciones con grupo (A1, A2, B1) a su sección base (A, B).
+// Mantiene secciones simples (A, B) o no estándar tal cual.
+const baseSeccion = (s: string | null | undefined): string => {
+  const t = String(s || "").trim().toUpperCase();
+  const m = t.match(/^([A-Z]+)\d+$/);
+  return m ? m[1] : t;
+};
+
 const sedeNorm = (v?: string | null) => {
   const s = (v || "").toUpperCase().trim();
   if (s === "PRINCIPAL" || s === "SEDE" || s === "ICA" || s === "") return "SEDE";
@@ -244,7 +252,8 @@ export default function DivisionTareas() {
           if (!r || !r.docente || !r.codigo) continue;
           const sede = sedeNorm(r.local);
           const docente = String(r.docente).toUpperCase().trim();
-          const key = `${docente}|${r.codigo}|${r.seccion}|${sede}`;
+          const sec = baseSeccion(r.seccion);
+          const key = `${docente}|${r.codigo}|${sec}|${sede}`;
           if (!map.has(key)) {
             map.set(key, {
               key,
@@ -253,7 +262,7 @@ export default function DivisionTareas() {
               codigo: r.codigo,
               carrera: r.carreraFull || r.carrera || "",
               ciclo: String(r.ciclo || ""),
-              seccion: r.seccion || "",
+              seccion: sec,
               sede,
               modalidad: r.modalidad || r.modalidadCurso || "",
               dia: r.dia || "",
@@ -272,10 +281,10 @@ export default function DivisionTareas() {
         });
         setUnidades(arr);
 
-        // Ya subidas: marcar (codigo+seccion+docente+sede)
+        // Ya subidas: marcar (codigo+seccion-base+docente+sede)
         const ya = new Set<string>();
         for (const p of subidas as Array<{ docente: string | null; codigoCurso: string | null; seccion: string | null; sede: string | null }>) {
-          const k = `${(p.docente || "").toUpperCase().trim()}|${p.codigoCurso || ""}|${p.seccion || ""}|${sedeNorm(p.sede)}`;
+          const k = `${(p.docente || "").toUpperCase().trim()}|${p.codigoCurso || ""}|${baseSeccion(p.seccion)}|${sedeNorm(p.sede)}`;
           ya.add(k);
         }
         setYaSubidas(ya);
