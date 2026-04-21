@@ -70,7 +70,25 @@ export default function ReporteAsistencia() {
     (async () => {
       setLoading(true);
       try {
-        const r = await fetch(`${apiBase}/api/asistencia-planillas`, { credentials: "include" });
+        const base = apiBase + "/";
+        const [r, ficaPlan, fcsPlan] = await Promise.all([
+          fetch(`${apiBase}/api/asistencia-planillas`, { credentials: "include" }),
+          fetch(`${base}planificacion-fica-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
+          fetch(`${base}planificacion-fcs-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
+        ]);
+        // Map carrera code → carreraFull
+        const carreraMap = new Map<string, string>();
+        for (const row of [...(Array.isArray(ficaPlan) ? ficaPlan : []), ...(Array.isArray(fcsPlan) ? fcsPlan : [])]) {
+          if (row?.carrera && row?.carreraFull) {
+            carreraMap.set(String(row.carrera).toUpperCase().trim(), String(row.carreraFull).trim());
+          }
+        }
+        const resolveCarrera = (c: string | null | undefined): string => {
+          const raw = String(c || "").trim();
+          if (!raw) return "";
+          const up = raw.toUpperCase();
+          return carreraMap.get(up) || raw;
+        };
         if (!r.ok) throw new Error("list");
         const list = (await r.json()) as PlanillaListItem[];
         const detalles = await Promise.all(
@@ -111,7 +129,7 @@ export default function ReporteAsistencia() {
               curso: det.nombreCurso || "",
               codigoCurso: det.codigoCurso || "",
               docente: det.docente || "",
-              carrera: det.carrera || "",
+              carrera: resolveCarrera(det.carrera),
               ciclo: det.ciclo || "",
               seccion: det.seccion || "",
               sede: sedeNorm(det.sede),
