@@ -101,16 +101,48 @@ export default function DivisionTareas() {
   const [excluirSubidas, setExcluirSubidas] = useState(true);
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000));
 
-  // Workers (compañeros)
-  const [workers, setWorkers] = useState<Worker[]>([
-    { id: newId(), nombre: "Giovanni", monto: 56 },
-    { id: newId(), nombre: "Valery",   monto: 56 },
-  ]);
+  // Workers (compañeros) — persistidos en localStorage
+  const [workers, setWorkers] = useState<Worker[]>(() => {
+    try {
+      const raw = localStorage.getItem("divisionTareas:workers");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      { id: newId(), nombre: "Giovanni", monto: 56 },
+      { id: newId(), nombre: "Valery",   monto: 56 },
+    ];
+  });
 
   // Resultado (cada compañero recibe DOCENTES completos, no planillas sueltas)
-  const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>({});
-  const [sobrantes, setSobrantes] = useState<DocenteUnit[]>([]);
+  const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>(() => {
+    try {
+      const raw = localStorage.getItem("divisionTareas:asignaciones");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+  const [sobrantes, setSobrantes] = useState<DocenteUnit[]>(() => {
+    try {
+      const raw = localStorage.getItem("divisionTareas:sobrantes");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  });
   const [search, setSearch] = useState("");
+
+  // Persistir cambios automáticamente
+  useEffect(() => {
+    try { localStorage.setItem("divisionTareas:workers", JSON.stringify(workers)); } catch {}
+  }, [workers]);
+  useEffect(() => {
+    try { localStorage.setItem("divisionTareas:asignaciones", JSON.stringify(asignaciones)); } catch {}
+  }, [asignaciones]);
+  useEffect(() => {
+    try { localStorage.setItem("divisionTareas:sobrantes", JSON.stringify(sobrantes)); } catch {}
+  }, [sobrantes]);
 
   useEffect(() => {
     (async () => {

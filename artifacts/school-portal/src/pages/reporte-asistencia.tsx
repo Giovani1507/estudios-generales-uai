@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, TrendingUp, Users,
 } from "lucide-react";
 import * as ExcelJS from "exceljs";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LabelList,
@@ -222,16 +222,57 @@ export default function ReporteAsistencia() {
 
   const captureChart = async (el: HTMLElement | null): Promise<string | null> => {
     if (!el) return null;
+    // Esperar 2 frames para asegurar que Recharts terminó de pintar
+    await new Promise<void>((res) => requestAnimationFrame(() => requestAnimationFrame(() => res())));
+    const rect = el.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
     try {
-      const canvas = await html2canvas(el, {
+      return await toPng(el, {
         backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        logging: false,
+        pixelRatio: 2,
+        width,
+        height,
+        cacheBust: true,
+        skipFonts: true,
+        style: { transform: "none" },
       });
-      return canvas.toDataURL("image/png");
     } catch (e) {
-      console.warn("captureChart failed", e);
+      console.warn("toPng failed, intentando con SVG directo:", e);
+    }
+    // Fallback: serializar el primer SVG dentro del contenedor manualmente
+    try {
+      const svg = el.querySelector("svg");
+      if (!svg) return null;
+      const clone = svg.cloneNode(true) as SVGElement;
+      const w = svg.clientWidth || width;
+      const h = svg.clientHeight || height;
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.setAttribute("width", String(w));
+      clone.setAttribute("height", String(h));
+      const xml = new XMLSerializer().serializeToString(clone);
+      const svgBase64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      const dataUrl = await new Promise<string | null>((resolve) => {
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = w * 2;
+          canvas.height = h * 2;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(null);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.scale(2, 2);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = svgBase64;
+      });
+      return dataUrl;
+    } catch (e) {
+      console.warn("captureChart fallback failed", e);
       return null;
     }
   };
