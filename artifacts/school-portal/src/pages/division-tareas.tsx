@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Users, Shuffle, Plus, Trash2, Download, Search, Sparkles,
   UserCheck, AlertTriangle, CheckCircle2,
@@ -101,47 +101,17 @@ export default function DivisionTareas() {
   const [excluirSubidas, setExcluirSubidas] = useState(true);
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000));
 
-  // Workers (compañeros) — persistidos en localStorage
-  const [workers, setWorkers] = useState<Worker[]>(() => {
-    try {
-      const raw = localStorage.getItem("divisionTareas:workers");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [
-      { id: newId(), nombre: "Giovanni", monto: 56 },
-      { id: newId(), nombre: "Valery",   monto: 56 },
-    ];
-  });
+  // Estado compartido entre todos los usuarios (persistido en el servidor).
+  const [workers, setWorkers] = useState<Worker[]>([
+    { id: newId(), nombre: "Giovanni", monto: 56 },
+    { id: newId(), nombre: "Valery",   monto: 56 },
+  ]);
+  const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>({});
+  const [sobrantes, setSobrantes] = useState<DocenteUnit[]>([]);
+  const [marcadosSubidos, setMarcadosSubidos] = useState<Set<string>>(new Set());
+  const [hydrated, setHydrated] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  // Resultado (cada compañero recibe DOCENTES completos, no planillas sueltas)
-  const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>(() => {
-    try {
-      const raw = localStorage.getItem("divisionTareas:asignaciones");
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return {};
-  });
-  const [sobrantes, setSobrantes] = useState<DocenteUnit[]>(() => {
-    try {
-      const raw = localStorage.getItem("divisionTareas:sobrantes");
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return [];
-  });
-  // Marcas manuales de "subido" por docente (persistidas)
-  const [marcadosSubidos, setMarcadosSubidos] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem("divisionTareas:marcadosSubidos");
-      if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) return new Set(arr);
-      }
-    } catch {}
-    return new Set();
-  });
   const toggleSubido = (docenteKey: string) => {
     setMarcadosSubidos(prev => {
       const next = new Set(prev);
@@ -152,19 +122,100 @@ export default function DivisionTareas() {
   };
   const [search, setSearch] = useState("");
 
-  // Persistir cambios automáticamente
+  // --- Sincronización compartida (multiusuario) ---
+  const lastSavedJsonRef = useRef<string>("");
+  const lastUpdatedAtRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+  const SHARED_URL = `${apiBase}/api/shared-state/divisionTareas`;
+
+  const applyServerPayload = (payload: any) => {
+    if (!payload || typeof payload !== "object") return;
+    if (Array.isArray(payload.workers)) setWorkers(payload.workers);
+    if (payload.asignaciones && typeof payload.asignaciones === "object") setAsignaciones(payload.asignaciones);
+    if (Array.isArray(payload.sobrantes)) setSobrantes(payload.sobrantes);
+    if (Array.isArray(payload.marcadosSubidos)) setMarcadosSubidos(new Set(payload.marcadosSubidos));
+  };
+
+  // Carga inicial desde el servidor
   useEffect(() => {
-    try { localStorage.setItem("divisionTareas:workers", JSON.stringify(workers)); } catch {}
-  }, [workers]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(SHARED_URL, { credentials: "include" });
+        if (r.ok) {
+          const data = await r.json();
+          if (!cancelled && data?.value) {
+            applyServerPayload(data.value);
+            lastSavedJsonRef.current = JSON.stringify(data.value);
+            lastUpdatedAtRef.current = data.updatedAt || null;
+          }
+        }
+      } catch {}
+      if (!cancelled) setHydrated(true);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persistir cambios al servidor (debounce)
   useEffect(() => {
-    try { localStorage.setItem("divisionTareas:asignaciones", JSON.stringify(asignaciones)); } catch {}
-  }, [asignaciones]);
+    if (!hydrated) return;
+    const payload = {
+      workers,
+      asignaciones,
+      sobrantes,
+      marcadosSubidos: [...marcadosSubidos],
+    };
+    const json = JSON.stringify(payload);
+    if (json === lastSavedJsonRef.current) return;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(async () => {
+      try {
+        setSyncing(true);
+        const r = await fetch(SHARED_URL, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: payload }),
+        });
+        if (r.ok) {
+          const data = await r.json();
+          lastSavedJsonRef.current = json;
+          lastUpdatedAtRef.current = data?.updatedAt || lastUpdatedAtRef.current;
+        }
+      } catch {} finally { setSyncing(false); }
+    }, 600);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [hydrated, workers, asignaciones, sobrantes, marcadosSubidos, SHARED_URL]);
+
+  // Polling: refrescar cambios hechos por otros usuarios
   useEffect(() => {
-    try { localStorage.setItem("divisionTareas:sobrantes", JSON.stringify(sobrantes)); } catch {}
-  }, [sobrantes]);
-  useEffect(() => {
-    try { localStorage.setItem("divisionTareas:marcadosSubidos", JSON.stringify([...marcadosSubidos])); } catch {}
-  }, [marcadosSubidos]);
+    if (!hydrated) return;
+    const id = window.setInterval(async () => {
+      if (saveTimerRef.current) return; // pendiente de guardar lo nuestro
+      if (document.hidden) return;
+      try {
+        const r = await fetch(SHARED_URL, { credentials: "include" });
+        if (!r.ok) return;
+        const data = await r.json();
+        const updatedAt = data?.updatedAt || null;
+        if (updatedAt && updatedAt === lastUpdatedAtRef.current) return;
+        const newJson = JSON.stringify(data?.value ?? null);
+        if (newJson === lastSavedJsonRef.current) {
+          lastUpdatedAtRef.current = updatedAt;
+          return;
+        }
+        if (data?.value) {
+          applyServerPayload(data.value);
+          lastSavedJsonRef.current = newJson;
+          lastUpdatedAtRef.current = updatedAt;
+        }
+      } catch {}
+    }, 4000);
+    return () => window.clearInterval(id);
+  }, [hydrated, SHARED_URL]);
 
   useEffect(() => {
     (async () => {

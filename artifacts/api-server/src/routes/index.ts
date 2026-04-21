@@ -20,6 +20,7 @@ import delegadosRouter from "./delegados.js";
 import asistenciaRouter from "./asistencia.js";
 import asistenciaPlanillasRouter from "./asistencia-planillas.js";
 import studentProblemsRouter from "./student-problems.js";
+import sharedStateRouter from "./shared-state.js";
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use("/delegados", delegadosRouter);
 router.use("/asistencia", asistenciaRouter);
 router.use("/asistencia-planillas", asistenciaPlanillasRouter);
 router.use("/student-problems", studentProblemsRouter);
+router.use("/shared-state", sharedStateRouter);
 
 export default router;

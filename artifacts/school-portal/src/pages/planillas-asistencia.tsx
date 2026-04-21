@@ -674,6 +674,15 @@ export default function PlanillasAsistencia() {
     })();
   }, []);
 
+  // Polling: refrescar planillas subidas por otros usuarios cada 6s
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      loadUploaded();
+    }, 6000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const teachers = useMemo(() => {
     type V = {
       count: number;
