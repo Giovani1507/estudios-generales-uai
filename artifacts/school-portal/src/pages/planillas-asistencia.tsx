@@ -667,19 +667,31 @@ export default function PlanillasAsistencia() {
   }, []);
 
   const teachers = useMemo(() => {
-    const map = new Map<string, { count: number; carreras: Set<string>; sedes: Set<Sede>; dias: Set<typeof DIAS[number]> }>();
+    type V = {
+      count: number;
+      carreras: Set<string>;
+      sedes: Set<Sede>;
+      dias: Set<typeof DIAS[number]>;
+      // Pares reales sede|día (para que sede + día se filtren coherentemente)
+      pares: Set<string>;
+    };
+    const map = new Map<string, V>();
     for (const r of data) {
       // Solo ciclos 1 y 2
       if (String(r.ciclo) !== "1" && String(r.ciclo) !== "2") continue;
       const k = r.docente?.toUpperCase().trim();
       if (!k) continue;
-      if (!map.has(k)) map.set(k, { count: 0, carreras: new Set(), sedes: new Set(), dias: new Set() });
+      if (!map.has(k)) map.set(k, { count: 0, carreras: new Set(), sedes: new Set(), dias: new Set(), pares: new Set() });
       const v = map.get(k)!;
       v.count++;
       v.carreras.add(r.carrera);
-      v.sedes.add(sedeFromLocal(r.local));
+      const sede = sedeFromLocal(r.local);
+      v.sedes.add(sede);
       const d = normDia(r.dia);
-      if (d) v.dias.add(d);
+      if (d) {
+        v.dias.add(d);
+        v.pares.add(`${sede}|${d}`);
+      }
     }
     return Array.from(map.entries())
       .map(([n, v]) => ({
@@ -687,16 +699,26 @@ export default function PlanillasAsistencia() {
         carreras: Array.from(v.carreras),
         sedes: Array.from(v.sedes),
         dias: Array.from(v.dias),
+        pares: v.pares,
       }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [data]);
 
-  // Conteo de docentes por día (para mostrar en pills)
+  // Conteo de docentes por día (para mostrar en pills) — respeta sede seleccionada
   const conteoPorDia = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of teachers) {
       if (sedeFiltro !== "TODAS" && !t.sedes.includes(sedeFiltro)) continue;
-      for (const d of t.dias) m.set(d, (m.get(d) || 0) + 1);
+      const diasValidos = new Set<string>();
+      if (sedeFiltro === "TODAS") {
+        for (const d of t.dias) diasValidos.add(d);
+      } else {
+        for (const p of t.pares) {
+          const [s, d] = p.split("|");
+          if (s === sedeFiltro) diasValidos.add(d);
+        }
+      }
+      for (const d of diasValidos) m.set(d, (m.get(d) || 0) + 1);
     }
     return m;
   }, [teachers, sedeFiltro]);
@@ -705,7 +727,13 @@ export default function PlanillasAsistencia() {
     const q = search.toLowerCase();
     return teachers.filter((t) => {
       if (sedeFiltro !== "TODAS" && !t.sedes.includes(sedeFiltro)) return false;
-      if (diaFiltro !== "TODOS" && !t.dias.includes(diaFiltro)) return false;
+      if (diaFiltro !== "TODOS") {
+        if (sedeFiltro === "TODAS") {
+          if (!t.dias.includes(diaFiltro)) return false;
+        } else {
+          if (!t.pares.has(`${sedeFiltro}|${diaFiltro}`)) return false;
+        }
+      }
       if (q && !t.nombre.toLowerCase().includes(q)) return false;
       return true;
     });
