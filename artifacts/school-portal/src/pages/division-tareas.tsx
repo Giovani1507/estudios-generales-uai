@@ -40,6 +40,19 @@ type DocenteUnit = {
   planillas: Unidad[];
 };
 
+const normDia = (d?: string | null): string => {
+  const x = (d || "").toUpperCase().trim()
+    .replace(/Á/g, "A").replace(/É/g, "E").replace(/Í/g, "I").replace(/Ó/g, "O").replace(/Ú/g, "U");
+  if (x.startsWith("LUN")) return "LUNES";
+  if (x.startsWith("MAR")) return "MARTES";
+  if (x.startsWith("MIE")) return "MIÉRCOLES";
+  if (x.startsWith("JUE")) return "JUEVES";
+  if (x.startsWith("VIE")) return "VIERNES";
+  if (x.startsWith("SAB")) return "SÁBADO";
+  if (x.startsWith("DOM")) return "DOMINGO";
+  return "";
+};
+
 const sedeNorm = (v?: string | null) => {
   const s = (v || "").toUpperCase().trim();
   if (s === "PRINCIPAL" || s === "ICA" || s === "") return "SEDE";
@@ -161,7 +174,7 @@ export default function DivisionTareas() {
     if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
     if (ciclosF.size > 0) base = base.filter(u => ciclosF.has(String(u.ciclo).trim()));
-    if (diaF !== "TODOS") base = base.filter(u => (u.dia || "").toUpperCase().trim() === diaF);
+    if (diaF !== "TODOS") base = base.filter(u => normDia(u.dia) === diaF);
     if (excluirSubidas && yaSubidas.size > 0) base = base.filter(u => !yaSubidas.has(u.key));
     return base;
   }, [unidades, sedeF, facultadF, ciclosF, diaF, excluirSubidas, yaSubidas]);
