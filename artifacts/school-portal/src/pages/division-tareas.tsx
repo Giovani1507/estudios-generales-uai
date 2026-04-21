@@ -55,8 +55,12 @@ const normDia = (d?: string | null): string => {
 
 const sedeNorm = (v?: string | null) => {
   const s = (v || "").toUpperCase().trim();
-  if (s === "PRINCIPAL" || s === "ICA" || s === "") return "SEDE";
-  return s;
+  if (s === "PRINCIPAL" || s === "SEDE" || s === "ICA" || s === "") return "SEDE";
+  if (s === "FILIAL" || s === "CHINCHA") return "FILIAL";
+  if (s === "SUNAMPE") return "SUNAMPE";
+  if (s === "HUAURA") return "HUAURA";
+  if (s === "PORUMA") return "PORUMA";
+  return "SEDE";
 };
 
 const COLORES_WORKER = [
