@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Loader2, Users, Shuffle, Plus, Trash2, Download, Search, Sparkles,
-  UserCheck, AlertTriangle,
+  UserCheck, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import { Input } from "@/components/ui/input";
@@ -131,6 +131,25 @@ export default function DivisionTareas() {
     } catch {}
     return [];
   });
+  // Marcas manuales de "subido" por docente (persistidas)
+  const [marcadosSubidos, setMarcadosSubidos] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("divisionTareas:marcadosSubidos");
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return new Set(arr);
+      }
+    } catch {}
+    return new Set();
+  });
+  const toggleSubido = (docenteKey: string) => {
+    setMarcadosSubidos(prev => {
+      const next = new Set(prev);
+      if (next.has(docenteKey)) next.delete(docenteKey);
+      else next.add(docenteKey);
+      return next;
+    });
+  };
   const [search, setSearch] = useState("");
 
   // Persistir cambios automáticamente
@@ -143,6 +162,9 @@ export default function DivisionTareas() {
   useEffect(() => {
     try { localStorage.setItem("divisionTareas:sobrantes", JSON.stringify(sobrantes)); } catch {}
   }, [sobrantes]);
+  useEffect(() => {
+    try { localStorage.setItem("divisionTareas:marcadosSubidos", JSON.stringify([...marcadosSubidos])); } catch {}
+  }, [marcadosSubidos]);
 
   useEffect(() => {
     (async () => {
@@ -552,14 +574,31 @@ export default function DivisionTareas() {
                       <div className="py-6 text-center text-muted-foreground text-xs">Sin resultados</div>
                     ) : (
                       <div className="divide-y divide-border/40">
-                        {lista.map((d, i) => (
-                          <div key={d.key} className="px-3 py-2 hover:bg-slate-50/60">
+                        {lista.map((d, i) => {
+                          const subido = marcadosSubidos.has(d.key);
+                          return (
+                          <div key={d.key} className={`px-3 py-2 transition-colors ${subido ? "bg-emerald-50 hover:bg-emerald-100/70" : "hover:bg-slate-50/60"}`}>
                             <div className="flex items-center justify-between gap-2 mb-1">
                               <div className="flex items-center gap-2 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSubido(d.key)}
+                                  title={subido ? "Marcado como subido (clic para desmarcar)" : "Marcar como subido"}
+                                  className={`shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                    subido
+                                      ? "bg-emerald-600 border-emerald-600 text-white"
+                                      : "bg-white border-slate-300 text-transparent hover:border-emerald-500 hover:text-emerald-300"
+                                  }`}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                </button>
                                 <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{i + 1}.</span>
-                                <span className="text-xs font-bold text-[#001f5f] truncate">{d.docente}</span>
+                                <span className={`text-xs font-bold truncate ${subido ? "text-emerald-800 line-through decoration-emerald-400/60" : "text-[#001f5f]"}`}>{d.docente}</span>
                               </div>
-                              <Badge variant="secondary" className="text-[10px] shrink-0">{d.planillas.length} cursos</Badge>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {subido && <Badge className="bg-emerald-600 text-white border-0 text-[10px]">SUBIDO</Badge>}
+                                <Badge variant="secondary" className="text-[10px]">{d.planillas.length} cursos</Badge>
+                              </div>
                             </div>
                             <div className="pl-8 space-y-0.5">
                               {d.planillas.map(u => (
@@ -573,7 +612,8 @@ export default function DivisionTareas() {
                               ))}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
