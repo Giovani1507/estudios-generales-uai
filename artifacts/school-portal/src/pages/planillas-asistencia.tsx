@@ -66,6 +66,14 @@ const XLEFT = { horizontal: "left" as const, vertical: "middle" as const, wrapTe
 const XTHIN: Partial<ExcelJS.Borders> = {
   top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" },
 };
+// Convierte secciones con grupo (A1, A2, B1) a su sección base (A, B).
+// Mantiene secciones simples (A, B) o no estándar tal cual.
+const baseSeccion = (s: string | null | undefined): string => {
+  const t = String(s || "").trim().toUpperCase();
+  const m = t.match(/^([A-Z]+)\d+$/);
+  return m ? m[1] : t;
+};
+
 const xsanitize = (s: string) =>
   (s || "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() || "SIN_NOMBRE";
 
@@ -422,7 +430,7 @@ export default function PlanillasAsistencia() {
       const match = list.find(p =>
         (p.docente || "").toUpperCase().trim() === (selected || "").toUpperCase().trim() &&
         (p.codigoCurso || "").trim() === c.codigo &&
-        (p.seccion || "").trim() === c.seccion
+        baseSeccion(p.seccion) === c.seccion
       );
       let planilla: PlanillaDetalle | null = null;
       if (match) {
@@ -485,7 +493,7 @@ export default function PlanillasAsistencia() {
         `${(d||"").toUpperCase().trim()}|${(c||"").trim()}|${(s||"").trim()}`;
       const planillaMap = new Map<string, typeof planillas[number]>();
       for (const p of planillas) {
-        planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", p.seccion||""), p);
+        planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", baseSeccion(p.seccion)), p);
       }
 
       const sanitize = xsanitize;
@@ -634,7 +642,7 @@ export default function PlanillasAsistencia() {
       const cnt = new Map<string, number>();
       for (const p of list) {
         if (!p.docente || !p.codigoCurso) continue;
-        const k = `${p.docente.toUpperCase().trim()}|${p.codigoCurso.trim()}|${p.seccion || ""}`;
+        const k = `${p.docente.toUpperCase().trim()}|${p.codigoCurso.trim()}|${baseSeccion(p.seccion)}`;
         set.add(k);
         const dk = p.docente.toUpperCase().trim();
         cnt.set(dk, (cnt.get(dk) || 0) + 1);
@@ -764,8 +772,9 @@ export default function PlanillasAsistencia() {
     );
     const map = new Map<string, Row & { sesiones: number }>();
     for (const r of rows) {
-      const k = `${r.codigo}|${r.seccion}|${r.carrera}|${r.ciclo}`;
-      if (!map.has(k)) map.set(k, { ...r, sesiones: 0 });
+      const secBase = baseSeccion(r.seccion);
+      const k = `${r.codigo}|${secBase}|${r.carrera}|${r.ciclo}`;
+      if (!map.has(k)) map.set(k, { ...r, seccion: secBase, sesiones: 0 });
       map.get(k)!.sesiones++;
     }
     return Array.from(map.values()).sort((a, b) => {
