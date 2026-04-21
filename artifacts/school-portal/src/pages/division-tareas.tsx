@@ -73,6 +73,8 @@ export default function DivisionTareas() {
   // Filtros
   const [sedeF, setSedeF] = useState<string>("TODAS");
   const [facultadF, setFacultadF] = useState<"TODAS" | "FCS" | "FICA">("TODAS");
+  const [ciclosF, setCiclosF] = useState<Set<string>>(new Set(["1", "2"]));
+  const [diaF, setDiaF] = useState<string>("TODOS");
   const [excluirSubidas, setExcluirSubidas] = useState(true);
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000));
 
@@ -152,9 +154,11 @@ export default function DivisionTareas() {
     let base = unidades;
     if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
+    if (ciclosF.size > 0) base = base.filter(u => ciclosF.has(String(u.ciclo).trim()));
+    if (diaF !== "TODOS") base = base.filter(u => (u.dia || "").toUpperCase().trim() === diaF);
     if (excluirSubidas && yaSubidas.size > 0) base = base.filter(u => !yaSubidas.has(u.key));
     return base;
-  }, [unidades, sedeF, facultadF, excluirSubidas, yaSubidas]);
+  }, [unidades, sedeF, facultadF, ciclosF, diaF, excluirSubidas, yaSubidas]);
 
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
@@ -329,6 +333,24 @@ export default function DivisionTareas() {
         <div className="flex flex-wrap items-center gap-3">
           <PillGroup label="Sede" value={sedeF} onChange={setSedeF} options={["TODAS", ...sedes]} />
           <PillGroup label="Facultad" value={facultadF} onChange={(v) => setFacultadF(v as "TODAS" | "FCS" | "FICA")} options={["TODAS", "FCS", "FICA"]} />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ciclo:</span>
+            {["1","2","3","4","5","6","7","8","9","10"].map(c => {
+              const active = ciclosF.has(c);
+              return (
+                <button key={c} type="button" onClick={() => {
+                  setCiclosF(prev => {
+                    const n = new Set(prev);
+                    if (n.has(c)) n.delete(c); else n.add(c);
+                    return n;
+                  });
+                }} className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border transition ${active ? "bg-[#001f5f] text-white border-[#001f5f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+          <PillGroup label="Día" value={diaF} onChange={setDiaF} options={["TODOS","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"]} />
           <label className="flex items-center gap-1.5 text-xs ml-2 cursor-pointer select-none">
             <input type="checkbox" checked={excluirSubidas} onChange={(e) => setExcluirSubidas(e.target.checked)} />
             Excluir las que <b>ya están subidas</b>
