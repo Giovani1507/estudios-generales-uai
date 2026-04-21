@@ -74,7 +74,6 @@ export default function DivisionTareas() {
   const [sedeF, setSedeF] = useState<string>("TODAS");
   const [facultadF, setFacultadF] = useState<"TODAS" | "FCS" | "FICA">("TODAS");
   const [excluirSubidas, setExcluirSubidas] = useState(true);
-  const [tipoUnidad, setTipoUnidad] = useState<"PLANILLA" | "DOCENTE">("PLANILLA");
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000));
 
   // Workers (compañeros)
@@ -154,20 +153,8 @@ export default function DivisionTareas() {
     if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
     if (excluirSubidas && yaSubidas.size > 0) base = base.filter(u => !yaSubidas.has(u.key));
-
-    if (tipoUnidad === "DOCENTE") {
-      // Una unidad por docente único en el subconjunto filtrado
-      const seen = new Set<string>();
-      const out: Unidad[] = [];
-      for (const u of base) {
-        if (seen.has(u.docente)) continue;
-        seen.add(u.docente);
-        out.push(u);
-      }
-      return out;
-    }
     return base;
-  }, [unidades, sedeF, facultadF, excluirSubidas, yaSubidas, tipoUnidad]);
+  }, [unidades, sedeF, facultadF, excluirSubidas, yaSubidas]);
 
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
@@ -243,7 +230,7 @@ export default function DivisionTareas() {
     resumen.getRow(1).values = ["DIVISIÓN DE TAREAS · 2026-1"];
     resumen.getRow(1).font = { bold: true, size: 14, color: { argb: "FF001F5F" } };
     resumen.mergeCells(1, 1, 1, 3);
-    resumen.getRow(2).values = [`Sede: ${sedeF}   ·   Facultad: ${facultadF}   ·   Tipo: ${tipoUnidad === "PLANILLA" ? "Planillas (curso/sección)" : "Docente único"}`];
+    resumen.getRow(2).values = [`Sede: ${sedeF}   ·   Facultad: ${facultadF}`];
     resumen.mergeCells(2, 1, 2, 3);
     resumen.getRow(4).values = ["Compañero", "Asignados", "Solicitados"];
     resumen.getRow(4).eachCell(c => {
@@ -342,7 +329,6 @@ export default function DivisionTareas() {
         <div className="flex flex-wrap items-center gap-3">
           <PillGroup label="Sede" value={sedeF} onChange={setSedeF} options={["TODAS", ...sedes]} />
           <PillGroup label="Facultad" value={facultadF} onChange={(v) => setFacultadF(v as "TODAS" | "FCS" | "FICA")} options={["TODAS", "FCS", "FICA"]} />
-          <PillGroup label="Tipo" value={tipoUnidad} onChange={(v) => setTipoUnidad(v as "PLANILLA" | "DOCENTE")} options={["PLANILLA", "DOCENTE"]} labelMap={{ PLANILLA: "Por planilla (curso/sec)", DOCENTE: "Por docente único" }} />
           <label className="flex items-center gap-1.5 text-xs ml-2 cursor-pointer select-none">
             <input type="checkbox" checked={excluirSubidas} onChange={(e) => setExcluirSubidas(e.target.checked)} />
             Excluir las que <b>ya están subidas</b>
@@ -458,12 +444,13 @@ export default function DivisionTareas() {
                           <th className="px-2 py-1.5 text-left">Docente</th>
                           <th className="px-2 py-1.5 text-left">Curso</th>
                           <th className="px-2 py-1.5 text-center">Sec</th>
+                          <th className="px-2 py-1.5 text-center">Día</th>
                           <th className="px-2 py-1.5 text-center">Sede</th>
                         </tr>
                       </thead>
                       <tbody>
                         {lista.length === 0 && (
-                          <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Sin resultados</td></tr>
+                          <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Sin resultados</td></tr>
                         )}
                         {lista.map((u, i) => (
                           <tr key={u.key} className="border-t border-border/30 hover:bg-slate-50/60">
@@ -474,6 +461,10 @@ export default function DivisionTareas() {
                               <div className="text-[10px] text-muted-foreground font-mono">{u.codigo} · {u.carrera}</div>
                             </td>
                             <td className="px-2 py-1.5 text-center font-semibold">C{u.ciclo}-{u.seccion}</td>
+                            <td className="px-2 py-1.5 text-center">
+                              <div className="text-[11px] font-semibold text-[#001f5f]">{u.dia || "—"}</div>
+                              {u.hora && <div className="text-[10px] text-muted-foreground">{u.hora}</div>}
+                            </td>
                             <td className="px-2 py-1.5 text-center">
                               <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-semibold">{u.sede}</span>
                             </td>
@@ -502,6 +493,7 @@ export default function DivisionTareas() {
                       <th className="px-2 py-1.5 text-left">Docente</th>
                       <th className="px-2 py-1.5 text-left">Curso</th>
                       <th className="px-2 py-1.5 text-center">Sec</th>
+                      <th className="px-2 py-1.5 text-center">Día</th>
                       <th className="px-2 py-1.5 text-center">Sede</th>
                     </tr>
                   </thead>
@@ -511,6 +503,7 @@ export default function DivisionTareas() {
                         <td className="px-2 py-1.5">{u.docente}</td>
                         <td className="px-2 py-1.5">{u.curso} <span className="text-muted-foreground">({u.codigo})</span></td>
                         <td className="px-2 py-1.5 text-center">C{u.ciclo}-{u.seccion}</td>
+                        <td className="px-2 py-1.5 text-center">{u.dia} {u.hora && <span className="text-muted-foreground">{u.hora}</span>}</td>
                         <td className="px-2 py-1.5 text-center">{u.sede}</td>
                       </tr>
                     ))}
