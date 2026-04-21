@@ -278,15 +278,22 @@ export default function DivisionTareas() {
 
   const sedes = useMemo(() => Array.from(new Set(unidades.map(u => u.sede))).sort(), [unidades]);
 
-  const candidatos = useMemo(() => {
+  // Candidatos sin aplicar el filtro de "ya subidas" (para mostrar el total real)
+  const candidatosTotales = useMemo(() => {
     let base = unidades;
     if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
     if (ciclosF.size > 0) base = base.filter(u => ciclosF.has(String(u.ciclo).trim()));
     if (diaF !== "TODOS") base = base.filter(u => normDia(u.dia) === diaF);
-    if (excluirSubidas && yaSubidas.size > 0) base = base.filter(u => !yaSubidas.has(u.key));
     return base;
-  }, [unidades, sedeF, facultadF, ciclosF, diaF, excluirSubidas, yaSubidas]);
+  }, [unidades, sedeF, facultadF, ciclosF, diaF]);
+
+  const candidatos = useMemo(() => {
+    if (excluirSubidas && yaSubidas.size > 0) {
+      return candidatosTotales.filter(u => !yaSubidas.has(u.key));
+    }
+    return candidatosTotales;
+  }, [candidatosTotales, excluirSubidas, yaSubidas]);
 
   // Agrupa las planillas por DOCENTE único. Cada DocenteUnit es 1 "persona" a repartir.
   const docentesCandidatos = useMemo<DocenteUnit[]>(() => {
@@ -297,6 +304,13 @@ export default function DivisionTareas() {
     }
     return Array.from(m.values()).sort((a, b) => a.docente.localeCompare(b.docente));
   }, [candidatos]);
+
+  // Total de docentes (sin excluir los ya subidos) — coincide con el conteo de la página de Asistencia.
+  const totalDocentesAll = useMemo(() => {
+    const set = new Set<string>();
+    for (const u of candidatosTotales) set.add(u.docente);
+    return set.size;
+  }, [candidatosTotales]);
 
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
@@ -511,9 +525,12 @@ export default function DivisionTareas() {
             Excluir las que <b>ya están subidas</b>
           </label>
           <div className="ml-auto flex items-center gap-2">
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className="gap-1" title={excluirSubidas && totalDocentesAll !== docentesCandidatos.length ? `Hay ${totalDocentesAll} docentes en total con estos filtros; ${totalDocentesAll - docentesCandidatos.length} ya tienen toda su asistencia subida y se excluyen del reparto.` : undefined}>
               <UserCheck className="h-3.5 w-3.5" />
               {docentesCandidatos.length} docentes
+              {excluirSubidas && totalDocentesAll !== docentesCandidatos.length && (
+                <span className="text-muted-foreground font-normal"> de {totalDocentesAll}</span>
+              )}
             </Badge>
             <Badge variant="outline" className="gap-1 text-[10px]">
               {candidatos.length} planillas
