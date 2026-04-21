@@ -34,6 +34,12 @@ type Unidad = {
 
 type Worker = { id: string; nombre: string; monto: number };
 
+type DocenteUnit = {
+  key: string;          // docente (normalizado)
+  docente: string;
+  planillas: Unidad[];
+};
+
 const sedeNorm = (v?: string | null) => {
   const s = (v || "").toUpperCase().trim();
   if (s === "PRINCIPAL" || s === "ICA" || s === "") return "SEDE";
@@ -84,9 +90,9 @@ export default function DivisionTareas() {
     { id: newId(), nombre: "Valery",   monto: 56 },
   ]);
 
-  // Resultado
-  const [asignaciones, setAsignaciones] = useState<Record<string, Unidad[]>>({});
-  const [sobrantes, setSobrantes] = useState<Unidad[]>([]);
+  // Resultado (cada compañero recibe DOCENTES completos, no planillas sueltas)
+  const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>({});
+  const [sobrantes, setSobrantes] = useState<DocenteUnit[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -160,6 +166,16 @@ export default function DivisionTareas() {
     return base;
   }, [unidades, sedeF, facultadF, ciclosF, diaF, excluirSubidas, yaSubidas]);
 
+  // Agrupa las planillas por DOCENTE único. Cada DocenteUnit es 1 "persona" a repartir.
+  const docentesCandidatos = useMemo<DocenteUnit[]>(() => {
+    const m = new Map<string, DocenteUnit>();
+    for (const u of candidatos) {
+      if (!m.has(u.docente)) m.set(u.docente, { key: u.docente, docente: u.docente, planillas: [] });
+      m.get(u.docente)!.planillas.push(u);
+    }
+    return Array.from(m.values()).sort((a, b) => a.docente.localeCompare(b.docente));
+  }, [candidatos]);
+
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
 
@@ -173,8 +189,9 @@ export default function DivisionTareas() {
   const balanceAuto = () => {
     if (workers.length === 0) return;
     const n = workers.length;
-    const base = Math.floor(candidatos.length / n);
-    const rest = candidatos.length - base * n;
+    const total = docentesCandidatos.length;
+    const base = Math.floor(total / n);
+    const rest = total - base * n;
     setWorkers(ws => ws.map((w, i) => ({ ...w, monto: base + (i < rest ? 1 : 0) })));
   };
 
@@ -193,17 +210,17 @@ export default function DivisionTareas() {
       toast({ title: "Cantidad inválida", description: "Indica cuántos a cada uno (>0).", variant: "destructive" });
       return;
     }
-    if (totalReq > candidatos.length) {
+    if (totalReq > docentesCandidatos.length) {
       toast({
         title: "No alcanzan",
-        description: `Pediste ${totalReq} pero solo hay ${candidatos.length} disponibles. Ajusta los montos o quita el filtro de "ya subidas".`,
+        description: `Pediste ${totalReq} pero solo hay ${docentesCandidatos.length} docentes disponibles. Ajusta los montos o quita el filtro de "ya subidas".`,
         variant: "destructive",
       });
       return;
     }
 
-    const pool = seededShuffle(candidatos, seed);
-    const out: Record<string, Unidad[]> = {};
+    const pool = seededShuffle(docentesCandidatos, seed);
+    const out: Record<string, DocenteUnit[]> = {};
     let cursor = 0;
     for (const w of workers) {
       const n = Math.max(0, Math.floor(w.monto || 0));
@@ -213,9 +230,10 @@ export default function DivisionTareas() {
     const sob = pool.slice(cursor);
     setAsignaciones(out);
     setSobrantes(sob);
+    const totalPlanillas = Object.values(out).reduce((s, arr) => s + arr.reduce((x, d) => x + d.planillas.length, 0), 0);
     toast({
       title: "Reparto listo",
-      description: `${totalReq} unidades asignadas a ${workers.length} persona(s).`,
+      description: `${totalReq} docente(s) asignados · ${totalPlanillas} planillas en total.`,
     });
   };
 
@@ -236,7 +254,8 @@ export default function DivisionTareas() {
     resumen.mergeCells(1, 1, 1, 3);
     resumen.getRow(2).values = [`Sede: ${sedeF}   ·   Facultad: ${facultadF}`];
     resumen.mergeCells(2, 1, 2, 3);
-    resumen.getRow(4).values = ["Compañero", "Asignados", "Solicitados"];
+    resumen.getRow(4).values = ["Compañero", "Docentes", "Planillas", "Solicitados"];
+    resumen.columns = [{ width: 30 }, { width: 12 }, { width: 12 }, { width: 14 }];
     resumen.getRow(4).eachCell(c => {
       c.font = { bold: true, color: { argb: "FFFFFFFF" } };
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
@@ -244,30 +263,43 @@ export default function DivisionTareas() {
     });
     workers.forEach((w, i) => {
       const r = resumen.getRow(5 + i);
+      const lista = asignaciones[w.id] || [];
       r.getCell(1).value = w.nombre;
-      r.getCell(2).value = (asignaciones[w.id] || []).length;
-      r.getCell(3).value = w.monto;
+      r.getCell(2).value = lista.length;
+      r.getCell(3).value = lista.reduce((s, d) => s + d.planillas.length, 0);
+      r.getCell(4).value = w.monto;
     });
 
-    const writeSheet = (name: string, list: Unidad[]) => {
+    const writeSheet = (name: string, list: DocenteUnit[]) => {
       const ws = wb.addWorksheet(name.slice(0, 30));
       ws.columns = [
         { width: 6 }, { width: 36 }, { width: 12 }, { width: 30 }, { width: 22 },
         { width: 8 }, { width: 8 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 8 },
       ];
-      ws.getRow(1).values = ["N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Día", "Hora"];
+      ws.getRow(1).values = ["Doc N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Día", "Hora"];
       ws.getRow(1).eachCell(c => {
         c.font = { bold: true, color: { argb: "FFFFFFFF" } };
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
         c.alignment = { horizontal: "center", wrapText: true };
         c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
       });
-      list.forEach((u, i) => {
-        const r = ws.getRow(i + 2);
-        r.values = [i + 1, u.docente, u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, u.dia, u.hora];
-        r.eachCell(c => {
-          c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-          c.font = { size: 10 };
+      let row = 2;
+      list.forEach((d, docIdx) => {
+        d.planillas.forEach((u, i) => {
+          const r = ws.getRow(row++);
+          r.values = [
+            i === 0 ? docIdx + 1 : "",
+            i === 0 ? d.docente : "",
+            u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, u.dia, u.hora,
+          ];
+          r.eachCell(c => {
+            c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+            c.font = { size: 10 };
+          });
+          if (i === 0) {
+            r.getCell(1).font = { size: 10, bold: true };
+            r.getCell(2).font = { size: 10, bold: true };
+          }
         });
       });
     };
@@ -294,12 +326,13 @@ export default function DivisionTareas() {
     );
   }
 
-  const filtroBusqueda = (list: Unidad[]) => {
+  const filtroBusqueda = (list: DocenteUnit[]) => {
     const q = search.toLowerCase().trim();
     if (!q) return list;
-    return list.filter(u =>
-      `${u.docente} ${u.curso} ${u.codigo} ${u.carrera} ${u.seccion} ${u.sede}`.toLowerCase().includes(q)
-    );
+    return list.filter(d => {
+      const hay = `${d.docente} ${d.planillas.map(u => `${u.curso} ${u.codigo} ${u.carrera} ${u.seccion} ${u.sede}`).join(" ")}`;
+      return hay.toLowerCase().includes(q);
+    });
   };
 
   return (
@@ -358,7 +391,10 @@ export default function DivisionTareas() {
           <div className="ml-auto flex items-center gap-2">
             <Badge variant="outline" className="gap-1">
               <UserCheck className="h-3.5 w-3.5" />
-              {candidatos.length} disponibles
+              {docentesCandidatos.length} docentes
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-[10px]">
+              {candidatos.length} planillas
             </Badge>
             {yaSubidas.size > 0 && (
               <Badge variant="secondary" className="text-[10px]">
@@ -410,7 +446,7 @@ export default function DivisionTareas() {
           </div>
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-border/40">
             <div className="text-xs text-muted-foreground">
-              Total a repartir: <b className={totalSolicitado > candidatos.length ? "text-rose-600" : "text-[#001f5f]"}>{totalSolicitado}</b> / {candidatos.length} disponibles
+              Total a repartir: <b className={totalSolicitado > docentesCandidatos.length ? "text-rose-600" : "text-[#001f5f]"}>{totalSolicitado}</b> docentes / {docentesCandidatos.length} disponibles
             </div>
             <div className="flex gap-2">
               {tieneAsignacion && (
@@ -423,10 +459,10 @@ export default function DivisionTareas() {
               </Button>
             </div>
           </div>
-          {totalSolicitado > candidatos.length && (
+          {totalSolicitado > docentesCandidatos.length && (
             <div className="mt-2 flex items-center gap-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1">
               <AlertTriangle className="h-3.5 w-3.5" />
-              Estás pidiendo más unidades de las que hay disponibles con los filtros actuales.
+              Estás pidiendo más docentes de los que hay disponibles con los filtros actuales.
             </div>
           )}
         </div>
@@ -448,7 +484,8 @@ export default function DivisionTareas() {
             {workers.map((w, idx) => {
               const c = COLORES_WORKER[idx % COLORES_WORKER.length];
               const lista = filtroBusqueda(asignaciones[w.id] || []);
-              const total = (asignaciones[w.id] || []).length;
+              const totalDoc = (asignaciones[w.id] || []).length;
+              const totalPla = (asignaciones[w.id] || []).reduce((s, d) => s + d.planillas.length, 0);
               return (
                 <div key={w.id} className="bg-white rounded-xl border border-border/50 shadow-sm overflow-hidden">
                   <div className={`px-4 py-3 ${c.bg} border-b ${c.border} flex items-center justify-between gap-2`}>
@@ -456,44 +493,40 @@ export default function DivisionTareas() {
                       <span className={`h-3 w-3 rounded-full ${c.dot}`} />
                       <h3 className={`text-sm font-bold ${c.text}`}>{w.nombre || "Sin nombre"}</h3>
                     </div>
-                    <Badge className={`${c.dot} text-white border-0`}>{total} asignadas</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge className={`${c.dot} text-white border-0`}>{totalDoc} docentes</Badge>
+                      <Badge variant="outline" className="text-[10px]">{totalPla} planillas</Badge>
+                    </div>
                   </div>
-                  <div className="max-h-[420px] overflow-auto">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/30 sticky top-0">
-                        <tr>
-                          <th className="px-2 py-1.5 text-center w-8">#</th>
-                          <th className="px-2 py-1.5 text-left">Docente</th>
-                          <th className="px-2 py-1.5 text-left">Curso</th>
-                          <th className="px-2 py-1.5 text-center">Sec</th>
-                          <th className="px-2 py-1.5 text-center">Día</th>
-                          <th className="px-2 py-1.5 text-center">Sede</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {lista.length === 0 && (
-                          <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Sin resultados</td></tr>
-                        )}
-                        {lista.map((u, i) => (
-                          <tr key={u.key} className="border-t border-border/30 hover:bg-slate-50/60">
-                            <td className="px-2 py-1.5 text-center text-muted-foreground">{i + 1}</td>
-                            <td className="px-2 py-1.5 font-medium">{u.docente}</td>
-                            <td className="px-2 py-1.5">
-                              <div className="line-clamp-1">{u.curso}</div>
-                              <div className="text-[10px] text-muted-foreground font-mono">{u.codigo} · {u.carrera}</div>
-                            </td>
-                            <td className="px-2 py-1.5 text-center font-semibold">C{u.ciclo}-{u.seccion}</td>
-                            <td className="px-2 py-1.5 text-center">
-                              <div className="text-[11px] font-semibold text-[#001f5f]">{u.dia || "—"}</div>
-                              {u.hora && <div className="text-[10px] text-muted-foreground">{u.hora}</div>}
-                            </td>
-                            <td className="px-2 py-1.5 text-center">
-                              <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-semibold">{u.sede}</span>
-                            </td>
-                          </tr>
+                  <div className="max-h-[460px] overflow-auto">
+                    {lista.length === 0 ? (
+                      <div className="py-6 text-center text-muted-foreground text-xs">Sin resultados</div>
+                    ) : (
+                      <div className="divide-y divide-border/40">
+                        {lista.map((d, i) => (
+                          <div key={d.key} className="px-3 py-2 hover:bg-slate-50/60">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{i + 1}.</span>
+                                <span className="text-xs font-bold text-[#001f5f] truncate">{d.docente}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-[10px] shrink-0">{d.planillas.length} cursos</Badge>
+                            </div>
+                            <div className="pl-8 space-y-0.5">
+                              {d.planillas.map(u => (
+                                <div key={u.key} className="flex items-start gap-2 text-[11px] leading-tight">
+                                  <span className="font-mono text-muted-foreground shrink-0">{u.codigo}</span>
+                                  <span className="flex-1 truncate">{u.curso}</span>
+                                  <span className="text-[10px] font-semibold text-slate-500 shrink-0">C{u.ciclo}-{u.seccion}</span>
+                                  <span className="text-[10px] text-slate-500 shrink-0">{u.dia}</span>
+                                  <span className="text-[10px] px-1 rounded bg-slate-100 font-semibold shrink-0">{u.sede}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -508,29 +541,26 @@ export default function DivisionTareas() {
                 </h3>
                 <Badge className="bg-amber-500 text-white border-0">{sobrantes.length}</Badge>
               </div>
-              <div className="max-h-[260px] overflow-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/30 sticky top-0">
-                    <tr>
-                      <th className="px-2 py-1.5 text-left">Docente</th>
-                      <th className="px-2 py-1.5 text-left">Curso</th>
-                      <th className="px-2 py-1.5 text-center">Sec</th>
-                      <th className="px-2 py-1.5 text-center">Día</th>
-                      <th className="px-2 py-1.5 text-center">Sede</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtroBusqueda(sobrantes).map((u) => (
-                      <tr key={u.key} className="border-t border-border/30">
-                        <td className="px-2 py-1.5">{u.docente}</td>
-                        <td className="px-2 py-1.5">{u.curso} <span className="text-muted-foreground">({u.codigo})</span></td>
-                        <td className="px-2 py-1.5 text-center">C{u.ciclo}-{u.seccion}</td>
-                        <td className="px-2 py-1.5 text-center">{u.dia} {u.hora && <span className="text-muted-foreground">{u.hora}</span>}</td>
-                        <td className="px-2 py-1.5 text-center">{u.sede}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="max-h-[260px] overflow-auto divide-y divide-border/40">
+                {filtroBusqueda(sobrantes).map((d) => (
+                  <div key={d.key} className="px-3 py-2">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-bold text-amber-800">{d.docente}</span>
+                      <Badge variant="secondary" className="text-[10px]">{d.planillas.length} cursos</Badge>
+                    </div>
+                    <div className="pl-3 space-y-0.5">
+                      {d.planillas.map(u => (
+                        <div key={u.key} className="flex items-start gap-2 text-[11px]">
+                          <span className="font-mono text-muted-foreground">{u.codigo}</span>
+                          <span className="flex-1 truncate">{u.curso}</span>
+                          <span className="text-[10px] font-semibold text-slate-500">C{u.ciclo}-{u.seccion}</span>
+                          <span className="text-[10px] text-slate-500">{u.dia}</span>
+                          <span className="text-[10px] px-1 rounded bg-slate-100 font-semibold">{u.sede}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
