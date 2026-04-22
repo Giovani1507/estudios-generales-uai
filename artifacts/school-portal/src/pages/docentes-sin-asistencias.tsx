@@ -47,7 +47,7 @@ export default function DocentesSinAsistencias() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"PENDIENTES" | "ENVIADOS" | "TODOS">("PENDIENTES");
+  const [filter, setFilter] = useState<"PENDIENTES" | "ENVIADOS" | "TODOS">("TODOS");
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const lastUpdatedAtRef = useRef<string | null>(null);
 
@@ -158,6 +158,15 @@ export default function DocentesSinAsistencias() {
   };
 
   const enviarCorreo = (f: Flag) => {
+    // Si ya está marcado como enviado, solo mostramos confirmación.
+    if (f.correoEnviado) {
+      toast({
+        title: "✉️ Correo ya enviado",
+        description: `Se envió correo al docente ${f.docente}${f.correoEnviadoByName ? ` (registrado por ${f.correoEnviadoByName})` : ""}.`,
+        duration: 5000,
+      });
+      return;
+    }
     const teacher = teacherByName.get(norm(f.docente));
     const email = teacher?.email || "";
     const subject = encodeURIComponent(
@@ -175,11 +184,29 @@ export default function DocentesSinAsistencias() {
         : `El archivo de asistencia subido es idéntico al del periodo anterior, por lo que no se reflejan nuevas marcas. Le pedimos verificar y subir la versión actualizada.\n\n`) +
       `Quedamos atentos.\nCoordinación Académica UAI`
     );
-    if (email) {
-      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    // Abrimos el cliente de correo en una pestaña nueva (más fiable que cambiar
+    // window.location, que podría romper la navegación de la SPA).
+    const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
+    const a = document.createElement("a");
+    a.href = mailto;
+    a.rel = "noopener noreferrer";
+    a.target = "_self";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if (!email) {
+      toast({
+        title: "Sin correo registrado",
+        description: `No hay email guardado para ${f.docente}. Se abrió el correo en blanco.`,
+        variant: "destructive",
+      });
     } else {
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
-      toast({ title: "Sin correo registrado", description: `No hay email guardado para ${f.docente}.`, variant: "destructive" });
+      toast({
+        title: "✉️ Abriendo correo",
+        description: `Se abrió el cliente de correo para ${f.docente} (${email}). Marca el ✓ cuando lo envíes.`,
+        duration: 5000,
+      });
     }
   };
 
