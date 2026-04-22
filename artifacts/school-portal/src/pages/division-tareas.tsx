@@ -509,38 +509,98 @@ export default function DivisionTareas() {
     const writeSheet = (name: string, list: DocenteUnit[]) => {
       const ws = wb.addWorksheet(name.slice(0, 30));
       ws.columns = [
-        { width: 6 }, { width: 36 }, { width: 12 }, { width: 30 }, { width: 22 },
-        { width: 8 }, { width: 8 }, { width: 12 }, { width: 14 }, { width: 38 },
+        { width: 36 }, // Docente / Día
+        { width: 12 }, // Ingreso
+        { width: 12 }, // Salida
+        { width: 16 }, // N° docentes (en filas separadoras)
+        { width: 14 }, // Código
+        { width: 32 }, // Curso
+        { width: 8 },  // Carrera
+        { width: 6 },  // Ciclo
+        { width: 6 },  // Sec
+        { width: 12 }, // Sede
+        { width: 14 }, // Modalidad
       ];
-      ws.getRow(1).values = ["Doc N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Horario"];
-      ws.getRow(1).eachCell(c => {
-        c.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
-        c.alignment = { horizontal: "center", wrapText: true };
-        c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-      });
-      let row = 2;
-      list.forEach((d, docIdx) => {
-        d.planillas.forEach((u, i) => {
-          const r = ws.getRow(row++);
-          const horario = (u.sesiones || []).map(s => `${s.dia}: ${s.hora}${s.horaFin ? ` HASTA LAS ${s.horaFin}` : ""}`).join(" · ")
-                          || `${u.dia}: ${u.hora}${u.horaFin ? ` HASTA LAS ${u.horaFin}` : ""}`;
-          r.values = [
-            i === 0 ? docIdx + 1 : "",
-            i === 0 ? d.docente : "",
-            u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, horario,
-          ];
-          r.alignment = { wrapText: true, vertical: "top" };
-          r.eachCell(c => {
-            c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-            c.font = { size: 10 };
+
+      // Aplanar todas las sesiones (una fila por sesión) y agrupar por día.
+      type Fila = {
+        dia: string; hora: string; horaFin: string;
+        docente: string; codigo: string; curso: string;
+        carrera: string; ciclo: string; seccion: string;
+        sede: string; modalidad: string;
+      };
+      const filas: Fila[] = [];
+      list.forEach(d => {
+        d.planillas.forEach(u => {
+          const ses = (u.sesiones && u.sesiones.length > 0)
+            ? u.sesiones
+            : [{ dia: u.dia, hora: u.hora, horaFin: u.horaFin }];
+          ses.forEach(s => {
+            filas.push({
+              dia: normDia(s.dia),
+              hora: s.hora || "",
+              horaFin: s.horaFin || "",
+              docente: d.docente,
+              codigo: u.codigo,
+              curso: u.curso,
+              carrera: u.carrera,
+              ciclo: u.ciclo,
+              seccion: u.seccion,
+              sede: u.sede,
+              modalidad: u.modalidad,
+            });
           });
-          if (i === 0) {
-            r.getCell(1).font = { size: 10, bold: true };
-            r.getCell(2).font = { size: 10, bold: true };
-          }
         });
       });
+
+      const porDia = new Map<string, Fila[]>();
+      for (const ord of ORDEN_DIAS) porDia.set(ord, []);
+      for (const f of filas) {
+        if (!porDia.has(f.dia)) porDia.set(f.dia, []);
+        porDia.get(f.dia)!.push(f);
+      }
+      for (const arr of porDia.values()) {
+        arr.sort((a, b) => minutosHora(a.hora) - minutosHora(b.hora));
+      }
+
+      let row = 1;
+      const diasOrdenados = [
+        ...ORDEN_DIAS,
+        ...Array.from(porDia.keys()).filter(d => !ORDEN_DIAS.includes(d)),
+      ];
+      for (const dia of diasOrdenados) {
+        const arr = porDia.get(dia) || [];
+        if (arr.length === 0) continue;
+
+        // Fila separadora del día
+        const h = ws.getRow(row++);
+        h.values = [dia, "INGRESO", "SALIDA", `${arr.length} DOCENTES`];
+        h.eachCell(c => {
+          c.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
+          c.alignment = { horizontal: "center", vertical: "middle" };
+          c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+        });
+
+        // Filas de docentes para ese día
+        for (const f of arr) {
+          const dr = ws.getRow(row++);
+          dr.values = [
+            f.docente, f.hora, f.horaFin, "",
+            f.codigo, f.curso, f.carrera, f.ciclo, f.seccion, f.sede, f.modalidad,
+          ];
+          dr.eachCell(c => {
+            c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+            c.font = { size: 10 };
+            c.alignment = { vertical: "top", wrapText: true };
+          });
+          dr.getCell(2).alignment = { horizontal: "center", vertical: "top" };
+          dr.getCell(3).alignment = { horizontal: "center", vertical: "top" };
+        }
+
+        // Fila vacía de separación entre días
+        row++;
+      }
     };
 
     workers.forEach(w => writeSheet(w.nombre || "Sin nombre", asignaciones[w.id] || []));
