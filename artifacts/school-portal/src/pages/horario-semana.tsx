@@ -59,6 +59,22 @@ function toMinutes(h: string) {
   const [hh, mm] = padH(h).split(":").map(Number);
   return hh * 60 + (mm || 0);
 }
+// Normaliza día (sin tildes, MAYÚSCULAS, mapea a uno de DIAS_ORDER)
+function normDia(d: string): string {
+  const s = (d || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  if (s.startsWith("LUN")) return "LUNES";
+  if (s.startsWith("MAR")) return "MARTES";
+  if (s.startsWith("MIE")) return "MIERCOLES";
+  if (s.startsWith("JUE")) return "JUEVES";
+  if (s.startsWith("VIE")) return "VIERNES";
+  if (s.startsWith("SAB")) return "SABADO";
+  if (s.startsWith("DOM")) return "DOMINGO";
+  return s;
+}
+// Normaliza modalidad: MAYÚSCULAS y unifica "Virtual"/"VIRTUAL"
+function normModalidad(m: string): string {
+  return (m || "").toString().toUpperCase().trim();
+}
 
 export default function HorarioSemana() {
   const [allData,   setAllData]   = useState<Row[]>([]);
@@ -67,6 +83,7 @@ export default function HorarioSemana() {
   const [local,     setLocal]     = useState("TODOS");
   const [ciclo,     setCiclo]     = useState("1Y2");
   const [diaFiltro, setDiaFiltro] = useState("TODOS");
+  const [modalidadFiltro, setModalidadFiltro] = useState("TODAS");
   const [search,    setSearch]    = useState("");
 
   useEffect(() => {
@@ -75,9 +92,15 @@ export default function HorarioSemana() {
       fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.json()),
       fetch(`${base}planificacion-fcs-2026-1.json`).then(r  => r.json()),
     ]).then(([fica, fcs]) => {
-      const ficaRows = (fica as Omit<Row, "facultad">[]).map(r => ({ ...r, facultad: "FICA" as const }));
-      const fcsRows  = (fcs  as Omit<Row, "facultad">[]).map(r => ({ ...r, facultad: "FCS"  as const }));
-      setAllData([...ficaRows, ...fcsRows]);
+      const norm = (rows: Omit<Row, "facultad">[], fac: "FICA" | "FCS"): Row[] =>
+        rows.map(r => ({
+          ...r,
+          facultad:  fac,
+          dia:       normDia(r.dia),
+          modalidad: normModalidad(r.modalidad),
+        }));
+      setAllData([...norm(fica as Omit<Row, "facultad">[], "FICA"),
+                  ...norm(fcs  as Omit<Row, "facultad">[], "FCS")]);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -108,13 +131,22 @@ export default function HorarioSemana() {
         return false;
       }
       if (diaFiltro !== "TODOS" && r.dia !== diaFiltro) return false;
+      if (modalidadFiltro !== "TODAS") {
+        if (modalidadFiltro === "PRESENCIAL") {
+          // Presencial puro o híbrido presencial
+          if (!r.modalidad.includes("PRESENCIAL")) return false;
+        } else if (modalidadFiltro === "VIRTUAL") {
+          // Virtual puro o híbrido virtual
+          if (!r.modalidad.includes("VIRTUAL")) return false;
+        } else if (r.modalidad !== modalidadFiltro) return false;
+      }
       if (q) {
         const hay = `${r.carreraFull} ${r.seccion} ${r.curso} ${r.docente} ${r.ciclo} ${r.local}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [allData, facultad, local, ciclo, diaFiltro, search]);
+  }, [allData, facultad, local, ciclo, diaFiltro, modalidadFiltro, search]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Row[]>();
@@ -141,6 +173,7 @@ export default function HorarioSemana() {
       ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
         : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
       diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
+      modalidadFiltro !== "TODAS" ? `Modalidad: ${modalidadFiltro}` : null,
     ].filter(Boolean).join(" · ") || "Todos los filtros";
 
     const NAVY_X = "FF001F5F";
@@ -251,6 +284,7 @@ export default function HorarioSemana() {
       ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
         : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
       diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
+      modalidadFiltro !== "TODAS" ? `Modalidad: ${modalidadFiltro}` : null,
     ].filter(Boolean).join(" · ") || "Todos los filtros";
 
     const diasHtml = diasConClases.map(dia => {
@@ -392,7 +426,7 @@ export default function HorarioSemana() {
 
       <Card className="shadow-sm">
         <CardContent className="pt-4 pb-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <Select value={facultad} onValueChange={v => { setFacultad(v); setLocal("TODOS"); setCiclo("TODOS"); }}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="Facultad" />
@@ -440,6 +474,19 @@ export default function HorarioSemana() {
                 {DIAS_ORDER.map(d => (
                   <SelectItem key={d} value={d}>{DIAS_LABEL[d]}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={modalidadFiltro} onValueChange={setModalidadFiltro}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="Modalidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas las modalidades</SelectItem>
+                <SelectItem value="PRESENCIAL">Presencial</SelectItem>
+                <SelectItem value="VIRTUAL">Virtual</SelectItem>
+                <SelectItem value="HIBRIDO PRESENCIAL">Híbrido presencial</SelectItem>
+                <SelectItem value="HIBRIDO VIRTUAL">Híbrido virtual</SelectItem>
               </SelectContent>
             </Select>
 
