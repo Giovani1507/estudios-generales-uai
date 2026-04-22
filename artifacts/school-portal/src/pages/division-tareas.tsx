@@ -32,6 +32,9 @@ type Unidad = {
   // porque un mismo curso-sección puede tener clases en varios días.
   dias: string[];
   hora: string;
+  horaFin: string;
+  // Todas las sesiones (día + hora inicio + hora fin) de esta planilla.
+  sesiones: { dia: string; hora: string; horaFin: string }[];
   facultad: string;
 };
 
@@ -105,7 +108,7 @@ export default function DivisionTareas() {
   const [yaSubidas, setYaSubidas] = useState<Set<string>>(new Set());
 
   // Filtros
-  const [sedeF, setSedeF] = useState<string>("TODAS");
+  const [sedesF, setSedesF] = useState<Set<string>>(new Set());
   const [facultadF, setFacultadF] = useState<"TODAS" | "FCS" | "FICA">("TODAS");
   const [ciclosF, setCiclosF] = useState<Set<string>>(new Set(["1", "2"]));
   const [diaF, setDiaF] = useState<string>("TODOS");
@@ -268,16 +271,28 @@ export default function DivisionTareas() {
               dia: r.dia || "",
               dias: [],
               hora: r.hora || "",
+              horaFin: r.horaFin || "",
+              sesiones: [],
               facultad: r.facultad || "",
               _dias: new Set<string>(),
-            });
+              _sesiones: new Map<string, { dia: string; hora: string; horaFin: string }>(),
+            } as any);
           }
           const d = normDia(r.dia);
-          if (d) map.get(key)!._dias.add(d);
+          if (d) (map.get(key)! as any)._dias.add(d);
+          const ses = (map.get(key)! as any)._sesiones as Map<string, { dia: string; hora: string; horaFin: string }>;
+          const sesKey = `${d}|${r.hora || ""}|${r.horaFin || ""}`;
+          if (d && r.hora && !ses.has(sesKey)) ses.set(sesKey, { dia: d, hora: r.hora, horaFin: r.horaFin || "" });
         }
-        const arr: Unidad[] = Array.from(map.values()).map(u => {
-          const { _dias, ...rest } = u;
-          return { ...rest, dias: Array.from(_dias) };
+        const arr: Unidad[] = Array.from(map.values()).map((u: any) => {
+          const { _dias, _sesiones, ...rest } = u;
+          const sesiones = Array.from(_sesiones.values()).sort((a: any, b: any) => {
+            const ord = ["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"];
+            const da = ord.indexOf(a.dia), db = ord.indexOf(b.dia);
+            if (da !== db) return da - db;
+            return String(a.hora).localeCompare(String(b.hora));
+          });
+          return { ...rest, dias: Array.from(_dias) as string[], sesiones };
         });
         setUnidades(arr);
 
@@ -303,12 +318,12 @@ export default function DivisionTareas() {
   // Candidatos sin aplicar el filtro de "ya subidas" (para mostrar el total real)
   const candidatosTotales = useMemo(() => {
     let base = unidades;
-    if (sedeF !== "TODAS") base = base.filter(u => u.sede === sedeF);
+    if (sedesF.size > 0) base = base.filter(u => sedesF.has(u.sede));
     if (facultadF !== "TODAS") base = base.filter(u => u.facultad === facultadF);
     if (ciclosF.size > 0) base = base.filter(u => ciclosF.has(String(u.ciclo).trim()));
     if (diaF !== "TODOS") base = base.filter(u => u.dias.includes(diaF));
     return base;
-  }, [unidades, sedeF, facultadF, ciclosF, diaF]);
+  }, [unidades, sedesF, facultadF, ciclosF, diaF]);
 
   const candidatos = useMemo(() => {
     if (excluirSubidas && yaSubidas.size > 0) {
@@ -353,7 +368,7 @@ export default function DivisionTareas() {
     setWorkers(ws => ws.map((w, i) => ({ ...w, monto: base + (i < rest ? 1 : 0) })));
   };
 
-  const repartir = () => {
+  const repartir = (opts?: { auto?: boolean }) => {
     if (workers.length === 0) {
       toast({ title: "Sin compañeros", description: "Agrega al menos una persona.", variant: "destructive" });
       return;
@@ -363,35 +378,51 @@ export default function DivisionTareas() {
       toast({ title: "Falta nombre", description: "Completa el nombre de todos.", variant: "destructive" });
       return;
     }
-    const totalReq = workers.reduce((s, w) => s + Math.max(0, Math.floor(w.monto || 0)), 0);
-    if (totalReq === 0) {
-      toast({ title: "Cantidad inválida", description: "Indica cuántos a cada uno (>0).", variant: "destructive" });
-      return;
-    }
-    if (totalReq > docentesCandidatos.length) {
-      toast({
-        title: "No alcanzan",
-        description: `Pediste ${totalReq} pero solo hay ${docentesCandidatos.length} docentes disponibles. Ajusta los montos o quita el filtro de "ya subidas".`,
-        variant: "destructive",
-      });
-      return;
+
+    // Reparto automático: si todos los montos están en 0 o se pide auto,
+    // se divide equitativamente entre los compañeros.
+    const totalManual = workers.reduce((s, w) => s + Math.max(0, Math.floor(w.monto || 0)), 0);
+    const auto = opts?.auto || totalManual === 0;
+
+    let cantidades: number[];
+    if (auto) {
+      const n = workers.length;
+      const total = docentesCandidatos.length;
+      const base = Math.floor(total / n);
+      const rest = total - base * n;
+      cantidades = workers.map((_w, i) => base + (i < rest ? 1 : 0));
+      // Reflejar la cantidad asignada en el campo "monto" de cada compañero
+      // para que el usuario vea cuánto le tocó.
+      setWorkers(ws => ws.map((w, i) => ({ ...w, monto: cantidades[i] })));
+    } else {
+      cantidades = workers.map(w => Math.max(0, Math.floor(w.monto || 0)));
+      const totalReq = cantidades.reduce((s, n) => s + n, 0);
+      if (totalReq > docentesCandidatos.length) {
+        toast({
+          title: "No alcanzan",
+          description: `Pediste ${totalReq} pero solo hay ${docentesCandidatos.length} docentes disponibles. Ajusta los montos o quita el filtro de "ya subidas".`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const pool = seededShuffle(docentesCandidatos, seed);
     const out: Record<string, DocenteUnit[]> = {};
     let cursor = 0;
-    for (const w of workers) {
-      const n = Math.max(0, Math.floor(w.monto || 0));
-      out[w.id] = pool.slice(cursor, cursor + n);
+    for (let i = 0; i < workers.length; i++) {
+      const n = cantidades[i];
+      out[workers[i].id] = pool.slice(cursor, cursor + n);
       cursor += n;
     }
     const sob = pool.slice(cursor);
     setAsignaciones(out);
     setSobrantes(sob);
+    const totalAsig = cantidades.reduce((s, n) => s + n, 0);
     const totalPlanillas = Object.values(out).reduce((s, arr) => s + arr.reduce((x, d) => x + d.planillas.length, 0), 0);
     toast({
-      title: "Reparto listo",
-      description: `${totalReq} docente(s) asignados · ${totalPlanillas} planillas en total.`,
+      title: auto ? "División automática" : "Reparto listo",
+      description: `${totalAsig} docente(s) asignados · ${totalPlanillas} planillas en total.`,
     });
   };
 
@@ -410,7 +441,8 @@ export default function DivisionTareas() {
     resumen.getRow(1).values = ["DIVISIÓN DE TAREAS · 2026-1"];
     resumen.getRow(1).font = { bold: true, size: 14, color: { argb: "FF001F5F" } };
     resumen.mergeCells(1, 1, 1, 3);
-    resumen.getRow(2).values = [`Sede: ${sedeF}   ·   Facultad: ${facultadF}`];
+    const sedesTxt = sedesF.size === 0 ? "TODAS" : Array.from(sedesF).join(" + ");
+    resumen.getRow(2).values = [`Sede: ${sedesTxt}   ·   Facultad: ${facultadF}`];
     resumen.mergeCells(2, 1, 2, 3);
     resumen.getRow(4).values = ["Compañero", "Docentes", "Planillas", "Solicitados"];
     resumen.columns = [{ width: 30 }, { width: 12 }, { width: 12 }, { width: 14 }];
@@ -432,9 +464,9 @@ export default function DivisionTareas() {
       const ws = wb.addWorksheet(name.slice(0, 30));
       ws.columns = [
         { width: 6 }, { width: 36 }, { width: 12 }, { width: 30 }, { width: 22 },
-        { width: 8 }, { width: 8 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 8 },
+        { width: 8 }, { width: 8 }, { width: 12 }, { width: 14 }, { width: 38 },
       ];
-      ws.getRow(1).values = ["Doc N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Día", "Hora"];
+      ws.getRow(1).values = ["Doc N°", "Docente", "Código", "Curso", "Carrera", "Ciclo", "Sec", "Sede", "Modalidad", "Horario"];
       ws.getRow(1).eachCell(c => {
         c.font = { bold: true, color: { argb: "FFFFFFFF" } };
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001F5F" } };
@@ -445,11 +477,14 @@ export default function DivisionTareas() {
       list.forEach((d, docIdx) => {
         d.planillas.forEach((u, i) => {
           const r = ws.getRow(row++);
+          const horario = (u.sesiones || []).map(s => `${s.dia}: ${s.hora}${s.horaFin ? ` HASTA LAS ${s.horaFin}` : ""}`).join(" · ")
+                          || `${u.dia}: ${u.hora}${u.horaFin ? ` HASTA LAS ${u.horaFin}` : ""}`;
           r.values = [
             i === 0 ? docIdx + 1 : "",
             i === 0 ? d.docente : "",
-            u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, u.dia, u.hora,
+            u.codigo, u.curso, u.carrera, u.ciclo, u.seccion, u.sede, u.modalidad, horario,
           ];
+          r.alignment = { wrapText: true, vertical: "top" };
           r.eachCell(c => {
             c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
             c.font = { size: 10 };
@@ -522,7 +557,35 @@ export default function DivisionTareas() {
           <Sparkles className="h-4 w-4 text-emerald-600" /> Configuración del reparto
         </h3>
         <div className="flex flex-wrap items-center gap-3">
-          <PillGroup label="Sede" value={sedeF} onChange={setSedeF} options={["TODAS", ...sedes]} />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Sede:</span>
+            <button
+              type="button"
+              onClick={() => setSedesF(new Set())}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold border transition ${sedesF.size === 0 ? "bg-[#001f5f] text-white border-[#001f5f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}
+            >
+              TODAS
+            </button>
+            {sedes.map(s => {
+              const active = sedesF.has(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    setSedesF(prev => {
+                      const n = new Set(prev);
+                      if (n.has(s)) n.delete(s); else n.add(s);
+                      return n;
+                    });
+                  }}
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold border transition ${active ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
           <PillGroup label="Facultad" value={facultadF} onChange={(v) => setFacultadF(v as "TODAS" | "FCS" | "FICA")} options={["TODAS", "FCS", "FICA"]} />
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ciclo:</span>
@@ -568,10 +631,12 @@ export default function DivisionTareas() {
         {/* Compañeros */}
         <div className="border-t border-border/40 pt-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Compañeros</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Compañeros <span className="text-[10px] text-muted-foreground/80 font-normal normal-case">(deja la cantidad en 0 para que se reparta solo)</span>
+            </h4>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={balanceAuto} className="h-7 text-xs gap-1">
-                <Sparkles className="h-3.5 w-3.5" /> Repartir 50/50
+              <Button variant="ghost" size="sm" onClick={balanceAuto} className="h-7 text-xs gap-1" title="Calcula y muestra cuánto le toca a cada uno">
+                <Sparkles className="h-3.5 w-3.5" /> Calcular cantidades
               </Button>
               <Button variant="ghost" size="sm" onClick={addWorker} className="h-7 text-xs gap-1">
                 <Plus className="h-3.5 w-3.5" /> Agregar
@@ -607,7 +672,7 @@ export default function DivisionTareas() {
           </div>
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-border/40">
             <div className="text-xs text-muted-foreground">
-              Total a repartir: <b className={totalSolicitado > docentesCandidatos.length ? "text-rose-600" : "text-[#001f5f]"}>{totalSolicitado}</b> docentes / {docentesCandidatos.length} disponibles
+              Total a repartir: <b className={totalSolicitado > docentesCandidatos.length ? "text-rose-600" : "text-[#001f5f]"}>{totalSolicitado || docentesCandidatos.length}</b> docentes / {docentesCandidatos.length} disponibles
             </div>
             <div className="flex gap-2">
               {tieneAsignacion && (
@@ -615,8 +680,11 @@ export default function DivisionTareas() {
                   <Shuffle className="h-4 w-4" /> Volver a sortear
                 </Button>
               )}
-              <Button onClick={repartir} className="gap-2 h-9 bg-[#001f5f] hover:bg-[#002b8a] text-white">
-                <Shuffle className="h-4 w-4" /> Asignar al azar
+              <Button onClick={() => repartir({ auto: true })} className="gap-2 h-9 bg-emerald-600 hover:bg-emerald-700 text-white" title="Reparte equitativamente sin necesidad de cantidades">
+                <Sparkles className="h-4 w-4" /> División automática
+              </Button>
+              <Button onClick={() => repartir()} variant="outline" className="gap-2 h-9 border-[#001f5f] text-[#001f5f] hover:bg-[#001f5f]/5" title="Usa las cantidades indicadas por compañero">
+                <Shuffle className="h-4 w-4" /> Repartir por cantidad
               </Button>
             </div>
           </div>
@@ -637,7 +705,7 @@ export default function DivisionTareas() {
               <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en las asignaciones…" className="pl-8 h-9 bg-white" />
             </div>
-            <Badge className="bg-[#001f5f] text-white border-0">Sede: {sedeF}</Badge>
+            <Badge className="bg-[#001f5f] text-white border-0">Sede: {sedesF.size === 0 ? "TODAS" : Array.from(sedesF).join(" + ")}</Badge>
             {sobrantes.length > 0 && <Badge className="bg-amber-500 text-white border-0">{sobrantes.length} sobrantes</Badge>}
           </div>
 
@@ -690,14 +758,22 @@ export default function DivisionTareas() {
                                 <Badge variant="secondary" className="text-[10px]">{d.planillas.length} cursos</Badge>
                               </div>
                             </div>
-                            <div className="pl-8 space-y-0.5">
+                            <div className="pl-8 space-y-1">
                               {d.planillas.map(u => (
-                                <div key={u.key} className="flex items-start gap-2 text-[11px] leading-tight">
-                                  <span className="font-mono text-muted-foreground shrink-0">{u.codigo}</span>
-                                  <span className="flex-1 truncate">{u.curso}</span>
-                                  <span className="text-[10px] font-semibold text-slate-500 shrink-0">C{u.ciclo}-{u.seccion}</span>
-                                  <span className="text-[10px] text-slate-500 shrink-0">{u.dia}</span>
-                                  <span className="text-[10px] px-1 rounded bg-slate-100 font-semibold shrink-0">{u.sede}</span>
+                                <div key={u.key} className="text-[11px] leading-tight border-l-2 border-slate-200 pl-2">
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-mono text-muted-foreground shrink-0">{u.codigo}</span>
+                                    <span className="flex-1 truncate">{u.curso}</span>
+                                    <span className="text-[10px] font-semibold text-slate-500 shrink-0">C{u.ciclo}-{u.seccion}</span>
+                                    <span className="text-[10px] px-1 rounded bg-slate-100 font-semibold shrink-0">{u.sede}</span>
+                                  </div>
+                                  <div className="mt-0.5 flex flex-wrap gap-1">
+                                    {(u.sesiones && u.sesiones.length > 0 ? u.sesiones : [{ dia: u.dia, hora: u.hora, horaFin: u.horaFin }]).map((s, idx) => (
+                                      <span key={idx} className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                        {s.dia}: {s.hora}{s.horaFin ? ` HASTA LAS ${s.horaFin}` : ""}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               ))}
                             </div>
