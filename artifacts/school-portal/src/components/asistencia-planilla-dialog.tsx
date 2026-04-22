@@ -363,16 +363,25 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
       const totalMarcas = p.alumnos.reduce(
         (acc, a) => acc + a.marcas.filter(m => (m || "").trim() !== "").length, 0
       );
-      if (p.alumnos.length === 0 || totalMarcas === 0) {
+      if (p.alumnos.length === 0) {
+        // Sin alumnos: no hay nada que guardar, solo flagear.
         toast({
-          title: p.alumnos.length === 0 ? "Excel vacío" : "Sin marcas de asistencia",
-          description: p.alumnos.length === 0
-            ? "No se encontraron alumnos en el archivo. El docente quedó marcado en 'Docentes sin asistencias'."
-            : "El archivo tiene alumnos pero ninguna marca registrada. El docente quedó marcado en 'Docentes sin asistencias'.",
+          title: "Excel vacío",
+          description: "No se encontraron alumnos en el archivo. El docente quedó marcado en 'Docentes sin asistencias'.",
           variant: "destructive",
         });
         flagDocenteSinAsistencia({ curso, motivo: "VACIO", flaggedByName: user?.fullName || null });
         return;
+      }
+      if (totalMarcas === 0) {
+        // Hay alumnos pero ninguna marca: avisamos, flageamos, y permitimos subir igual.
+        toast({
+          title: "Sin marcas de asistencia",
+          description: "El archivo tiene alumnos pero ninguna marca registrada. Igual se subirá y el docente quedó marcado en 'Docentes sin asistencias'.",
+          variant: "destructive",
+          duration: 7000,
+        });
+        flagDocenteSinAsistencia({ curso, motivo: "VACIO", flaggedByName: user?.fullName || null });
       }
       setSinCambios(false);
       setParsed(p);
@@ -418,16 +427,17 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
             const newSet  = new Set(parsed.alumnos.map(norm));
             const iguales = prevSet.size === newSet.size && [...newSet].every(k => prevSet.has(k));
             if (iguales) {
+              // Avisamos y flageamos, pero NO interrumpimos: la subida continúa
+              // (se reescribe la planilla con el mismo contenido y se actualiza updatedAt).
               toast({
                 title: "⚠️ La asistencia no se ha actualizado",
-                description: "El Excel subido es idéntico al anterior. El docente quedó marcado en 'Docentes sin asistencias'.",
+                description: "El Excel subido es idéntico al anterior. Se guardó igual y el docente quedó marcado en 'Docentes sin asistencias'.",
                 variant: "destructive",
                 duration: 7000,
               });
               flagDocenteSinAsistencia({ curso, motivo: "REPETIDO", flaggedByName: user?.fullName || null });
               setSinCambios(true);
-              setSaving(false);
-              return;
+              // continuamos al PUT
             }
           }
         } catch { /* si falla la comparación, continuamos con el update normal */ }
