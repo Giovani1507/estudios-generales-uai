@@ -87,6 +87,50 @@ const COLORES_WORKER = [
 
 const newId = () => Math.random().toString(36).slice(2, 9);
 
+// Devuelve "rank" cronológico de una sesión: día (0=LUN, 6=DOM) * 10000 + minutos del día.
+const ORDEN_DIAS = ["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"];
+const minutosHora = (h: string): number => {
+  const m = String(h || "").match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return 99 * 60;
+  return Number(m[1]) * 60 + Number(m[2]);
+};
+const rankSesion = (s: { dia: string; hora: string }): number => {
+  const di = ORDEN_DIAS.indexOf(s.dia);
+  const d = di < 0 ? 99 : di;
+  return d * 10000 + minutosHora(s.hora);
+};
+// rank más temprano de un docente (mira todas sus planillas y todas las sesiones).
+const rankDocente = (d: DocenteUnit): number => {
+  let best = Number.MAX_SAFE_INTEGER;
+  for (const u of d.planillas) {
+    const ses = (u.sesiones && u.sesiones.length > 0)
+      ? u.sesiones
+      : [{ dia: normDia(u.dia), hora: u.hora || "" }];
+    for (const s of ses) {
+      const r = rankSesion(s);
+      if (r < best) best = r;
+    }
+  }
+  return best;
+};
+const ordenarPorHorario = (lista: DocenteUnit[]): DocenteUnit[] => {
+  // Ordena planillas dentro de cada docente y luego docentes entre sí.
+  const con = lista.map(d => ({
+    ...d,
+    planillas: [...d.planillas].sort((a, b) => {
+      const ra = Math.min(...((a.sesiones && a.sesiones.length > 0) ? a.sesiones : [{ dia: normDia(a.dia), hora: a.hora }]).map(rankSesion));
+      const rb = Math.min(...((b.sesiones && b.sesiones.length > 0) ? b.sesiones : [{ dia: normDia(b.dia), hora: b.hora }]).map(rankSesion));
+      return ra - rb;
+    }),
+  }));
+  return con.sort((a, b) => {
+    const ra = rankDocente(a);
+    const rb = rankDocente(b);
+    if (ra !== rb) return ra - rb;
+    return a.docente.localeCompare(b.docente);
+  });
+};
+
 const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
   const a = [...arr];
   let s = seed >>> 0;
@@ -412,10 +456,12 @@ export default function DivisionTareas() {
     let cursor = 0;
     for (let i = 0; i < workers.length; i++) {
       const n = cantidades[i];
-      out[workers[i].id] = pool.slice(cursor, cursor + n);
+      // Asigna el bloque al compañero, pero ordena cronológicamente:
+      // primero por día (LUN..DOM) y luego por hora (07:40 antes que 09:30).
+      out[workers[i].id] = ordenarPorHorario(pool.slice(cursor, cursor + n));
       cursor += n;
     }
-    const sob = pool.slice(cursor);
+    const sob = ordenarPorHorario(pool.slice(cursor));
     setAsignaciones(out);
     setSobrantes(sob);
     const totalAsig = cantidades.reduce((s, n) => s + n, 0);
