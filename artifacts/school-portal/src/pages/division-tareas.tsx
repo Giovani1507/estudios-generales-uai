@@ -167,6 +167,8 @@ export default function DivisionTareas() {
   const [asignaciones, setAsignaciones] = useState<Record<string, DocenteUnit[]>>({});
   const [sobrantes, setSobrantes] = useState<DocenteUnit[]>([]);
   const [marcadosSubidos, setMarcadosSubidos] = useState<Set<string>>(new Set());
+  const [vistaPorDia, setVistaPorDia] = useState<boolean>(true);
+  const [diasAbiertos, setDiasAbiertos] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
@@ -610,7 +612,7 @@ export default function DivisionTareas() {
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `Division_Tareas_${sedeF}_2026-1.xlsx`;
+    a.download = `Division_Tareas_${sedesF.size === 0 ? "TODAS" : Array.from(sedesF).join("-")}_2026-1.xlsx`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -813,6 +815,18 @@ export default function DivisionTareas() {
             </div>
             <Badge className="bg-[#001f5f] text-white border-0">Sede: {sedesF.size === 0 ? "TODAS" : Array.from(sedesF).join(" + ")}</Badge>
             {sobrantes.length > 0 && <Badge className="bg-amber-500 text-white border-0">{sobrantes.length} sobrantes</Badge>}
+            <div className="ml-auto inline-flex rounded-md border border-slate-200 overflow-hidden bg-white">
+              <button
+                type="button"
+                onClick={() => setVistaPorDia(false)}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${!vistaPorDia ? "bg-[#001f5f] text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Por docente</button>
+              <button
+                type="button"
+                onClick={() => setVistaPorDia(true)}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${vistaPorDia ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Por día</button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -836,6 +850,96 @@ export default function DivisionTareas() {
                   <div className="max-h-[460px] overflow-auto">
                     {lista.length === 0 ? (
                       <div className="py-6 text-center text-muted-foreground text-xs">Sin resultados</div>
+                    ) : vistaPorDia ? (
+                      (() => {
+                        type FilaD = { hora: string; horaFin: string; d: DocenteUnit; u: DocenteUnit["planillas"][0] };
+                        const map = new Map<string, FilaD[]>();
+                        for (const d of lista) {
+                          for (const u of d.planillas) {
+                            const ses = (u.sesiones && u.sesiones.length > 0)
+                              ? u.sesiones
+                              : [{ dia: u.dia, hora: u.hora, horaFin: u.horaFin }];
+                            for (const s of ses) {
+                              const dia = normDia(s.dia);
+                              if (!map.has(dia)) map.set(dia, []);
+                              map.get(dia)!.push({ hora: s.hora || "", horaFin: s.horaFin || "", d, u });
+                            }
+                          }
+                        }
+                        for (const arr of map.values()) {
+                          arr.sort((a, b) => minutosHora(a.hora) - minutosHora(b.hora));
+                        }
+                        const orden = [
+                          ...ORDEN_DIAS.filter(o => map.has(o)),
+                          ...Array.from(map.keys()).filter(k => !ORDEN_DIAS.includes(k)),
+                        ];
+                        return (
+                          <div className="divide-y divide-border/40">
+                            {orden.map(dia => {
+                              const arr = map.get(dia)!;
+                              const docsUnicos = new Set(arr.map(x => x.d.key)).size;
+                              const claveAbierto = `${w.id}|${dia}`;
+                              const abierto = diasAbiertos[claveAbierto] !== false; // default abierto
+                              return (
+                                <div key={dia} className="bg-white">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDiasAbiertos(prev => ({ ...prev, [claveAbierto]: !abierto }))}
+                                    className={`w-full px-3 py-2 flex items-center justify-between gap-2 ${c.bg} border-b ${c.border} hover:opacity-90`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className={`text-xs ${abierto ? "" : "rotate-[-90deg]"} transition-transform inline-block ${c.text}`}>▼</span>
+                                      <span className={`text-sm font-bold ${c.text}`}>{dia}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <Badge className={`${c.dot} text-white border-0 text-[10px]`}>{docsUnicos} docentes</Badge>
+                                      <Badge variant="outline" className="text-[10px]">{arr.length} sesiones</Badge>
+                                    </div>
+                                  </button>
+                                  {abierto && (
+                                    <div className="divide-y divide-border/30">
+                                      {arr.map((row, idx) => {
+                                        const subido = marcadosSubidos.has(row.d.key);
+                                        return (
+                                          <div key={`${row.d.key}|${row.u.key}|${idx}`} className={`px-3 py-1.5 flex items-center gap-2 transition-colors ${subido ? "bg-emerald-50 hover:bg-emerald-100/70" : "hover:bg-slate-50/60"}`}>
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleSubido(row.d.key)}
+                                              title={subido ? "Marcado como subido (clic para desmarcar)" : "Marcar como subido"}
+                                              className={`shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                subido
+                                                  ? "bg-emerald-600 border-emerald-600 text-white"
+                                                  : "bg-white border-slate-300 text-transparent hover:border-emerald-500 hover:text-emerald-300"
+                                              }`}
+                                            >
+                                              <CheckCircle2 className="h-3.5 w-3.5" />
+                                            </button>
+                                            <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{idx + 1}.</span>
+                                            <div className="min-w-0 flex-1">
+                                              <div className={`text-xs font-bold truncate ${subido ? "text-emerald-800 line-through decoration-emerald-400/60" : "text-[#001f5f]"}`}>
+                                                {row.d.docente}
+                                              </div>
+                                              <div className="text-[10px] text-muted-foreground truncate">
+                                                <span className="font-mono">{row.u.codigo}</span> · {row.u.curso} · C{row.u.ciclo}-{row.u.seccion}
+                                              </div>
+                                            </div>
+                                            <div className="shrink-0 flex items-center gap-1">
+                                              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800">
+                                                {row.hora}{row.horaFin ? ` → ${row.horaFin}` : ""}
+                                              </span>
+                                              <span className="text-[10px] px-1 rounded bg-slate-100 font-semibold">{row.u.sede}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div className="divide-y divide-border/40">
                         {lista.map((d, i) => {
