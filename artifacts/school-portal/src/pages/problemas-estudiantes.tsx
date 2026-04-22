@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 import { QRCodeCanvas } from "qrcode.react";
 import ExcelJS from "exceljs";
 import { Download, RefreshCw, QrCode, Trash2, Loader2, Printer } from "lucide-react";
@@ -25,6 +26,7 @@ type Reporte = {
 };
 
 export default function ProblemasEstudiantes() {
+  useLogPageEntry("Reportes de Problemas");
   const [data, setData] = useState<Reporte[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);

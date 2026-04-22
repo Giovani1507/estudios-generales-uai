@@ -129,6 +129,18 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Justificación de Falta",
+    url: "/justificacion-falta",
+    icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Soporte Justificación",
+    url: "/soporte-justificacion",
+    icon: ShieldCheck,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Seguridad",
     url: "/seguridad",
     icon: ShieldAlert,

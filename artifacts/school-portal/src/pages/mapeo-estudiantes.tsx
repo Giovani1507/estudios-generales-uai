@@ -24,6 +24,7 @@ import {
   ClipboardEdit, X, CheckCircle2, Circle, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 import { useAuth } from "@/lib/auth";
 import * as ExcelJS from "exceljs";
 
@@ -235,6 +236,7 @@ async function exportarExcel(rows: MapeoCambio[]) {
 }
 
 export default function MapeoEstudiantes() {
+  useLogPageEntry("Mapeo de Estudiantes");
   const { user } = useAuth();
   const { toast } = useToast();
   const [rows, setRows]         = useState<MapeoCambio[]>([]);

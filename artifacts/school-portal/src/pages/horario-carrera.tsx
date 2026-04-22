@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 import * as ExcelJS from "exceljs";
 import {
   Select,
@@ -653,6 +654,7 @@ function buildSheet(
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function HorarioCarrera() {
+  useLogPageEntry("Horario por Carrera");
   const [facultad, setFacultad] = useState<"FCS" | "FICA">("FCS");
 
   // ── FCS state ─────────────────────────────────────────────────────────────

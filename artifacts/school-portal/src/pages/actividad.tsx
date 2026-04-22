@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import {
   Activity, Search, RefreshCw, LogIn, LogOut, Download, AlertCircle, Loader2, Clock,
+  ClipboardCheck, CheckCircle2, XCircle, Trash2, DoorOpen, Pencil,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -23,9 +24,17 @@ type Log = {
 };
 
 const TYPE_CONFIG: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  login:   { label: "Ingreso",   Icon: LogIn,   color: "bg-green-100 text-green-800 border-green-200" },
-  logout:  { label: "Salida",    Icon: LogOut,  color: "bg-slate-100 text-slate-700 border-slate-200" },
-  descarga:{ label: "Descarga",  Icon: Download, color: "bg-blue-100 text-blue-800 border-blue-200"  },
+  login:                    { label: "Ingreso",            Icon: LogIn,          color: "bg-green-100 text-green-800 border-green-200" },
+  logout:                   { label: "Salida",             Icon: LogOut,         color: "bg-slate-100 text-slate-700 border-slate-200" },
+  descarga:                 { label: "Descarga",           Icon: Download,       color: "bg-blue-100 text-blue-800 border-blue-200"   },
+  ingreso_apartado:         { label: "Entrada apartado",   Icon: DoorOpen,       color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  justificacion_registro:   { label: "Reg. justificación", Icon: ClipboardCheck, color: "bg-blue-100 text-blue-800 border-blue-200"   },
+  justificacion_check:      { label: "Justificó",          Icon: CheckCircle2,   color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  justificacion_uncheck:    { label: "Desmarcó just.",     Icon: XCircle,        color: "bg-amber-100 text-amber-800 border-amber-200" },
+  justificacion_eliminacion:{ label: "Elim. justificación",Icon: Trash2,         color: "bg-rose-100 text-rose-800 border-rose-200"   },
+  edicion:                  { label: "Edición",            Icon: Pencil,         color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  eliminacion:              { label: "Eliminación",        Icon: Trash2,         color: "bg-rose-100 text-rose-800 border-rose-200"   },
+  check:                    { label: "Marcado check",      Icon: CheckCircle2,   color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
 };
 
 function formatDate(iso: string) {

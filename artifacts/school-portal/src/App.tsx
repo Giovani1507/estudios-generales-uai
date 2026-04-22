@@ -50,6 +50,8 @@ import DocentesSinAsistencias from "@/pages/docentes-sin-asistencias";
 import RegistroAsistencia from "@/pages/registro-asistencia";
 import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
+import JustificacionFalta from "@/pages/justificacion-falta";
+import SoporteJustificacion from "@/pages/soporte-justificacion";
 
 const queryClient = new QueryClient();
 
@@ -223,6 +225,14 @@ function AppRouter() {
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />
+      <Route
+        path="/justificacion-falta"
+        component={() => <ProtectedRoute component={JustificacionFalta} />}
+      />
+      <Route
+        path="/soporte-justificacion"
+        component={() => <ProtectedRoute component={SoporteJustificacion} />}
+      />
       <Route
         path="/problemas-estudiantes"
         component={() => <ProtectedRoute component={ProblemasEstudiantes} />}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useLogPageEntry, logActivity } from "@/hooks/use-activity-log";
 import { AsistenciaPlanillaDialog, type CursoCtx } from "@/components/asistencia-planilla-dialog";
 
 type Row = {
@@ -404,6 +405,7 @@ async function buildCursoWorkbookXLSX(c: CursoExportInfo): Promise<ArrayBuffer> 
 }
 
 export default function PlanillasAsistencia() {
+  useLogPageEntry("Planillas de Asistencia");
   const { toast } = useToast();
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);

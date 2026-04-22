@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 import * as ExcelJS from "exceljs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -278,6 +279,7 @@ const LOCAL_COLOR: Record<string, string> = {
 };
 
 export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFacultad?: "FICA" | "FCS" }) {
+  useLogPageEntry(`Lista de Docentes ${initialFacultad}`);
   const [facultad, setFacultad] = useState<"FICA" | "FCS">(initialFacultad);
   const [ficaData, setFicaData] = useState<PlanRow[]>([]);
   const [fcsData,  setFcsData]  = useState<PlanRow[]>([]);

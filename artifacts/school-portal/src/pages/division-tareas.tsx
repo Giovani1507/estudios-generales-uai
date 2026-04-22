@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useLogPageEntry, logActivity } from "@/hooks/use-activity-log";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -175,11 +176,18 @@ export default function DivisionTareas() {
   const toggleSubido = (docenteKey: string) => {
     setMarcadosSubidos(prev => {
       const next = new Set(prev);
-      if (next.has(docenteKey)) next.delete(docenteKey);
-      else next.add(docenteKey);
+      if (next.has(docenteKey)) {
+        next.delete(docenteKey);
+        logActivity("check", `División de Tareas: desmarcó subido — ${docenteKey}`);
+      } else {
+        next.add(docenteKey);
+        logActivity("check", `División de Tareas: marcó subido — ${docenteKey}`);
+      }
       return next;
     });
   };
+
+  useLogPageEntry("División de Tareas");
   const [search, setSearch] = useState("");
 
   // --- Sincronización compartida (multiusuario) ---
@@ -472,6 +480,7 @@ export default function DivisionTareas() {
       title: auto ? "División automática" : "Reparto listo",
       description: `${totalAsig} docente(s) asignados · ${totalPlanillas} planillas en total.`,
     });
+    logActivity("edicion", `División de Tareas: reparto ${auto ? "automático" : "manual"} — ${totalAsig} docentes / ${totalPlanillas} planillas`);
   };
 
   const reShuffle = () => {
@@ -480,7 +489,10 @@ export default function DivisionTareas() {
     setTimeout(() => repartir(), 0);
   };
 
-  const limpiar = () => { setAsignaciones({}); setSobrantes([]); };
+  const limpiar = () => {
+    setAsignaciones({}); setSobrantes([]);
+    logActivity("eliminacion", "División de Tareas: limpió todas las asignaciones");
+  };
 
   const exportXLSX = async () => {
     const wb = new ExcelJS.Workbook();
@@ -615,6 +627,7 @@ export default function DivisionTareas() {
     a.download = `Division_Tareas_${sedesF.size === 0 ? "TODAS" : Array.from(sedesF).join("-")}_2026-1.xlsx`;
     a.click();
     URL.revokeObjectURL(a.href);
+    logActivity("descarga", `División de Tareas: descargó ${a.download}`);
   };
 
   if (loading) {

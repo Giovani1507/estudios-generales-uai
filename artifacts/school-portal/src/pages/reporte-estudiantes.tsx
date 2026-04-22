@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Users, Download, Trash2, Search, RefreshCw, Phone, CalendarCheck, Clock, Printer, Upload, CheckCircle2, XCircle, FileSearch, LogIn } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import { useAuth } from "@/lib/auth";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 
 interface StudentReg {
   id: number;
@@ -156,6 +157,7 @@ function printQR(url: string) {
 }
 
 export default function ReporteEstudiantes() {
+  useLogPageEntry("Reporte de Estudiantes");
   const { refetchUser } = useAuth();
   const [students, setStudents] = useState<StudentReg[]>([]);
   const [loading, setLoading]   = useState(false);

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useLogPageEntry } from "@/hooks/use-activity-log";
 import { useAuth } from "@/lib/auth";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -41,6 +42,7 @@ const fmtFecha = (iso?: string | null) => {
 const norm = (s: string | null | undefined) => (s || "").toUpperCase().trim();
 
 export default function DocentesSinAsistencias() {
+  useLogPageEntry("Docentes sin Asistencias");
   const { toast } = useToast();
   const { user } = useAuth();
   const [list, setList] = useState<Flag[]>([]);
