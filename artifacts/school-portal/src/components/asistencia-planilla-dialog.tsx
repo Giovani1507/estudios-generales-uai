@@ -359,8 +359,18 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
     try {
       const buf = await f.arrayBuffer();
       const p = parseAttendanceXlsx(buf);
-      if (p.alumnos.length === 0) {
-        toast({ title: "Excel vacío", description: "No se encontraron alumnos en el archivo. El docente quedó marcado en 'Docentes sin asistencias'.", variant: "destructive" });
+      // Total de marcas reales (cualquier celda con A/P/T/F/J/etc no vacía)
+      const totalMarcas = p.alumnos.reduce(
+        (acc, a) => acc + a.marcas.filter(m => (m || "").trim() !== "").length, 0
+      );
+      if (p.alumnos.length === 0 || totalMarcas === 0) {
+        toast({
+          title: p.alumnos.length === 0 ? "Excel vacío" : "Sin marcas de asistencia",
+          description: p.alumnos.length === 0
+            ? "No se encontraron alumnos en el archivo. El docente quedó marcado en 'Docentes sin asistencias'."
+            : "El archivo tiene alumnos pero ninguna marca registrada. El docente quedó marcado en 'Docentes sin asistencias'.",
+          variant: "destructive",
+        });
         flagDocenteSinAsistencia({ curso, motivo: "VACIO", flaggedByName: user?.fullName || null });
         return;
       }
