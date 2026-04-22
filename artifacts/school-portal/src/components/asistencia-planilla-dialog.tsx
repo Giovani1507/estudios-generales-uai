@@ -9,9 +9,74 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save } from "lucide-react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
+// Marca un docente como "sin asistencia válida" para que aparezca en la
+// página "Docentes sin asistencias". Persiste en el estado compartido.
+async function flagDocenteSinAsistencia(opts: {
+  curso: { docente: string; codigoCurso: string; nombreCurso: string;
+    carrera?: string; ciclo?: string; seccion?: string; sede?: string };
+  motivo: "VACIO" | "REPETIDO";
+  flaggedByName?: string | null;
+}) {
+  try {
+    const url = `${apiBase}/api/shared-state/docentesSinAsistencias`;
+    const r = await fetch(url, { credentials: "include" });
+    let list: any[] = [];
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data?.value)) list = data.value;
+      else if (Array.isArray(data?.value?.flagged)) list = data.value.flagged;
+    }
+    const dKey = (s: string) => (s || "").toUpperCase().trim();
+    const docente = dKey(opts.curso.docente);
+    const codigo  = (opts.curso.codigoCurso || "").trim();
+    const seccion = (opts.curso.seccion || "").trim().toUpperCase();
+    // Si ya existe un flag activo (no atendido) con mismo docente+curso+seccion+motivo,
+    // solo actualiza fecha; si el correo ya se envió, crea uno nuevo.
+    const existenteIdx = list.findIndex((x: any) =>
+      dKey(x.docente) === docente &&
+      (x.codigoCurso || "").trim() === codigo &&
+      (x.seccion || "").trim().toUpperCase() === seccion &&
+      x.motivo === opts.motivo &&
+      !x.correoEnviado
+    );
+    const nowIso = new Date().toISOString();
+    if (existenteIdx >= 0) {
+      list[existenteIdx] = {
+        ...list[existenteIdx],
+        flaggedAt: nowIso,
+        flaggedByName: opts.flaggedByName || list[existenteIdx].flaggedByName || null,
+      };
+    } else {
+      list.unshift({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        docente: opts.curso.docente,
+        codigoCurso: opts.curso.codigoCurso,
+        nombreCurso: opts.curso.nombreCurso,
+        carrera: opts.curso.carrera || null,
+        ciclo: opts.curso.ciclo || null,
+        seccion: opts.curso.seccion || null,
+        sede: opts.curso.sede || null,
+        motivo: opts.motivo,
+        flaggedAt: nowIso,
+        flaggedByName: opts.flaggedByName || null,
+        correoEnviado: false,
+        correoEnviadoAt: null,
+        correoEnviadoByName: null,
+      });
+    }
+    await fetch(url, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: list }),
+    });
+  } catch { /* ignore */ }
+}
 
 export type CursoCtx = {
   docente: string;
@@ -243,6 +308,7 @@ const DIA_ORDER: Record<string, number> = {
 
 export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }: Props) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [view, setView] = useState<"list" | "import" | "detail">("list");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -294,7 +360,8 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
       const buf = await f.arrayBuffer();
       const p = parseAttendanceXlsx(buf);
       if (p.alumnos.length === 0) {
-        toast({ title: "Excel vacío", description: "No se encontraron alumnos en el archivo.", variant: "destructive" });
+        toast({ title: "Excel vacío", description: "No se encontraron alumnos en el archivo. El docente quedó marcado en 'Docentes sin asistencias'.", variant: "destructive" });
+        flagDocenteSinAsistencia({ curso, motivo: "VACIO", flaggedByName: user?.fullName || null });
         return;
       }
       setSinCambios(false);
@@ -343,10 +410,11 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
             if (iguales) {
               toast({
                 title: "⚠️ La asistencia no se ha actualizado",
-                description: "El Excel subido es idéntico al anterior. Comunícate con el docente.",
+                description: "El Excel subido es idéntico al anterior. El docente quedó marcado en 'Docentes sin asistencias'.",
                 variant: "destructive",
                 duration: 7000,
               });
+              flagDocenteSinAsistencia({ curso, motivo: "REPETIDO", flaggedByName: user?.fullName || null });
               setSinCambios(true);
               setSaving(false);
               return;

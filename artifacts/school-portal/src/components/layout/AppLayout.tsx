@@ -111,6 +111,12 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
+    title: "Docentes sin Asistencias",
+    url: "/docentes-sin-asistencias",
+    icon: AlertTriangle,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,

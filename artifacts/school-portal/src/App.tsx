@@ -46,6 +46,7 @@ import PlanillasAsistencia from "@/pages/planillas-asistencia";
 import ResultadosPlanillas from "@/pages/resultados-planillas";
 import ReporteAsistencia from "@/pages/reporte-asistencia";
 import DivisionTareas from "@/pages/division-tareas";
+import DocentesSinAsistencias from "@/pages/docentes-sin-asistencias";
 import RegistroAsistencia from "@/pages/registro-asistencia";
 import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
@@ -215,6 +216,10 @@ function AppRouter() {
       <Route
         path="/division-tareas"
         component={() => <ProtectedRoute component={DivisionTareas} />}
+      />
+      <Route
+        path="/docentes-sin-asistencias"
+        component={() => <ProtectedRoute component={DocentesSinAsistencias} />}
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />
