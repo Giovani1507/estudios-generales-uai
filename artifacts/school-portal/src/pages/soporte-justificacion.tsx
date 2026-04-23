@@ -39,7 +39,7 @@ export default function SoporteJustificacion() {
 
   const [showQR, setShowQR] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
-  const manualUrl = `${window.location.origin}${import.meta.env.BASE_URL || ""}manual-justificacion`.replace(/([^:]\/)\/+/g, "$1");
+  const manualUrl = `${window.location.origin}${import.meta.env.BASE_URL || ""}manuales/Manual_Justificacion.docx`.replace(/([^:]\/)\/+/g, "$1");
 
   const downloadQR = () => {
     const canvas = qrRef.current?.querySelector("canvas");

@@ -141,12 +141,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Manual de Justificación",
-    url: "/manual-justificacion",
-    icon: BookOpen,
-    roles: ["administrador", "coordinador", "administrativo", "docente"],
-  },
-  {
     title: "Seguridad",
     url: "/seguridad",
     icon: ShieldAlert,

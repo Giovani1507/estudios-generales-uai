@@ -52,7 +52,6 @@ import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
 import JustificacionFalta from "@/pages/justificacion-falta";
 import SoporteJustificacion from "@/pages/soporte-justificacion";
-import ManualJustificacion from "@/pages/manual-justificacion";
 
 const queryClient = new QueryClient();
 
@@ -226,7 +225,6 @@ function AppRouter() {
       />
       <Route path="/registro-asistencia" component={RegistroAsistencia} />
       <Route path="/reportar-problema" component={ReportarProblema} />
-      <Route path="/manual-justificacion" component={ManualJustificacion} />
       <Route
         path="/justificacion-falta"
         component={() => <ProtectedRoute component={JustificacionFalta} />}
