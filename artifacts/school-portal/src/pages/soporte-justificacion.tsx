@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import {
   ShieldCheck, Loader2, Search, CheckCircle2, RefreshCcw, Trash2, Filter,
+  QrCode, Printer, Download as DownloadIcon, ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,87 @@ export default function SoporteJustificacion() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("TODOS");
+
+  const [showQR, setShowQR] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+  const manualUrl = `${window.location.origin}${import.meta.env.BASE_URL || ""}manual-justificacion`.replace(/([^:]\/)\/+/g, "$1");
+
+  const downloadQR = () => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "qr-manual-justificacion.png";
+    a.click();
+  };
+
+  const printQR = () => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return;
+    const qrDataUrl = canvas.toDataURL("image/png");
+    const logoUrl = `${window.location.origin}${import.meta.env.BASE_URL || ""}logo.png`.replace(/([^:]\/)\/+/g, "$1");
+    const w = window.open("", "_blank", "width=820,height=1100");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" /><title>QR · Manual de Justificación · UAI</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 24px; color: #001f5f; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .card { max-width: 640px; margin: 0 auto; border: 3px solid #001f5f; border-radius: 18px; padding: 32px 28px; text-align: center; background: #fff; }
+  .top { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 4px; }
+  .top img { height: 70px; }
+  .top .titles { text-align: left; }
+  .top .titles h1 { margin: 0; font-size: 20px; letter-spacing: 0.5px; line-height: 1.1; }
+  .top .titles p  { margin: 0; font-size: 12px; color: #475569; font-weight: 600; }
+  .divider { height: 4px; background: linear-gradient(90deg,#001f5f,#2563eb); margin: 18px 0 22px; border-radius: 2px; }
+  .heading { font-size: 26px; font-weight: 800; margin: 0 0 6px; }
+  .sub { font-size: 14px; color: #334155; margin: 0 0 22px; }
+  .qr-wrap { display: inline-block; padding: 14px; background: #fff; border: 2px solid #e2e8f0; border-radius: 14px; }
+  .qr-wrap img { display: block; width: 320px; height: 320px; }
+  .steps { margin-top: 22px; text-align: left; background: #f1f5f9; border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #1e293b; line-height: 1.55; }
+  .steps b { color: #001f5f; }
+  .url { margin-top: 18px; font-size: 11px; color: #64748b; word-break: break-all; }
+  .footer { margin-top: 22px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+  @media print { .noprint { display: none; } }
+  .actions { text-align: center; margin-top: 18px; }
+  .actions button { background: #001f5f; color: #fff; border: 0; padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 0 4px; }
+  .actions button.alt { background: #475569; }
+</style></head><body>
+  <div class="card">
+    <div class="top">
+      <img src="${logoUrl}" alt="UAI" onerror="this.style.display='none'" />
+      <div class="titles">
+        <h1>UNIVERSIDAD AUTÓNOMA DE ICA</h1>
+        <p>Estudios Generales · Portal Académico</p>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <h2 class="heading">Manual de Justificación</h2>
+    <p class="sub">Escanea el código QR con tu celular para abrir el manual paso a paso.</p>
+    <div class="qr-wrap"><img src="${qrDataUrl}" alt="QR" /></div>
+    <div class="steps">
+      <b>¿Cómo enviar tu justificación?</b><br/>
+      1. Ingresa al campus virtual con tu código y DNI.<br/>
+      2. Ve a <b>Intranet → Información Académica → Inasistencias</b>.<br/>
+      3. Selecciona el curso, llena el formulario y adjunta tu evidencia.<br/>
+      4. Avisa al docente del curso que enviaste la solicitud.
+    </div>
+    <div class="url">${manualUrl}</div>
+    <div class="footer">Universidad Autónoma de Ica · Portal Académico © ${new Date().getFullYear()}</div>
+  </div>
+  <div class="actions noprint">
+    <button onclick="window.print()">Imprimir</button>
+    <button class="alt" onclick="window.close()">Cerrar</button>
+  </div>
+  <script>
+    const img = document.querySelector('.qr-wrap img');
+    const logo = document.querySelector('.top img');
+    Promise.all([img, logo].map(el => { if (!el || el.complete) return Promise.resolve(); return new Promise(r => { el.onload = r; el.onerror = r; }); })).then(() => setTimeout(() => window.print(), 300));
+  <\/script>
+</body></html>`);
+    w.document.close();
+  };
 
   const fetchAll = async () => {
     try {
@@ -139,10 +222,52 @@ export default function SoporteJustificacion() {
             Lista de estudiantes derivados desde <b>Justificación de Falta</b>. Marca con check cuando ya se justificó.
           </p>
         </div>
-        <Button variant="outline" onClick={fetchAll} className="gap-2">
-          <RefreshCcw className="h-4 w-4" /> Actualizar
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setShowQR(v => !v)} className="gap-2">
+            <QrCode className="h-4 w-4" /> {showQR ? "Ocultar QR" : "QR del Manual"}
+          </Button>
+          <Button variant="outline" onClick={fetchAll} className="gap-2">
+            <RefreshCcw className="h-4 w-4" /> Actualizar
+          </Button>
+        </div>
       </div>
+
+      {showQR && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div ref={qrRef} className="bg-white p-3 border border-slate-200 rounded-xl">
+              <QRCodeCanvas value={manualUrl} size={220} includeMargin level="H" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-[#001f5f] mb-1 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Manual de Justificación · Código QR
+              </h3>
+              <p className="text-sm text-slate-600 mb-2">
+                Comparte o imprime este QR para que los estudiantes accedan al manual paso a paso, sin necesidad de iniciar sesión.
+              </p>
+              <p className="text-xs text-slate-500 break-all bg-slate-50 border border-slate-200 rounded p-2 mb-3">
+                {manualUrl}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={printQR} className="gap-2 bg-[#001f5f] hover:bg-[#003a8c] text-white">
+                  <Printer className="h-4 w-4" /> Imprimir QR
+                </Button>
+                <Button variant="outline" onClick={downloadQR} className="gap-2">
+                  <DownloadIcon className="h-4 w-4" /> Descargar PNG
+                </Button>
+                <a
+                  href={manualUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <ExternalLink className="h-4 w-4" /> Abrir manual
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border shadow-sm p-3 flex items-center gap-2 flex-wrap">
         <Badge className="bg-[#001f5f] text-white border-0">Total: {stats.total}</Badge>
