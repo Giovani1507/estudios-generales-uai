@@ -416,6 +416,46 @@ export default function DivisionTareas() {
   const planillasSubidasCount = candidatosTotales.length - planillasPendientes.length;
   const todoSubido = candidatosTotales.length > 0 && planillasPendientes.length === 0;
 
+  // Pendientes agrupados por docente y ordenados alfabéticamente.
+  const pendientesPorDocente = useMemo(() => {
+    const m = new Map<string, Unidad[]>();
+    for (const u of planillasPendientes) {
+      if (!m.has(u.docente)) m.set(u.docente, []);
+      m.get(u.docente)!.push(u);
+    }
+    return Array.from(m.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([docente, planillas]) => ({
+        docente,
+        planillas: [...planillas].sort((a, b) => {
+          const c = a.carrera.localeCompare(b.carrera);
+          if (c !== 0) return c;
+          const ci = String(a.ciclo).localeCompare(String(b.ciclo));
+          if (ci !== 0) return ci;
+          return a.seccion.localeCompare(b.seccion);
+        }),
+      }));
+  }, [planillasPendientes]);
+
+  // Búsqueda dentro del listado de pendientes.
+  const [showPendientes, setShowPendientes] = useState(false);
+  const [pendientesQuery, setPendientesQuery] = useState("");
+  const pendientesFiltrados = useMemo(() => {
+    const q = pendientesQuery.trim().toUpperCase();
+    if (!q) return pendientesPorDocente;
+    return pendientesPorDocente
+      .map(d => ({
+        docente: d.docente,
+        planillas: d.planillas.filter(p =>
+          d.docente.includes(q) ||
+          (p.curso || "").toUpperCase().includes(q) ||
+          (p.codigo || "").toUpperCase().includes(q) ||
+          (p.sede || "").toUpperCase().includes(q),
+        ),
+      }))
+      .filter(d => d.docente.includes(q) || d.planillas.length > 0);
+  }, [pendientesPorDocente, pendientesQuery]);
+
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
 
@@ -734,6 +774,75 @@ export default function DivisionTareas() {
                 style={{ width: `${Math.round((planillasSubidasCount / Math.max(1, candidatosTotales.length)) * 100)}%` }}
               />
             </div>
+
+            {/* Botón ver / ocultar lista */}
+            <div className="mt-4 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setShowPendientes(v => !v)}
+                className="gap-2 border-orange-400 text-orange-800 bg-white hover:bg-orange-100 font-semibold"
+              >
+                {showPendientes ? "Ocultar" : "Ver"} lista de pendientes
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-orange-600 text-white text-[11px] px-2 py-0.5 font-bold">
+                  {planillasPendientes.length}
+                </span>
+              </Button>
+            </div>
+
+            {/* Lista detallada de pendientes */}
+            {showPendientes && (
+              <div className="mt-4 bg-white rounded-xl border border-orange-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs text-muted-foreground flex-1 min-w-[200px]">
+                    Lista de docentes y planillas que aún no tienen ningún Excel de asistencia subido al servidor (cruza la planificación oficial con los registros del backend, respetando los filtros activos).
+                  </p>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={pendientesQuery}
+                      onChange={(e) => setPendientesQuery(e.target.value)}
+                      placeholder="Buscar docente, curso, código o sede…"
+                      className="pl-8 h-9 w-[280px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="max-h-[420px] overflow-y-auto rounded-lg border border-orange-100 divide-y divide-orange-100">
+                  {pendientesFiltrados.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      No hay coincidencias con la búsqueda.
+                    </div>
+                  ) : (
+                    pendientesFiltrados.map(({ docente, planillas }, idx) => (
+                      <div key={docente} className={`p-3 ${idx % 2 === 0 ? "bg-orange-50/40" : "bg-white"}`}>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="font-bold text-[#001f5f] text-sm">{docente}</div>
+                          <Badge variant="outline" className="text-[10px] border-orange-300 text-orange-700">
+                            {planillas.length} {planillas.length === 1 ? "planilla" : "planillas"}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                          {planillas.map((p) => (
+                            <div
+                              key={p.key}
+                              className="flex items-center gap-2 text-[12px] bg-white border border-orange-200/60 rounded-md px-2 py-1.5"
+                            >
+                              <span className="px-1.5 py-0.5 rounded bg-[#001f5f] text-white text-[10px] font-bold">
+                                {p.carrera}
+                              </span>
+                              <span className="text-muted-foreground text-[11px]">C{p.ciclo}-{p.seccion}</span>
+                              <span className="text-muted-foreground text-[11px] font-mono">{p.codigo}</span>
+                              <span className="flex-1 truncate font-medium">{p.curso}</span>
+                              <Badge variant="secondary" className="text-[10px]">{p.sede}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )
       )}
