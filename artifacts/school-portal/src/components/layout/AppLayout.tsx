@@ -27,6 +27,7 @@ import {
   LogOut,
   ChevronRight,
   ClipboardList,
+  ClipboardCheck,
   Bell,
   FolderOpen,
   ChevronDown,
@@ -87,33 +88,9 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "Asistencia 2026-1",
-    url: "/planillas-asistencia",
-    icon: ClipboardList,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Desaprobado por Inasistencia",
-    url: "/resultados-planillas",
-    icon: AlertTriangle,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Reporte de Asistencia",
-    url: "/reporte-asistencia",
-    icon: ClipboardList,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "División de Tareas",
     url: "/division-tareas",
     icon: Users,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Docentes sin Asistencias",
-    url: "/docentes-sin-asistencias",
-    icon: AlertTriangle,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
@@ -190,6 +167,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
   const [estudiantesOpen, setEstudiantesOpen] = useState(
     location.startsWith("/estudiantes")
+  );
+  const [asistenciaOpen, setAsistenciaOpen] = useState(
+    location.startsWith("/planillas-asistencia") ||
+    location.startsWith("/reporte-asistencia") ||
+    location.startsWith("/resultados-planillas") ||
+    location.startsWith("/docentes-sin-asistencias")
   );
   const [gridOpen, setGridOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -375,6 +358,48 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                 <div className="bg-black/15">
                                   {[
                                     { href: "/estudiantes/delegados", label: "Delegados", Icon: Users },
+                                  ].map(({ href, label, Icon }) => (
+                                    <Link
+                                      key={href}
+                                      href={href}
+                                      className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                        location === href
+                                          ? "bg-white/20 text-white font-semibold"
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
+                                    >
+                                      <Icon className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1">{label}</span>
+                                      <ChevronRight className="w-3 h-3 text-white/40" />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </SidebarMenuItem>
+                        )}
+
+                        {/* Asistencia submenu after Mapeo Estudiantes */}
+                        {idx === 4 && (
+                          <SidebarMenuItem>
+                            <div className="border-b border-white/10">
+                              <button
+                                onClick={() => setAsistenciaOpen((o) => !o)}
+                                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                <ClipboardCheck className="w-4 h-4 shrink-0 text-white/80" />
+                                <span className="text-sm flex-1 text-left">Asistencia</span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${asistenciaOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                              {asistenciaOpen && (
+                                <div className="bg-black/15">
+                                  {[
+                                    { href: "/planillas-asistencia",       label: "Asistencia 2026-1",          Icon: ClipboardList },
+                                    { href: "/reporte-asistencia",         label: "Reporte de Asistencia",      Icon: ClipboardList },
+                                    { href: "/resultados-planillas",       label: "Desaprobado por Inasistencia", Icon: AlertTriangle },
+                                    { href: "/docentes-sin-asistencias",   label: "Docentes sin Asistencias",   Icon: UserX },
                                   ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}
