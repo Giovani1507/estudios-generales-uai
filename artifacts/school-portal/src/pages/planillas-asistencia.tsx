@@ -977,6 +977,7 @@ export default function PlanillasAsistencia() {
                         <th className="px-3 py-2 text-left font-semibold">Código</th>
                         <th className="px-3 py-2 text-left font-semibold">Curso</th>
                         <th className="px-3 py-2 text-left font-semibold">Modalidad</th>
+                        <th className="px-3 py-2 text-left font-semibold">Sede</th>
                         <th className="px-3 py-2 text-center font-semibold">Sesiones</th>
                         <th className="px-3 py-2 text-right font-semibold">Asistencia</th>
                       </tr>
@@ -1003,6 +1004,11 @@ export default function PlanillasAsistencia() {
                             <span className="line-clamp-2">{c.curso}</span>
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{c.modalidad}</td>
+                          <td className="px-3 py-2">
+                            <Badge variant="outline" className="text-[10px] font-semibold">
+                              {sedeFromLocal(c.local)}
+                            </Badge>
+                          </td>
                           <td className="px-3 py-2 text-center text-muted-foreground">{c.sesiones}</td>
                           <td className="px-3 py-2 text-right space-x-1 whitespace-nowrap">
                             <Button
