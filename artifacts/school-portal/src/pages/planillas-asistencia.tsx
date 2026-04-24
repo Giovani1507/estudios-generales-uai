@@ -784,7 +784,10 @@ export default function PlanillasAsistencia() {
     const map = new Map<string, Row & { sesiones: number }>();
     for (const r of rows) {
       const secBase = baseSeccion(r.seccion);
-      const k = `${r.codigo}|${secBase}|${r.carrera}|${r.ciclo}`;
+      const sede = sedeFromLocal(r.local);
+      // La clave incluye la sede para que un mismo código+sección dictado en
+      // sedes distintas (p.ej. PRINCIPAL y FILIAL) aparezca como dos cursos.
+      const k = `${r.codigo}|${secBase}|${r.carrera}|${r.ciclo}|${sede}`;
       if (!map.has(k)) map.set(k, { ...r, seccion: secBase, sesiones: 0 });
       map.get(k)!.sesiones++;
     }
@@ -793,7 +796,9 @@ export default function PlanillasAsistencia() {
       if (c !== 0) return c;
       const ci = a.ciclo.localeCompare(b.ciclo);
       if (ci !== 0) return ci;
-      return a.seccion.localeCompare(b.seccion);
+      const s = a.seccion.localeCompare(b.seccion);
+      if (s !== 0) return s;
+      return sedeFromLocal(a.local).localeCompare(sedeFromLocal(b.local));
     });
   }, [data, selected]);
 

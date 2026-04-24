@@ -403,6 +403,19 @@ export default function DivisionTareas() {
     return set.size;
   }, [candidatosTotales]);
 
+  // Planillas pendientes de subir bajo los filtros actuales (ignora "excluirSubidas").
+  const planillasPendientes = useMemo(
+    () => candidatosTotales.filter(u => !yaSubidas.has(u.key)),
+    [candidatosTotales, yaSubidas],
+  );
+  const docentesPendientesCount = useMemo(() => {
+    const set = new Set<string>();
+    for (const u of planillasPendientes) set.add(u.docente);
+    return set.size;
+  }, [planillasPendientes]);
+  const planillasSubidasCount = candidatosTotales.length - planillasPendientes.length;
+  const todoSubido = candidatosTotales.length > 0 && planillasPendientes.length === 0;
+
   const totalSolicitado = workers.reduce((s, w) => s + (Number.isFinite(w.monto) ? w.monto : 0), 0);
   const tieneAsignacion = Object.keys(asignaciones).length > 0;
 
@@ -671,6 +684,59 @@ export default function DivisionTareas() {
           </Button>
         </div>
       </div>
+
+      {/* Resumen de subida — siempre visible */}
+      {!loading && candidatosTotales.length > 0 && (
+        todoSubido ? (
+          <div className="rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 shadow-xl p-8 text-center">
+            <CheckCircle2 className="h-16 w-16 text-white mx-auto mb-3 drop-shadow" />
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-wide drop-shadow">
+              ¡SE SUBIÓ TODAS LAS ASISTENCIAS!
+            </h2>
+            <p className="text-emerald-50 mt-2 text-base md:text-lg font-semibold">
+              {planillasSubidasCount} de {candidatosTotales.length} planillas subidas — {totalDocentesAll} docentes al día
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 shadow-md p-5">
+            <div className="flex items-center justify-around gap-4 flex-wrap text-center">
+              <div>
+                <div className="text-5xl md:text-6xl font-extrabold text-orange-600 leading-none">
+                  {planillasPendientes.length}
+                </div>
+                <div className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-orange-800 mt-1">
+                  Planillas por subir
+                </div>
+              </div>
+              <div className="h-14 w-px bg-orange-300/70" />
+              <div>
+                <div className="text-4xl md:text-5xl font-extrabold text-amber-700 leading-none">
+                  {docentesPendientesCount}
+                </div>
+                <div className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-amber-800 mt-1">
+                  Docentes pendientes
+                </div>
+              </div>
+              <div className="h-14 w-px bg-orange-300/70" />
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-emerald-700 leading-none">
+                  {planillasSubidasCount}
+                  <span className="text-lg md:text-xl text-emerald-600/70 font-semibold"> / {candidatosTotales.length}</span>
+                </div>
+                <div className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-emerald-800 mt-1">
+                  Ya subidas
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 h-3 w-full rounded-full bg-orange-200/60 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all"
+                style={{ width: `${Math.round((planillasSubidasCount / Math.max(1, candidatosTotales.length)) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )
+      )}
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-border/50 shadow-sm p-4 space-y-3">
