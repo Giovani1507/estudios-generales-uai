@@ -25,13 +25,18 @@ type PlanRow = {
 
 type DocenteEntry = {
   nombre: string;
+  dni: string | null;
   locales: string[];
   carreras: string[];
   ciclos: string[];
   horasAcad: number;
 };
 
-function buildDocentes(data: PlanRow[]): DocenteEntry[] {
+function normalizeDocenteName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+}
+
+function buildDocentes(data: PlanRow[], dniMap?: Record<string, string>): DocenteEntry[] {
   const map = new Map<string, {
     locales: Set<string>;
     carreras: Set<string>;
@@ -64,6 +69,7 @@ function buildDocentes(data: PlanRow[]): DocenteEntry[] {
   return Array.from(map.entries())
     .map(([nombre, e]) => ({
       nombre,
+      dni: dniMap?.[normalizeDocenteName(nombre)] ?? null,
       locales:  [...e.locales].sort(),
       carreras: [...e.carreras].sort(),
       ciclos:   [...e.ciclos].sort((a, b) => Number(a) - Number(b)),
@@ -122,6 +128,7 @@ async function exportExcel(
 
   ws.columns = [
     { width: 6 },
+    { width: 12 },
     { width: 40 },
     { width: 20 },
     { width: 20 },
@@ -133,7 +140,7 @@ async function exportExcel(
 
   ws.getRow(1).height = 58;
   ws.mergeCells("A1:B1");
-  ws.mergeCells("C1:F1");
+  ws.mergeCells("C1:G1");
   const logoCell = ws.getCell("A1");
   logoCell.fill = sf(NAVY);
   logoCell.alignment = CTR;
@@ -154,12 +161,12 @@ async function exportExcel(
 
   const setInfoRow = (row: number, label: string, value: string) => {
     ws.getRow(row).height = 18;
-    ws.mergeCells(`C${row}:F${row}`);
+    ws.mergeCells(`A${row}:B${row}`);
+    ws.mergeCells(`C${row}:G${row}`);
     const la = ws.getCell(`A${row}`);
     la.value = label;
     la.font = { bold: true, size: 10, color: { argb: NAVY } };
     la.fill = sf(LGRAY); la.border = THIN; la.alignment = LEFT;
-    ws.mergeCells(`B${row}:B${row}`);
     const lc = ws.getCell(`C${row}`);
     lc.value = value;
     lc.font = { bold: true, size: 10, color: { argb: DGRAY } };
@@ -177,7 +184,7 @@ async function exportExcel(
 
   const hdrRow = ws.getRow(9);
   hdrRow.height = 22;
-  const headers = ["N°", "APELLIDOS Y NOMBRES", "LOCAL(ES)", "CARRERA(S)", "CICLO(S)", "HORAS ACAD."];
+  const headers = ["N°", "DNI", "APELLIDOS Y NOMBRES", "LOCAL(ES)", "CARRERA(S)", "CICLO(S)", "HORAS ACAD."];
   headers.forEach((h, i) => {
     const cell = hdrRow.getCell(i + 1);
     cell.value = h;
@@ -214,6 +221,7 @@ async function exportExcel(
     const flagLabel = flag ? (TIPO_LABEL[flag.tipo] ?? flag.tipo) : null;
     const vals: (string | number)[] = [
       idx + 1,
+      d.dni ?? "—",
       flag ? `${d.nombre}  ⚠ ${flagLabel}` : d.nombre,
       d.locales.join(" / "),
       d.carreras.join(", "),
@@ -227,23 +235,24 @@ async function exportExcel(
       cell.font = {
         size: 9.5, color: { argb: txtColor },
         bold: !!flag,
-        italic: !!flag && i === 5,
+        italic: !!flag && i === 6,
         name: "Calibri",
       };
       cell.fill = sf(bg);
       cell.border = esRojo ? RED_BDR : esAmbar ? AMBER_BDR : THIN;
-      cell.alignment = i === 1 ? LEFT : CTR;
+      cell.alignment = i === 2 ? LEFT : CTR;
+      if (i === 1) cell.numFmt = "@";
     });
   });
 
   const footRow = 10 + docentes.length;
   ws.getRow(footRow).height = 20;
-  ws.mergeCells(`A${footRow}:E${footRow}`);
+  ws.mergeCells(`A${footRow}:F${footRow}`);
   const totalCell = ws.getCell(`A${footRow}`);
   totalCell.value = `TOTAL DOCENTES: ${docentes.length}`;
   totalCell.font = { bold: true, size: 10, color: { argb: NAVY }, name: "Calibri" };
   totalCell.fill = sf(LGRAY); totalCell.alignment = CTR; totalCell.border = MED;
-  const totalHorasCell = ws.getCell(`F${footRow}`);
+  const totalHorasCell = ws.getCell(`G${footRow}`);
   totalHorasCell.value = docentes.reduce((s, d) => s + d.horasAcad, 0);
   totalHorasCell.font = { bold: true, size: 10, color: { argb: NAVY }, name: "Calibri" };
   totalHorasCell.fill = sf(LGRAY); totalHorasCell.alignment = CTR; totalHorasCell.border = MED;
@@ -283,6 +292,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
   const [facultad, setFacultad] = useState<"FICA" | "FCS">(initialFacultad);
   const [ficaData, setFicaData] = useState<PlanRow[]>([]);
   const [fcsData,  setFcsData]  = useState<PlanRow[]>([]);
+  const [dniMap,   setDniMap]   = useState<Record<string, string>>({});
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState("");
   const [localFiltro, setLocalFiltro] = useState("TODOS");
@@ -305,10 +315,12 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
       fetch(`${base}planificacion-fica-2026-1.json`).then(r => r.json()),
       fetch(`${base}planificacion-fcs-2026-1.json`).then(r => r.json()),
       fetch(`${apiBase}/api/seguridad-docentes`, { credentials: "include" }).then(r => r.ok ? r.json() : []),
-    ]).then(([fica, fcs, segs]) => {
+      fetch(`${base}docentes-dni.json`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    ]).then(([fica, fcs, segs, dnis]) => {
       setFicaData(fica);
       setFcsData(fcs);
       setFlags(segs);
+      setDniMap(dnis);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -323,14 +335,15 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
   const todosDocentes = useMemo(() => {
     const src = (localFiltro === "TODOS" ? activeData : activeData.filter(r => r.local === localFiltro))
       .filter(r => ["1", "2"].includes(r.ciclo));
-    return buildDocentes(src);
-  }, [activeData, localFiltro]);
+    return buildDocentes(src, dniMap);
+  }, [activeData, localFiltro, dniMap]);
 
   const docentes = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return todosDocentes;
     return todosDocentes.filter(d =>
       d.nombre.toLowerCase().includes(q) ||
+      (d.dni ?? "").includes(q) ||
       d.carreras.some(c => c.toLowerCase().includes(q)) ||
       d.locales.some(l => l.toLowerCase().includes(q))
     );
@@ -438,7 +451,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
           <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
           <Input
             className="pl-8"
-            placeholder="Buscar docente, carrera…"
+            placeholder="Buscar por nombre, DNI, carrera…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -468,6 +481,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
               <thead>
                 <tr className="bg-[#001F5F] text-white">
                   <th className="px-3 py-3 text-center text-xs font-semibold w-10">N°</th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold w-24">DNI</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Apellidos y Nombres</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold">Local(es)</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold">Carrera(s)</th>
@@ -491,6 +505,11 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
                     >
                       <td className={`px-3 py-2.5 text-center text-xs font-mono ${renuncio ? "text-red-400" : "text-muted-foreground"}`}>
                         {i + 1}
+                      </td>
+                      <td className={`px-3 py-2.5 text-center text-xs font-mono tabular-nums ${
+                        renuncio ? "text-red-500" : d.dni ? "text-foreground font-semibold" : "text-muted-foreground/50"
+                      }`}>
+                        {d.dni ?? "—"}
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
@@ -562,7 +581,7 @@ export default function ListaDocentes({ initialFacultad = "FICA" }: { initialFac
               </tbody>
               <tfoot>
                 <tr className="bg-[#D9E0F1] border-t-2 border-[#001F5F]">
-                  <td colSpan={5} className="px-4 py-3 text-xs font-bold text-[#001F5F] text-right">
+                  <td colSpan={6} className="px-4 py-3 text-xs font-bold text-[#001F5F] text-right">
                     TOTAL — {docentes.length} docentes
                   </td>
                   <td className="px-3 py-3 text-right text-sm font-bold text-emerald-700">
