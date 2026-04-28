@@ -162,6 +162,48 @@ router.patch("/me/cargo", requireAuth, async (req, res) => {
   }
 });
 
+router.patch("/me/password", requireAuth, async (req, res) => {
+  const sessionUser = (req as any).currentUser;
+  const { actual, nueva } = req.body ?? {};
+  if (typeof actual !== "string" || typeof nueva !== "string") {
+    res.status(400).json({ error: "Faltan campos" });
+    return;
+  }
+  if (nueva.length < 6) {
+    res.status(400).json({ error: "La nueva contraseña debe tener al menos 6 caracteres" });
+    return;
+  }
+  try {
+    const users = await db.select().from(usersTable).where(eq(usersTable.id, sessionUser.id)).limit(1);
+    const user = users[0];
+    if (!user) {
+      res.status(404).json({ error: "Usuario no encontrado" });
+      return;
+    }
+    if (user.passwordHash !== hashPassword(actual)) {
+      res.status(400).json({ error: "La contraseña actual es incorrecta" });
+      return;
+    }
+    if (hashPassword(nueva) === user.passwordHash) {
+      res.status(400).json({ error: "La nueva contraseña debe ser distinta de la actual" });
+      return;
+    }
+    await db.update(usersTable).set({ passwordHash: hashPassword(nueva) }).where(eq(usersTable.id, user.id));
+    await logActivity(req, {
+      userId: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      type: "password_change",
+      detail: "Cambio de contraseña desde Configuración",
+    });
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (err) {
+    console.error("Password update error:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 router.patch("/me/avatar", requireAuth, async (req, res) => {
   const sessionUser = (req as any).currentUser;
   const { avatarDataUrl } = req.body;

@@ -327,10 +327,11 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const form = e.currentTarget;
-                    const nueva = (form.elements.namedItem("nueva") as HTMLInputElement).value;
+                    const actual    = (form.elements.namedItem("actual") as HTMLInputElement).value;
+                    const nueva     = (form.elements.namedItem("nueva") as HTMLInputElement).value;
                     const confirmar = (form.elements.namedItem("confirmar") as HTMLInputElement).value;
                     if (nueva !== confirmar) {
                       toast({ title: "Error", description: "Las contraseñas no coinciden.", variant: "destructive" });
@@ -340,8 +341,23 @@ export default function Settings() {
                       toast({ title: "Error", description: "La contraseña debe tener al menos 6 caracteres.", variant: "destructive" });
                       return;
                     }
-                    toast({ title: "Contraseña actualizada", description: "Su contraseña fue cambiada correctamente." });
-                    form.reset();
+                    try {
+                      const res = await fetch("/api/auth/me/password", {
+                        method: "PATCH",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ actual, nueva }),
+                      });
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok) {
+                        toast({ title: "Error", description: data.error || "No se pudo cambiar la contraseña.", variant: "destructive" });
+                        return;
+                      }
+                      toast({ title: "Contraseña actualizada", description: "Su contraseña fue cambiada correctamente." });
+                      form.reset();
+                    } catch {
+                      toast({ title: "Error de conexión", description: "Intente nuevamente.", variant: "destructive" });
+                    }
                   }}
                   className="space-y-4"
                 >

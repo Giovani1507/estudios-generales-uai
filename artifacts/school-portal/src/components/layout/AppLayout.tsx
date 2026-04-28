@@ -45,7 +45,7 @@ import {
   ShieldAlert,
   UserX,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type UserRole = "administrador" | "coordinador" | "administrativo" | "docente";
 
@@ -589,21 +589,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Bell className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-3 pl-3 border-l border-border">
+              <Link
+                href="/configuracion"
+                className="flex items-center gap-3 pl-3 border-l border-border rounded-lg px-2 py-1 -mr-1 hover:bg-muted/60 transition-colors group"
+                title="Mi cuenta"
+              >
                 <div className="flex flex-col text-right">
-                  <span className="text-xs font-semibold text-foreground leading-tight uppercase tracking-wide">
+                  <span className="text-xs font-semibold text-foreground leading-tight uppercase tracking-wide group-hover:text-primary">
                     {user.fullName}
                   </span>
                   <span className="text-xs font-bold text-accent uppercase tracking-wide">
                     {user.role}
                   </span>
                 </div>
-                <Avatar className="w-9 h-9 shrink-0 border-2 border-primary/20">
+                <Avatar className="w-9 h-9 shrink-0 border-2 border-primary/20 group-hover:border-primary/60 transition-colors">
+                  {user.avatarUrl ? (
+                    <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                  ) : null}
                   <AvatarFallback className="bg-primary text-white font-bold text-xs">
                     {user.fullName?.substring(0, 2).toUpperCase() || "UA"}
                   </AvatarFallback>
                 </Avatar>
-              </div>
+              </Link>
             </div>
           </header>
 
