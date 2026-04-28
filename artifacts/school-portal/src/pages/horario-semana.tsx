@@ -3,8 +3,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical, Printer, FileSpreadsheet } from "lucide-react";
+import { CalendarDays, Search, X, Clock, BookOpen, User, Loader2, DoorOpen, FlaskConical, Printer, FileSpreadsheet, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as ExcelJS from "exceljs";
 
 const NAVY = "#001F5F";
@@ -83,7 +85,25 @@ export default function HorarioSemana() {
   const [local,     setLocal]     = useState("TODOS");
   const [ciclo,     setCiclo]     = useState("1Y2");
   const [diaFiltro, setDiaFiltro] = useState("TODOS");
-  const [modalidadFiltro, setModalidadFiltro] = useState("TODAS");
+  const MODALIDADES = ["PRESENCIAL", "HIBRIDO PRESENCIAL", "VIRTUAL", "HIBRIDO VIRTUAL"] as const;
+  const MODALIDAD_LABEL: Record<string, string> = {
+    "PRESENCIAL":         "Presencial",
+    "HIBRIDO PRESENCIAL": "Híbrido presencial",
+    "VIRTUAL":            "Virtual",
+    "HIBRIDO VIRTUAL":    "Híbrido virtual",
+  };
+  const [modalidadesSel, setModalidadesSel] = useState<Set<string>>(new Set());
+  const toggleModalidad = (m: string) => {
+    setModalidadesSel(prev => {
+      const next = new Set(prev);
+      if (next.has(m)) next.delete(m); else next.add(m);
+      return next;
+    });
+  };
+  const modalidadFiltroLabel =
+    modalidadesSel.size === 0 || modalidadesSel.size === MODALIDADES.length
+      ? "Todas"
+      : Array.from(modalidadesSel).map(m => MODALIDAD_LABEL[m] ?? m).join(", ");
   const [search,    setSearch]    = useState("");
 
   useEffect(() => {
@@ -131,14 +151,9 @@ export default function HorarioSemana() {
         return false;
       }
       if (diaFiltro !== "TODOS" && r.dia !== diaFiltro) return false;
-      if (modalidadFiltro !== "TODAS") {
-        if (modalidadFiltro === "PRESENCIAL") {
-          // Presencial puro o híbrido presencial
-          if (!r.modalidad.includes("PRESENCIAL")) return false;
-        } else if (modalidadFiltro === "VIRTUAL") {
-          // Virtual puro o híbrido virtual
-          if (!r.modalidad.includes("VIRTUAL")) return false;
-        } else if (r.modalidad !== modalidadFiltro) return false;
+      if (modalidadesSel.size > 0 && modalidadesSel.size < MODALIDADES.length) {
+        // OR entre todas las modalidades marcadas
+        if (!modalidadesSel.has(r.modalidad)) return false;
       }
       if (q) {
         const hay = `${r.carreraFull} ${r.seccion} ${r.curso} ${r.docente} ${r.ciclo} ${r.local}`.toLowerCase();
@@ -146,7 +161,7 @@ export default function HorarioSemana() {
       }
       return true;
     });
-  }, [allData, facultad, local, ciclo, diaFiltro, modalidadFiltro, search]);
+  }, [allData, facultad, local, ciclo, diaFiltro, modalidadesSel, search]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Row[]>();
@@ -173,7 +188,9 @@ export default function HorarioSemana() {
       ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
         : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
       diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
-      modalidadFiltro !== "TODAS" ? `Modalidad: ${modalidadFiltro}` : null,
+      modalidadesSel.size > 0 && modalidadesSel.size < MODALIDADES.length
+        ? `Modalidad: ${Array.from(modalidadesSel).map(m => MODALIDAD_LABEL[m] ?? m).join(" + ")}`
+        : null,
     ].filter(Boolean).join(" · ") || "Todos los filtros";
 
     const NAVY_X = "FF001F5F";
@@ -284,7 +301,9 @@ export default function HorarioSemana() {
       ciclo === "1Y2"       ? "Ciclos 1 y 2 (EE.GG)"
         : ciclo !== "TODOS" ? `Ciclo: ${ciclo}`        : null,
       diaFiltro !== "TODOS" ? `Día: ${DIAS_LABEL[diaFiltro]}` : null,
-      modalidadFiltro !== "TODAS" ? `Modalidad: ${modalidadFiltro}` : null,
+      modalidadesSel.size > 0 && modalidadesSel.size < MODALIDADES.length
+        ? `Modalidad: ${Array.from(modalidadesSel).map(m => MODALIDAD_LABEL[m] ?? m).join(" + ")}`
+        : null,
     ].filter(Boolean).join(" · ") || "Todos los filtros";
 
     const diasHtml = diasConClases.map(dia => {
@@ -477,18 +496,51 @@ export default function HorarioSemana() {
               </SelectContent>
             </Select>
 
-            <Select value={modalidadFiltro} onValueChange={setModalidadFiltro}>
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Modalidad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODAS">Todas las modalidades</SelectItem>
-                <SelectItem value="PRESENCIAL">Presencial</SelectItem>
-                <SelectItem value="VIRTUAL">Virtual</SelectItem>
-                <SelectItem value="HIBRIDO PRESENCIAL">Híbrido presencial</SelectItem>
-                <SelectItem value="HIBRIDO VIRTUAL">Híbrido virtual</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="h-9 text-xs border rounded-md px-3 bg-white flex items-center justify-between gap-2 min-w-0"
+                  title={modalidadFiltroLabel}
+                >
+                  <span className="truncate">
+                    {modalidadesSel.size === 0 || modalidadesSel.size === MODALIDADES.length
+                      ? "Todas las modalidades"
+                      : modalidadesSel.size === 1
+                        ? MODALIDAD_LABEL[Array.from(modalidadesSel)[0]] ?? Array.from(modalidadesSel)[0]
+                        : `${modalidadesSel.size} modalidades`}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b">
+                  <span className="text-[11px] font-medium text-muted-foreground">Modalidades</span>
+                  <button
+                    type="button"
+                    className="text-[11px] text-blue-600 hover:underline"
+                    onClick={() => setModalidadesSel(new Set())}
+                  >
+                    Limpiar
+                  </button>
+                </div>
+                {MODALIDADES.map(m => {
+                  const checked = modalidadesSel.has(m);
+                  return (
+                    <label
+                      key={m}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-xs"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleModalidad(m)}
+                      />
+                      <span>{MODALIDAD_LABEL[m]}</span>
+                    </label>
+                  );
+                })}
+              </PopoverContent>
+            </Popover>
 
             <div className="flex items-center gap-1 border rounded-md px-2 py-1 bg-white h-9">
               <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
