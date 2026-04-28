@@ -2481,7 +2481,7 @@
     "horasAcad": 2,
     "pabellon": "F",
     "aula": "AULA 203 F",
-    "laboratorio": "LABORATORIO DE CÁMARA GESELL"
+    "laboratorio": ""
   },
   {
     "local": "FILIAL",
@@ -5494,7 +5494,7 @@
     "horasAcad": 2,
     "pabellon": "D",
     "aula": "AULA 301 D",
-    "laboratorio": "LABORATORIO DE CÓMPUTO 1"
+    "laboratorio": ""
   },
   {
     "local": "FILIAL",
@@ -5722,8 +5722,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "F",
-    "aula": "AULA 2025 F",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -5768,8 +5768,8 @@
     "hora": "14:20",
     "horaFin": "16:50",
     "horasAcad": 3,
-    "pabellon": "F",
-    "aula": "AULA 2025 F",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -5814,8 +5814,8 @@
     "hora": "12:40",
     "horaFin": "15:10",
     "horasAcad": 3,
-    "pabellon": "F",
-    "aula": "AULA 2025 F",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -5883,8 +5883,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "F",
-    "aula": "AULA 2025 F",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -5929,8 +5929,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 301 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6000,7 +6000,7 @@
     "horasAcad": 3,
     "pabellon": "",
     "aula": "",
-    "laboratorio": "LABORATORIO DE QUÍMICA Y BIOQUÍMICA 2"
+    "laboratorio": ""
   },
   {
     "local": "FILIAL",
@@ -6067,8 +6067,8 @@
     "hora": "12:40",
     "horaFin": "14:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 301 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6159,8 +6159,8 @@
     "hora": "12:40",
     "horaFin": "14:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 302 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6297,8 +6297,8 @@
     "hora": "11:00",
     "horaFin": "15:10",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6320,8 +6320,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6343,8 +6343,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6366,8 +6366,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6389,8 +6389,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6412,8 +6412,8 @@
     "hora": "11:00",
     "horaFin": "14:20",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6435,8 +6435,8 @@
     "hora": "11:00",
     "horaFin": "15:10",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6458,8 +6458,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6504,8 +6504,8 @@
     "hora": "08:30",
     "horaFin": "11:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6550,8 +6550,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6573,8 +6573,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6619,8 +6619,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6642,8 +6642,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6665,8 +6665,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6688,8 +6688,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6711,8 +6711,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6895,8 +6895,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6918,8 +6918,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6941,8 +6941,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6964,8 +6964,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -6987,8 +6987,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7010,8 +7010,8 @@
     "hora": "16:50",
     "horaFin": "20:10",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7171,8 +7171,8 @@
     "hora": "08:30",
     "horaFin": "10:10",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7240,8 +7240,8 @@
     "hora": "08:30",
     "horaFin": "11:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7309,8 +7309,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7378,8 +7378,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7401,8 +7401,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7493,8 +7493,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7539,8 +7539,8 @@
     "hora": "16:00",
     "horaFin": "18:30",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7562,8 +7562,8 @@
     "hora": "16:00",
     "horaFin": "17:40",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7723,8 +7723,8 @@
     "hora": "13:30",
     "horaFin": "15:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7815,8 +7815,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7861,8 +7861,8 @@
     "hora": "08:30",
     "horaFin": "11:00",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7907,8 +7907,8 @@
     "hora": "11:00",
     "horaFin": "12:40",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7930,8 +7930,8 @@
     "hora": "11:00",
     "horaFin": "13:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7976,8 +7976,8 @@
     "hora": "12:40",
     "horaFin": "14:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -7999,8 +7999,8 @@
     "hora": "11:50",
     "horaFin": "13:30",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8023,7 +8023,7 @@
     "horaFin": "11:50",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 402 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8068,8 +8068,8 @@
     "hora": "11:00",
     "horaFin": "13:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8138,7 +8138,7 @@
     "horaFin": "11:00",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 406 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8230,7 +8230,7 @@
     "horaFin": "22:40",
     "horasAcad": 5,
     "pabellon": "D",
-    "aula": "AULA 501 D",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8298,8 +8298,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8322,7 +8322,7 @@
     "horaFin": "20:10",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 306 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8390,8 +8390,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8459,8 +8459,8 @@
     "hora": "17:40",
     "horaFin": "21:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8482,8 +8482,8 @@
     "hora": "17:40",
     "horaFin": "21:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -8712,8 +8712,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10069,8 +10069,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 406 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10092,8 +10092,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10115,8 +10115,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10161,8 +10161,8 @@
     "hora": "11:50",
     "horaFin": "16:00",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10207,8 +10207,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10230,8 +10230,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10253,8 +10253,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10299,8 +10299,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10345,8 +10345,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 406 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10414,8 +10414,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10437,8 +10437,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10483,8 +10483,8 @@
     "hora": "13:30",
     "horaFin": "15:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10575,8 +10575,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10644,8 +10644,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10713,8 +10713,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 406 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10736,8 +10736,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10805,8 +10805,8 @@
     "hora": "11:50",
     "horaFin": "14:20",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10828,8 +10828,8 @@
     "hora": "11:50",
     "horaFin": "13:30",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10851,8 +10851,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10874,8 +10874,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10897,8 +10897,8 @@
     "hora": "11:00",
     "horaFin": "14:20",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -10966,8 +10966,8 @@
     "hora": "11:00",
     "horaFin": "12:40",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": "TALLER DE SALA DE AUDIENCIA"
   },
   {
@@ -10989,8 +10989,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11334,8 +11334,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11357,8 +11357,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11380,8 +11380,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11403,8 +11403,8 @@
     "hora": "11:00",
     "horaFin": "15:10",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11426,8 +11426,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11449,8 +11449,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11472,8 +11472,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11495,8 +11495,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11518,8 +11518,8 @@
     "hora": "19:20",
     "horaFin": "22:40",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11541,8 +11541,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11564,8 +11564,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11587,8 +11587,8 @@
     "hora": "16:50",
     "horaFin": "20:10",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11886,8 +11886,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -11909,8 +11909,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": "TALLER DE SALA DE AUDIENCIA"
   },
   {
@@ -11934,7 +11934,7 @@
     "horasAcad": 2,
     "pabellon": "",
     "aula": "",
-    "laboratorio": "TALLER DE SALA DE AUDIENCIA"
+    "laboratorio": ""
   },
   {
     "local": "PRINCIPAL",
@@ -12001,8 +12001,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12024,8 +12024,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12070,8 +12070,8 @@
     "hora": "11:50",
     "horaFin": "12:40",
     "horasAcad": 1,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12093,8 +12093,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12116,8 +12116,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12139,8 +12139,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12231,8 +12231,8 @@
     "hora": "10:10",
     "horaFin": "13:30",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12254,8 +12254,8 @@
     "hora": "11:50",
     "horaFin": "13:30",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12300,8 +12300,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12714,8 +12714,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12737,8 +12737,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12829,8 +12829,8 @@
     "hora": "11:00",
     "horaFin": "13:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12875,8 +12875,8 @@
     "hora": "09:20",
     "horaFin": "11:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12921,8 +12921,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12967,8 +12967,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -12990,8 +12990,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13036,8 +13036,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13082,8 +13082,8 @@
     "hora": "09:20",
     "horaFin": "11:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13105,8 +13105,8 @@
     "hora": "11:00",
     "horaFin": "13:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13128,8 +13128,8 @@
     "hora": "11:00",
     "horaFin": "12:40",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13151,8 +13151,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13197,8 +13197,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13220,8 +13220,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13243,8 +13243,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13266,8 +13266,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13289,8 +13289,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13312,8 +13312,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13335,8 +13335,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13404,8 +13404,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13427,8 +13427,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13450,8 +13450,8 @@
     "hora": "07:40",
     "horaFin": "08:30",
     "horasAcad": 1,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13519,8 +13519,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13611,8 +13611,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13634,8 +13634,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13726,8 +13726,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -13841,8 +13841,8 @@
     "hora": "09:20",
     "horaFin": "11:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14025,8 +14025,8 @@
     "hora": "15:10",
     "horaFin": "19:20",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14071,8 +14071,8 @@
     "hora": "09:20",
     "horaFin": "11:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": "LABORATORIO DE QUÍMICA Y BIOQUÍMICA"
   },
   {
@@ -14117,8 +14117,8 @@
     "hora": "18:30",
     "horaFin": "20:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14255,8 +14255,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14301,8 +14301,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 406 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14324,8 +14324,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14370,8 +14370,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14416,8 +14416,8 @@
     "hora": "09:20",
     "horaFin": "13:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14439,8 +14439,8 @@
     "hora": "15:10",
     "horaFin": "16:50",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14485,8 +14485,8 @@
     "hora": "12:40",
     "horaFin": "15:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14508,8 +14508,8 @@
     "hora": "12:40",
     "horaFin": "14:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14531,8 +14531,8 @@
     "hora": "09:20",
     "horaFin": "12:40",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14554,8 +14554,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14692,8 +14692,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14715,8 +14715,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14761,8 +14761,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14807,8 +14807,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 402 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14853,8 +14853,8 @@
     "hora": "14:20",
     "horaFin": "15:10",
     "horasAcad": 1,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14899,8 +14899,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14945,8 +14945,8 @@
     "hora": "16:00",
     "horaFin": "20:10",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14968,8 +14968,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -14991,8 +14991,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15014,8 +15014,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15037,8 +15037,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15060,8 +15060,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15083,8 +15083,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15106,8 +15106,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15313,8 +15313,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15359,8 +15359,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15382,8 +15382,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15428,8 +15428,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15474,8 +15474,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15520,8 +15520,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15543,8 +15543,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15566,8 +15566,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15589,8 +15589,8 @@
     "hora": "11:50",
     "horaFin": "16:00",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15612,8 +15612,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15635,8 +15635,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15704,8 +15704,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15750,8 +15750,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15773,8 +15773,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15796,8 +15796,8 @@
     "hora": "08:30",
     "horaFin": "11:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15819,8 +15819,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15842,8 +15842,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15888,8 +15888,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -15980,8 +15980,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16003,8 +16003,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16026,8 +16026,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16049,8 +16049,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16072,8 +16072,8 @@
     "hora": "11:00",
     "horaFin": "14:20",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16095,8 +16095,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16118,8 +16118,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16141,8 +16141,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16164,8 +16164,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16187,8 +16187,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16210,8 +16210,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16233,8 +16233,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16256,8 +16256,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16279,8 +16279,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16302,8 +16302,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16325,8 +16325,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16348,8 +16348,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16394,8 +16394,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16440,8 +16440,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16624,8 +16624,8 @@
     "hora": "11:00",
     "horaFin": "15:10",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16647,8 +16647,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16670,8 +16670,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16739,8 +16739,8 @@
     "hora": "08:30",
     "horaFin": "11:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": "LABORATORIO DE COMPUTO"
   },
   {
@@ -16785,8 +16785,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16808,8 +16808,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16831,8 +16831,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16855,7 +16855,7 @@
     "horaFin": "23:30",
     "horasAcad": 2,
     "pabellon": "DIURNO",
-    "aula": "AULA 404 D",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16877,8 +16877,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16900,8 +16900,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -16992,8 +16992,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17222,8 +17222,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17245,8 +17245,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17314,8 +17314,8 @@
     "hora": "08:30",
     "horaFin": "11:00",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17383,8 +17383,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17475,8 +17475,8 @@
     "hora": "08:30",
     "horaFin": "10:10",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 402 C",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17544,8 +17544,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17567,8 +17567,8 @@
     "hora": "09:20",
     "horaFin": "11:50",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17660,7 +17660,7 @@
     "horaFin": "11:50",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 303 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17705,8 +17705,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17797,8 +17797,8 @@
     "hora": "16:50",
     "horaFin": "18:30",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17866,8 +17866,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17889,8 +17889,8 @@
     "hora": "15:10",
     "horaFin": "17:40",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -17958,8 +17958,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18027,8 +18027,8 @@
     "hora": "20:10",
     "horaFin": "22:40",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18119,8 +18119,8 @@
     "hora": "18:30",
     "horaFin": "20:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18188,8 +18188,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18280,8 +18280,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18349,8 +18349,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18441,8 +18441,8 @@
     "hora": "08:30",
     "horaFin": "10:10",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 501 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18856,7 +18856,7 @@
     "horaFin": "19:20",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 603 D",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18948,7 +18948,7 @@
     "horaFin": "12:40",
     "horasAcad": 3,
     "pabellon": "D",
-    "aula": "AULA 603 D",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -18970,8 +18970,8 @@
     "hora": "11:50",
     "horaFin": "15:10",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19062,8 +19062,8 @@
     "hora": "10:10",
     "horaFin": "11:50",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19131,8 +19131,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19154,8 +19154,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 404 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19223,8 +19223,8 @@
     "hora": "10:10",
     "horaFin": "14:20",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19246,8 +19246,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19338,8 +19338,8 @@
     "hora": "15:10",
     "horaFin": "16:50",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19407,8 +19407,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19430,8 +19430,8 @@
     "hora": "15:10",
     "horaFin": "17:40",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19499,8 +19499,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19522,8 +19522,8 @@
     "hora": "19:20",
     "horaFin": "21:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19614,8 +19614,8 @@
     "hora": "21:50",
     "horaFin": "23:30",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19683,8 +19683,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19706,8 +19706,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19775,8 +19775,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19798,8 +19798,8 @@
     "hora": "13:30",
     "horaFin": "15:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19890,8 +19890,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19959,8 +19959,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -19983,7 +19983,7 @@
     "horaFin": "10:10",
     "horasAcad": 2,
     "pabellon": "B",
-    "aula": "AULA 303 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20028,8 +20028,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20074,8 +20074,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20097,8 +20097,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20121,7 +20121,7 @@
     "horaFin": "14:20",
     "horasAcad": 2,
     "pabellon": "B",
-    "aula": "AULA 404 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20166,8 +20166,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20189,8 +20189,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20327,8 +20327,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 304 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20373,8 +20373,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20396,8 +20396,8 @@
     "hora": "19:20",
     "horaFin": "21:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20534,8 +20534,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20580,8 +20580,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20604,7 +20604,7 @@
     "horaFin": "19:20",
     "horasAcad": 2,
     "pabellon": "B",
-    "aula": "AULA 306A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20695,8 +20695,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 304 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20741,8 +20741,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20765,7 +20765,7 @@
     "horaFin": "10:10",
     "horasAcad": 2,
     "pabellon": "B",
-    "aula": "AULA 404 A",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20856,8 +20856,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 305 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20902,8 +20902,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20925,8 +20925,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -20994,8 +20994,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21017,8 +21017,8 @@
     "hora": "16:00",
     "horaFin": "19:20",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21063,8 +21063,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21086,8 +21086,8 @@
     "hora": "14:20",
     "horaFin": "18:30",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21155,8 +21155,8 @@
     "hora": "19:20",
     "horaFin": "22:40",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21178,8 +21178,8 @@
     "hora": "19:20",
     "horaFin": "22:40",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 603 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21293,8 +21293,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 604 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21316,8 +21316,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21431,8 +21431,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21454,8 +21454,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21569,8 +21569,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21592,8 +21592,8 @@
     "hora": "16:00",
     "horaFin": "20:10",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 403 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21661,8 +21661,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21684,8 +21684,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21707,8 +21707,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 304 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21776,8 +21776,8 @@
     "hora": "19:20",
     "horaFin": "23:30",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21799,8 +21799,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21822,8 +21822,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21868,8 +21868,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -21960,8 +21960,8 @@
     "hora": "08:30",
     "horaFin": "11:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 405 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22029,8 +22029,8 @@
     "hora": "07:40",
     "horaFin": "08:30",
     "horasAcad": 1,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22098,8 +22098,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22167,8 +22167,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22213,8 +22213,8 @@
     "hora": "07:40",
     "horaFin": "08:30",
     "horasAcad": 1,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22397,8 +22397,8 @@
     "hora": "07:40",
     "horaFin": "08:30",
     "horasAcad": 1,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22466,8 +22466,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 305 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22581,8 +22581,8 @@
     "hora": "07:40",
     "horaFin": "08:30",
     "horasAcad": 1,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22650,8 +22650,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22696,8 +22696,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 403 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22719,8 +22719,8 @@
     "hora": "18:30",
     "horaFin": "21:50",
     "horasAcad": 4,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22742,8 +22742,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "B",
-    "aula": "AULA 404 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22765,8 +22765,8 @@
     "hora": "18:30",
     "horaFin": "20:10",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22811,8 +22811,8 @@
     "hora": "11:00",
     "horaFin": "13:30",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22834,8 +22834,8 @@
     "hora": "12:40",
     "horaFin": "14:20",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22857,8 +22857,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22926,8 +22926,8 @@
     "hora": "07:40",
     "horaFin": "11:00",
     "horasAcad": 4,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -22949,8 +22949,8 @@
     "hora": "08:30",
     "horaFin": "10:10",
     "horasAcad": 2,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23018,8 +23018,8 @@
     "hora": "08:30",
     "horaFin": "11:00",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23087,8 +23087,8 @@
     "hora": "07:40",
     "horaFin": "11:50",
     "horasAcad": 5,
-    "pabellon": "D",
-    "aula": "AULA 403 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23110,8 +23110,8 @@
     "hora": "08:30",
     "horaFin": "12:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23179,8 +23179,8 @@
     "hora": "11:00",
     "horaFin": "14:20",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23202,8 +23202,8 @@
     "hora": "16:00",
     "horaFin": "17:40",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23248,8 +23248,8 @@
     "hora": "07:40",
     "horaFin": "10:10",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 303 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23294,8 +23294,8 @@
     "hora": "11:00",
     "horaFin": "15:10",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23317,8 +23317,8 @@
     "hora": "07:40",
     "horaFin": "09:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23363,8 +23363,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23409,8 +23409,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23455,8 +23455,8 @@
     "hora": "14:20",
     "horaFin": "16:00",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23524,8 +23524,8 @@
     "hora": "09:20",
     "horaFin": "11:50",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 402 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23547,8 +23547,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 304A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23570,8 +23570,8 @@
     "hora": "15:10",
     "horaFin": "17:40",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23593,8 +23593,8 @@
     "hora": "16:00",
     "horaFin": "18:30",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23639,8 +23639,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23662,8 +23662,8 @@
     "hora": "18:30",
     "horaFin": "20:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23708,8 +23708,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23777,8 +23777,8 @@
     "hora": "20:10",
     "horaFin": "22:40",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23800,8 +23800,8 @@
     "hora": "18:30",
     "horaFin": "22:40",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23823,8 +23823,8 @@
     "hora": "21:00",
     "horaFin": "23:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23892,8 +23892,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23915,8 +23915,8 @@
     "hora": "15:10",
     "horaFin": "16:50",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -23984,8 +23984,8 @@
     "hora": "16:50",
     "horaFin": "19:20",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24053,8 +24053,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24122,8 +24122,8 @@
     "hora": "15:10",
     "horaFin": "19:20",
     "horasAcad": 5,
-    "pabellon": "A",
-    "aula": "AULA 404 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24145,8 +24145,8 @@
     "hora": "20:10",
     "horaFin": "23:30",
     "horasAcad": 4,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24191,8 +24191,8 @@
     "hora": "21:00",
     "horaFin": "22:40",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24237,8 +24237,8 @@
     "hora": "18:30",
     "horaFin": "21:00",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24398,8 +24398,8 @@
     "hora": "20:10",
     "horaFin": "21:50",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24444,8 +24444,8 @@
     "hora": "08:30",
     "horaFin": "10:10",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24605,8 +24605,8 @@
     "hora": "16:50",
     "horaFin": "18:30",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24651,8 +24651,8 @@
     "hora": "13:30",
     "horaFin": "15:10",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24789,8 +24789,8 @@
     "hora": "15:10",
     "horaFin": "16:50",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24835,8 +24835,8 @@
     "hora": "10:10",
     "horaFin": "11:50",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24950,8 +24950,8 @@
     "hora": "19:20",
     "horaFin": "21:00",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -24996,8 +24996,8 @@
     "hora": "16:50",
     "horaFin": "19:20",
     "horasAcad": 3,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25019,8 +25019,8 @@
     "hora": "16:50",
     "horaFin": "19:20",
     "horasAcad": 0,
-    "pabellon": "D",
-    "aula": "AULA 502 D",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25042,8 +25042,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25088,8 +25088,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 402 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25203,8 +25203,8 @@
     "hora": "16:50",
     "horaFin": "18:30",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25249,8 +25249,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 405 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25295,8 +25295,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25410,8 +25410,8 @@
     "hora": "17:40",
     "horaFin": "19:20",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25456,8 +25456,8 @@
     "hora": "19:20",
     "horaFin": "21:50",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 401 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25502,8 +25502,8 @@
     "hora": "16:50",
     "horaFin": "19:20",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25617,8 +25617,8 @@
     "hora": "16:50",
     "horaFin": "18:30",
     "horasAcad": 2,
-    "pabellon": "A",
-    "aula": "AULA 306 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25663,8 +25663,8 @@
     "hora": "18:30",
     "horaFin": "21:00",
     "horasAcad": 3,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25709,8 +25709,8 @@
     "hora": "16:00",
     "horaFin": "18:30",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25824,8 +25824,8 @@
     "hora": "17:40",
     "horaFin": "20:10",
     "horasAcad": 3,
-    "pabellon": "A",
-    "aula": "AULA 303 A",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -25870,8 +25870,8 @@
     "hora": "19:20",
     "horaFin": "21:00",
     "horasAcad": 2,
-    "pabellon": "B",
-    "aula": "AULA 401 B",
+    "pabellon": "",
+    "aula": "",
     "laboratorio": ""
   },
   {
@@ -28103,7 +28103,7 @@
     "horasAcad": 2,
     "pabellon": "",
     "aula": "",
-    "laboratorio": "TALLER DE SALA DE AUDIENCIA"
+    "laboratorio": ""
   },
   {
     "local": "HUAURA",
