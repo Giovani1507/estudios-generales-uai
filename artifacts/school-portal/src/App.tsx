@@ -52,6 +52,7 @@ import ReportarProblema from "@/pages/reportar-problema";
 import ProblemasEstudiantes from "@/pages/problemas-estudiantes";
 import JustificacionFalta from "@/pages/justificacion-falta";
 import SoporteJustificacion from "@/pages/soporte-justificacion";
+import NominaPage from "@/pages/nomina";
 
 const queryClient = new QueryClient();
 
@@ -236,6 +237,10 @@ function AppRouter() {
       <Route
         path="/problemas-estudiantes"
         component={() => <ProtectedRoute component={ProblemasEstudiantes} />}
+      />
+      <Route
+        path="/nomina"
+        component={() => <ProtectedRoute component={NominaPage} />}
       />
       {/* 404 */}
       <Route component={NotFound} />

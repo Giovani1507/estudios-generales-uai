@@ -23,3 +23,4 @@ export * from "./asistencia_planillas";
 export * from "./student_problems";
 export * from "./shared_state";
 export * from "./justificaciones";
+export * from "./nominas";

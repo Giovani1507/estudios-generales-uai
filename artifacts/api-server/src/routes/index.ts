@@ -22,6 +22,7 @@ import asistenciaPlanillasRouter from "./asistencia-planillas.js";
 import studentProblemsRouter from "./student-problems.js";
 import sharedStateRouter from "./shared-state.js";
 import justificacionesRouter from "./justificaciones.js";
+import nominasRouter from "./nominas.js";
 
 const router = Router();
 
@@ -48,5 +49,6 @@ router.use("/asistencia-planillas", asistenciaPlanillasRouter);
 router.use("/student-problems", studentProblemsRouter);
 router.use("/shared-state", sharedStateRouter);
 router.use("/justificaciones", justificacionesRouter);
+router.use("/nominas", nominasRouter);
 
 export default router;

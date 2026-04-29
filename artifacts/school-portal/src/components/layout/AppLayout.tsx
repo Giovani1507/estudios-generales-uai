@@ -44,6 +44,7 @@ import {
   FileEdit,
   ShieldAlert,
   UserX,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -109,6 +110,12 @@ const menuItems: MenuItem[] = [
     title: "Justificación de Falta",
     url: "/justificacion-falta",
     icon: ClipboardList,
+    roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Nómina",
+    url: "/nomina",
+    icon: FileSpreadsheet,
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
