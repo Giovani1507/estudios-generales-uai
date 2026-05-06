@@ -164,6 +164,12 @@ async function downloadExcel(sectionId: string, cookie: string): Promise<Buffer>
   return Buffer.from(ab);
 }
 
+/* Quitar sufijos de modalidad del intranet (P=presencial, V=virtual, H=híbrido)
+   "BP"→"B", "CP"→"C", "AV"→"A", "BHP"→"B", "BHV"→"B" */
+function stripModalidad(s: string): string {
+  return s.replace(/[PVH]+$/, "");
+}
+
 /* ─── Upsert planilla in DB ─── */
 async function upsertPlanilla(data: {
   docente: string;
@@ -179,17 +185,37 @@ async function upsertPlanilla(data: {
     throw new Error("Faltan campos requeridos");
   }
 
-  const existing = await db
+  const docenteKey = data.docente.toUpperCase().trim();
+  const codigoKey  = data.codigoCurso.trim();
+  const seccionKey = data.seccion.trim();
+  const seccionAlt = stripModalidad(seccionKey); // "BP" → "B"
+
+  // Busca exacto primero; si no, busca con sección sin sufijo de modalidad
+  let existing = await db
     .select({ id: asistenciaPlanillasTable.id })
     .from(asistenciaPlanillasTable)
     .where(
       and(
-        eq(asistenciaPlanillasTable.docente, data.docente.toUpperCase().trim()),
-        eq(asistenciaPlanillasTable.codigoCurso, data.codigoCurso.trim()),
-        eq(asistenciaPlanillasTable.seccion, data.seccion.trim()),
+        eq(asistenciaPlanillasTable.docente, docenteKey),
+        eq(asistenciaPlanillasTable.codigoCurso, codigoKey),
+        eq(asistenciaPlanillasTable.seccion, seccionKey),
       )
     )
     .limit(1);
+
+  if (existing.length === 0 && seccionAlt && seccionAlt !== seccionKey) {
+    existing = await db
+      .select({ id: asistenciaPlanillasTable.id })
+      .from(asistenciaPlanillasTable)
+      .where(
+        and(
+          eq(asistenciaPlanillasTable.docente, docenteKey),
+          eq(asistenciaPlanillasTable.codigoCurso, codigoKey),
+          eq(asistenciaPlanillasTable.seccion, seccionAlt),
+        )
+      )
+      .limit(1);
+  }
 
   const payload = {
     encabezadoCrudo: data.encabezadoCrudo,
@@ -240,9 +266,13 @@ async function syncTeacher(
   );
 
   for (const course of courses) {
-    // Extract codigoCurso from course text "P06-20261-P06A1103-MÉTODOS..."
+    // Extract codigoCurso from course text: "P38-20261-P38A1104-FILOSOFÍA Y ÉTICA"
+    // Regex: one uppercase letter + 2 digits + one uppercase letter + 4 digits (e.g. P38A1104)
     const courseCodeMatch = course.text.match(/\b([A-Z]\d{2}[A-Z]\d{4})\b/);
-    const courseCode = courseCodeMatch ? courseCodeMatch[1] : null;
+    // Fallback: split by "-" and take the element that looks like a course code
+    const courseCode = courseCodeMatch
+      ? courseCodeMatch[1]
+      : (course.text.split("-").find((p) => /^[A-Z]\d{2}[A-Z]\d{4}$/.test(p.trim())) ?? null);
 
     const secciones: Array<{ id: string; text: string }> = await intranetGet(
       `${BASE_URL}/secciones-por-curso/${course.id}/docente/${teacher.id}?termId=${termId}`,
@@ -271,7 +301,11 @@ async function syncTeacher(
         if (result === "created") created++;
         else updated++;
       } catch (err: any) {
-        console.error(`[sync-asistencias] Error in section ${seccion.id}:`, err.message);
+        console.error(
+          `[sync-asistencias] Error in section ${seccion.id} (${seccion.text}):`,
+          err.message,
+        );
+        log(`  ✗ ${seccion.text}: ${err.message}`);
         failed++;
       }
     }

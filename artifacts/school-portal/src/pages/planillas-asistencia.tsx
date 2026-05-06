@@ -733,9 +733,15 @@ export default function PlanillasAsistencia() {
       const cnt = new Map<string, number>();
       for (const p of list) {
         if (!p.docente || !p.codigoCurso) continue;
-        const k = `${p.docente.toUpperCase().trim()}|${p.codigoCurso.trim()}|${baseSeccion(p.seccion)}`;
-        set.add(k);
         const dk = p.docente.toUpperCase().trim();
+        const codigo = p.codigoCurso.trim();
+        const base2 = baseSeccion(p.seccion);
+        // Clave exacta (ej: "BP", "CP", "AV")
+        set.add(`${dk}|${codigo}|${base2}`);
+        // Clave normalizada: quita sufijos de modalidad al final
+        // "BP"→"B", "CP"→"C", "AV"→"A", "BHP"→"B", "BHV"→"B"
+        const stripped = base2.replace(/[PVH]+$/, "");
+        if (stripped && stripped !== base2) set.add(`${dk}|${codigo}|${stripped}`);
         cnt.set(dk, (cnt.get(dk) || 0) + 1);
       }
       setUploaded(set);
