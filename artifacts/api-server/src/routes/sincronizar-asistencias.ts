@@ -5,11 +5,44 @@ import { and, eq, sql } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { Agent, fetch as undiciFetch } from "undici";
 import * as XLSX from "xlsx";
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
 
 const router = Router();
 const tlsAgent = new Agent({ connect: { rejectUnauthorized: false } });
 const BASE_URL = "https://intranet.autonomadeica.edu.pe";
 const DEFAULT_TERM = "08de1730-801b-4d3d-81a8-e840d74c49fa";
+
+/* ─── Set de combinaciones válidas según planificación 2026-1 ─── */
+function buildPlanningSet(): Set<string> {
+  const set = new Set<string>();
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // Desde src/routes/ → ../../../school-portal/public/
+  const publicDir = path.resolve(__dirname, "../../../school-portal/public");
+  const files = [
+    "planificacion-fica-2026-1.json",
+    "planificacion-fcs-2026-1.json",
+  ];
+  for (const f of files) {
+    const fpath = path.join(publicDir, f);
+    if (!fs.existsSync(fpath)) { console.warn(`[sync] Planning file not found: ${fpath}`); continue; }
+    try {
+      const rows: Array<{ docente?: string; codigo?: string; seccion?: string }> = JSON.parse(fs.readFileSync(fpath, "utf-8"));
+      for (const r of rows) {
+        if (!r.docente || !r.codigo || !r.seccion) continue;
+        const key = [
+          r.docente.trim().toUpperCase(),
+          r.codigo.trim().toUpperCase(),
+          r.seccion.trim().toUpperCase().replace(/[PV]$/, ""),
+        ].join("|");
+        set.add(key);
+      }
+    } catch (e) { console.error(`[sync] Error loading ${f}:`, e); }
+  }
+  console.log(`[sync] Planning set cargado: ${set.size} combos válidos`);
+  return set;
+}
 
 function getIntranetHeaders(cookie: string, referer?: string) {
   return {
@@ -240,10 +273,11 @@ async function syncTeacher(
   teacher: { id: string; name: string; username: string },
   cookie: string,
   termId: string,
+  planningSet: Set<string>,
   onProgress?: (msg: string) => void,
-): Promise<{ created: number; updated: number; failed: number; sections: number }> {
+): Promise<{ created: number; updated: number; failed: number; skipped: number; sections: number }> {
   const log = (msg: string) => onProgress?.(msg);
-  let created = 0, updated = 0, failed = 0, sections = 0;
+  let created = 0, updated = 0, failed = 0, skipped = 0, sections = 0;
 
   log(`Obteniendo cursos de ${teacher.name}...`);
   const courses: Array<{ id: string; text: string }> = await intranetGet(
@@ -293,6 +327,19 @@ async function syncTeacher(
           continue;
         }
 
+        // ── Validar contra planificación: solo guardar si el combo existe ──
+        const normSecPlan = resolvedSeccion.trim().toUpperCase().replace(/[PV]$/, "");
+        const planKey = [
+          teacher.name.trim().toUpperCase(),
+          resolvedCodigo.trim().toUpperCase(),
+          normSecPlan,
+        ].join("|");
+        if (!planningSet.has(planKey)) {
+          log(`  ⊘ ${resolvedCodigo} · ${resolvedSeccion} — no está en la planificación, omitido`);
+          skipped++;
+          continue;
+        }
+
         const result = await upsertPlanilla({
           docente: teacher.name,
           codigoCurso: resolvedCodigo,
@@ -317,7 +364,7 @@ async function syncTeacher(
     }
   }
 
-  return { created, updated, failed, sections };
+  return { created, updated, failed, skipped, sections };
 }
 
 /* ─── POST /api/sincronizar-asistencias ─── */
@@ -378,21 +425,23 @@ router.post(
           teachers = (raw.data || []).map((d: any) => ({ id: d.id, name: d.name?.toUpperCase().trim(), username: d.username }));
         }
 
+        const planningSet = buildPlanningSet();
         send("start", { total: teachers.length });
 
-        let totalCreated = 0, totalUpdated = 0, totalFailed = 0;
+        let totalCreated = 0, totalUpdated = 0, totalFailed = 0, totalSkipped = 0;
 
         for (let i = 0; i < teachers.length; i++) {
           const t = teachers[i];
           send("teacher", { index: i + 1, total: teachers.length, name: t.name });
 
           try {
-            const r = await syncTeacher(t, cookie, termId, (msg) => {
+            const r = await syncTeacher(t, cookie, termId, planningSet, (msg) => {
               send("progress", { message: msg });
             });
             totalCreated += r.created;
             totalUpdated += r.updated;
             totalFailed += r.failed;
+            totalSkipped += r.skipped;
             send("teacher_done", { name: t.name, ...r });
           } catch (err: any) {
             if (err.message === "AUTH_EXPIRED") {
@@ -404,7 +453,7 @@ router.post(
           }
         }
 
-        send("done", { created: totalCreated, updated: totalUpdated, failed: totalFailed });
+        send("done", { created: totalCreated, updated: totalUpdated, failed: totalFailed, skipped: totalSkipped });
         res.write("event: done\ndata: {}\n\n");
         res.end();
       } catch (err: any) {
@@ -436,7 +485,8 @@ router.post(
       const raw = rows[0].rawData as any;
       const teacher = { id: raw.id, name: rows[0].name, username: rows[0].username };
 
-      const result = await syncTeacher(teacher, cookie, termId);
+      const planningSet = buildPlanningSet();
+      const result = await syncTeacher(teacher, cookie, termId, planningSet);
       res.json({ ok: true, docente: teacher.name, ...result });
     } catch (err: any) {
       console.error("[sincronizar-asistencias] error:", err);
