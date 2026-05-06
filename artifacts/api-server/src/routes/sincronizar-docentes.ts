@@ -3,6 +3,9 @@ import { db } from "@workspace/db";
 import { docentesExternosTable } from "@workspace/db/schema";
 import { sql, ilike, or } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
+import { Agent, fetch as undiciFetch } from "undici";
+
+const tlsAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 const router = Router();
 
@@ -37,7 +40,8 @@ async function fetchAllDocentes(cookie: string, termId: string): Promise<Externa
       _: String(Date.now()),
     });
 
-    const res = await fetch(`${EXTERNAL_API}?${params.toString()}`, {
+    const res = await undiciFetch(`${EXTERNAL_API}?${params.toString()}`, {
+      dispatcher: tlsAgent,
       headers: {
         Cookie: cookie,
         Accept: "application/json",
