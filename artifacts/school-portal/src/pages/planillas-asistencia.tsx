@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download, RefreshCw, X, Trash2 } from "lucide-react";
+import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download, RefreshCw, X, Trash2, Zap } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import JSZip from "jszip";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 
 type Row = {
   carrera: string; carreraFull: string; ciclo: string; seccion: string;
@@ -427,7 +430,13 @@ export default function PlanillasAsistencia() {
   const [syncResult, setSyncResult] = useState<{ created: number; updated: number; failed: number } | null>(null);
   const [confirmLimpiar, setConfirmLimpiar] = useState(false);
   const [limpiando, setLimpiando] = useState(false);
+  const [confirmSyncAll, setConfirmSyncAll] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const [syncAllLog, setSyncAllLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
+  const [syncAllResult, setSyncAllResult] = useState<{ created: number; updated: number; skipped: number; failed: number } | null>(null);
+  const [showSyncAllDialog, setShowSyncAllDialog] = useState(false);
   const syncLogRef = useRef<HTMLDivElement>(null);
+  const syncAllLogRef = useRef<HTMLDivElement>(null);
 
   const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -511,6 +520,92 @@ export default function PlanillasAsistencia() {
       addLog(`Error de conexión: ${err.message}`, "err");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const sincronizarTodo = async () => {
+    setSyncingAll(true);
+    setSyncAllLog([]);
+    setSyncAllResult(null);
+    setShowSyncAllDialog(true);
+    setConfirmSyncAll(false);
+
+    const addLog = (msg: string, type: "info" | "ok" | "err" = "info") => {
+      setSyncAllLog(prev => {
+        const next = [...prev, { msg, type }];
+        setTimeout(() => syncAllLogRef.current?.scrollTo({ top: 9999, behavior: "smooth" }), 50);
+        return next;
+      });
+    };
+
+    addLog("Iniciando sincronización masiva desde la intranet...", "info");
+
+    try {
+      const res = await fetch(`${apiBase}/api/sincronizar-asistencias`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify({ sse: true }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: `Error ${res.status}` }));
+        addLog(err.error === "AUTH_EXPIRED"
+          ? "Cookie de la intranet expirada. Renueva tu sesión."
+          : err.message || `Error ${res.status}`, "err");
+        setSyncingAll(false);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let created = 0, updated = 0, skipped = 0, failed = 0;
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        let event = "";
+        for (const line of lines) {
+          if (line.startsWith("event:")) { event = line.slice(6).trim(); continue; }
+          if (!line.startsWith("data:")) continue;
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (event === "start") {
+              addLog(`${data.total} docentes encontrados. Descargando planillas…`, "info");
+            } else if (event === "teacher") {
+              addLog(`[${data.index}/${data.total}] ${data.name}`, "info");
+            } else if (event === "progress") {
+              addLog(`  ${data.message}`, "info");
+            } else if (event === "teacher_done") {
+              created += data.created ?? 0; updated += data.updated ?? 0;
+              skipped += data.skipped ?? 0; failed  += data.failed  ?? 0;
+              const parts = [];
+              if (data.created)  parts.push(`${data.created} nuevas`);
+              if (data.updated)  parts.push(`${data.updated} act.`);
+              if (data.skipped)  parts.push(`${data.skipped} omitidas`);
+              if (data.failed)   parts.push(`${data.failed} fallidas`);
+              if (parts.length)
+                addLog(`  ✓ ${parts.join(" · ")}`, "ok");
+            } else if (event === "teacher_error") {
+              addLog(`  ✗ ${data.name}: ${data.error}`, "err");
+            } else if (event === "done") {
+              setSyncAllResult({ created, updated, skipped, failed });
+              addLog(`\nListo: ${created} nuevas · ${updated} actualizadas · ${skipped} omitidas · ${failed} fallidas`, "ok");
+            } else if (event === "error") {
+              addLog(`Error: ${data.message}`, "err");
+            }
+          } catch { /* skip parse errors */ }
+        }
+      }
+      await loadUploaded();
+    } catch (err: any) {
+      addLog(`Error de conexión: ${err.message}`, "err");
+    } finally {
+      setSyncingAll(false);
     }
   };
 
@@ -942,6 +1037,16 @@ export default function PlanillasAsistencia() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
+            onClick={() => setConfirmSyncAll(true)}
+            disabled={syncingAll}
+            className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {syncingAll
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Sincronizando…</>
+              : <><Zap className="h-4 w-4" /> Sincronización Masiva</>
+            }
+          </Button>
+          <Button
             variant="outline"
             onClick={() => setConfirmLimpiar(true)}
             disabled={limpiando}
@@ -1251,6 +1356,81 @@ export default function PlanillasAsistencia() {
           allRows={data}
         />
       )}
+
+      {/* ── Confirmación sincronización masiva ── */}
+      <AlertDialog open={confirmSyncAll} onOpenChange={(o) => { if (!syncingAll) setConfirmSyncAll(o); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-indigo-600" /> ¿Iniciar sincronización masiva?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esto descargará y actualizará las planillas de <strong>todos los docentes</strong> desde
+              la intranet. Solo se guardarán cursos que estén en la planificación 2026-1.
+              El proceso puede tardar varios minutos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); sincronizarTodo(); }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              <Zap className="h-4 w-4 mr-1" /> Sí, sincronizar todo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Diálogo de progreso de sincronización masiva ── */}
+      <Dialog open={showSyncAllDialog} onOpenChange={(o) => { if (!syncingAll) setShowSyncAllDialog(o); }}>
+        <DialogContent className="max-w-2xl w-full">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {syncingAll
+                ? <><Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> Sincronización masiva en progreso…</>
+                : <><Zap className="h-4 w-4 text-indigo-600" /> Sincronización masiva completada</>
+              }
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Log de progreso */}
+          <div
+            ref={syncAllLogRef}
+            className="bg-gray-950 rounded-lg p-3 h-80 overflow-y-auto font-mono text-xs space-y-0.5"
+          >
+            {syncAllLog.map((entry, i) => (
+              <div key={i} className={
+                entry.type === "ok"  ? "text-emerald-400" :
+                entry.type === "err" ? "text-rose-400" :
+                "text-gray-300"
+              }>
+                {entry.msg}
+              </div>
+            ))}
+            {syncingAll && (
+              <div className="text-indigo-400 animate-pulse">▌</div>
+            )}
+          </div>
+
+          {/* Resumen final */}
+          {syncAllResult && (
+            <div className="grid grid-cols-4 gap-3 pt-1">
+              {[
+                { label: "Nuevas",     val: syncAllResult.created, color: "text-emerald-600" },
+                { label: "Actualizadas", val: syncAllResult.updated, color: "text-blue-600"  },
+                { label: "Omitidas",   val: syncAllResult.skipped, color: "text-amber-600"  },
+                { label: "Fallidas",   val: syncAllResult.failed,  color: "text-rose-600"   },
+              ].map(({ label, val, color }) => (
+                <div key={label} className="bg-gray-50 rounded-lg p-3 text-center border border-border/50">
+                  <div className={`text-2xl font-bold ${color}`}>{val}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={confirmLimpiar} onOpenChange={(o) => { if (!limpiando) setConfirmLimpiar(o); }}>
         <AlertDialogContent>
