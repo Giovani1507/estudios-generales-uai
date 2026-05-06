@@ -79,12 +79,12 @@ export default function ReporteAsistencia() {
     try {
       const base = `${apiBase}/`;
       const [r, ficaPlan, fcsPlan] = await Promise.all([
-        fetch(`${apiBase}/api/asistencia-planillas`, { credentials: "include", signal: ctrl.signal }),
+        fetch(`${apiBase}/api/asistencia-planillas/all-full`, { credentials: "include", signal: ctrl.signal }),
         fetch(`${base}planificacion-fica-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
         fetch(`${base}planificacion-fcs-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
       ]);
       if (!r.ok) throw new Error("list");
-      const list = (await r.json()) as PlanillaItem[];
+      const detalles = (await r.json()) as PlanillaDetail[];
 
       // Mapa codigo_upper → ciclo desde los JSON de planificación
       const codigoCicloMap = new Map<string, string>();
@@ -93,18 +93,6 @@ export default function ReporteAsistencia() {
           codigoCicloMap.set(String(row.codigo).toUpperCase().trim(), String(row.ciclo).trim());
         }
       }
-
-      const detalles = await Promise.all(
-        list.map(async (p) => {
-          try {
-            const d = await fetch(`${apiBase}/api/asistencia-planillas/${p.id}`, {
-              credentials: "include", signal: ctrl.signal,
-            });
-            if (!d.ok) return null;
-            return (await d.json()) as PlanillaDetail;
-          } catch { return null; }
-        })
-      );
 
       const out: Fila[] = [];
       for (const det of detalles) {

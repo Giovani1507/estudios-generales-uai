@@ -50,6 +50,17 @@ router.get("/", async (req, res) => {
   }
 });
 
+/* Devuelve TODAS las planillas con datos completos (weeks + alumnos + totales) en una sola query */
+router.get("/all-full", async (_req, res) => {
+  try {
+    const rows = await db.select().from(asistenciaPlanillasTable).orderBy(desc(asistenciaPlanillasTable.updatedAt));
+    res.json(rows);
+  } catch (err) {
+    console.error("[asistencia-planillas] GET /all-full error:", err);
+    res.status(500).json({ error: "Error al obtener planillas completas" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
