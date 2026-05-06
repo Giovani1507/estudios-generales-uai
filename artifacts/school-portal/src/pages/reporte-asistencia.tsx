@@ -30,6 +30,7 @@ type Fila = {
   codigo: string;
   seccion: string;
   local: string;
+  ciclo: string;
   codAlumno: string;
   alumno: string;
   presentes: number;
@@ -59,6 +60,7 @@ export default function ReporteAsistencia() {
   const [search, setSearch]       = useState("");
   const [sedeF, setSedeF]         = useState("TODAS");
   const [docenteF, setDocenteF]   = useState("TODOS");
+  const [cicloF, setCicloF]       = useState<"TODOS" | "1" | "2">("TODOS");
   const [estadoF, setEstadoF]     = useState<"TODOS" | "APROBADO" | "DESAPROBADO">("TODOS");
   const [sortKey, setSortKey]     = useState<SortKey>("docente");
   const [sortDir, setSortDir]     = useState<"asc" | "desc">("asc");
@@ -96,6 +98,11 @@ export default function ReporteAsistencia() {
       const out: Fila[] = [];
       for (const det of detalles) {
         if (!det) continue;
+        // Solo ciclos 1 y 2
+        const cicloNum = parseInt(det.ciclo || "", 10);
+        if (cicloNum !== 1 && cicloNum !== 2) continue;
+        const ciclo = String(cicloNum);
+
         const weeksLen = det.weeks?.length || 0;
         let maxMarcas = 0;
         for (const a of det.alumnos || []) {
@@ -119,6 +126,7 @@ export default function ReporteAsistencia() {
             codigo:    (det.codigoCurso || "").toUpperCase(),
             seccion:   (det.seccion   || "").toUpperCase(),
             local:     sedeLabel(det.sede),
+            ciclo,
             codAlumno: (a.numero || "").toUpperCase(),
             alumno:    (a.nombre  || "").toUpperCase(),
             presentes: pres,
@@ -148,11 +156,12 @@ export default function ReporteAsistencia() {
     return filas.filter(f => {
       if (sedeF    !== "TODAS"  && f.local    !== sedeF)    return false;
       if (docenteF !== "TODOS"  && f.docente  !== docenteF) return false;
+      if (cicloF   !== "TODOS"  && f.ciclo    !== cicloF)   return false;
       if (estadoF  !== "TODOS"  && f.estado   !== estadoF)  return false;
       if (q && ![f.alumno, f.codAlumno, f.curso, f.codigo, f.docente, f.seccion].some(v => v.includes(q))) return false;
       return true;
     });
-  }, [filas, sedeF, docenteF, estadoF, search]);
+  }, [filas, sedeF, docenteF, cicloF, estadoF, search]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -363,6 +372,14 @@ export default function ReporteAsistencia() {
                 className="pl-8 h-9"
               />
             </div>
+            <Select value={cicloF} onValueChange={v => setCicloF(v as typeof cicloF)}>
+              <SelectTrigger className="w-32 h-9"><SelectValue placeholder="Ciclo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todos los ciclos</SelectItem>
+                <SelectItem value="1">Ciclo 1</SelectItem>
+                <SelectItem value="2">Ciclo 2</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={sedeF} onValueChange={setSedeF}>
               <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Local" /></SelectTrigger>
               <SelectContent>
