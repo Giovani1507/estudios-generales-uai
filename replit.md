@@ -1,4 +1,6 @@
-# Workspace
+# Portal Académico UAI
+
+Gestión académica UAI 2026-1: planillas de asistencia, docentes, horarios y reportes para coordinadores.
 
 ## Overview
 

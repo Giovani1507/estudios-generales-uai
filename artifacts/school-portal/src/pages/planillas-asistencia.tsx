@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download, RefreshCw, X } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import JSZip from "jszip";
 import { Input } from "@/components/ui/input";
@@ -418,6 +418,95 @@ export default function PlanillasAsistencia() {
   const [sedeFiltro, setSedeFiltro] = useState<"TODAS" | Sede>("TODAS");
   const [diaFiltro, setDiaFiltro] = useState<"TODOS" | typeof DIAS[number]>("TODOS");
   const [exportingCurso, setExportingCurso] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncLog, setSyncLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
+  const [syncResult, setSyncResult] = useState<{ created: number; updated: number; failed: number } | null>(null);
+  const syncLogRef = useRef<HTMLDivElement>(null);
+
+  const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+
+  const sincronizarDocente = async () => {
+    if (!selected || syncing) return;
+    setSyncing(true);
+    setSyncLog([]);
+    setSyncResult(null);
+
+    const addLog = (msg: string, type: "info" | "ok" | "err" = "info") => {
+      setSyncLog(prev => {
+        const next = [...prev, { msg, type }];
+        setTimeout(() => syncLogRef.current?.scrollTo({ top: 9999, behavior: "smooth" }), 50);
+        return next;
+      });
+    };
+
+    addLog(`Sincronizando asistencias de ${selected}...`, "info");
+
+    try {
+      const res = await fetch(`${apiBase}/api/sincronizar-asistencias`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify({ docenteName: selected, sse: true }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: `Error ${res.status}` }));
+        if (res.status === 404 || err.error === "DOCENTE_NO_ENCONTRADO") {
+          addLog("Docente no encontrado en la intranet. Ve a 'Sincronizar Docentes' primero.", "err");
+        } else if (err.error === "AUTH_EXPIRED") {
+          addLog("La cookie de la intranet expiró. Renueva tu sesión.", "err");
+        } else {
+          addLog(err.message || "Error al sincronizar", "err");
+        }
+        setSyncing(false);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let created = 0, updated = 0, failed = 0;
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        let event = "";
+        for (const line of lines) {
+          if (line.startsWith("event:")) { event = line.slice(6).trim(); continue; }
+          if (!line.startsWith("data:")) continue;
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (event === "start") {
+              addLog(`Encontrados ${data.total} docente(s). Descargando Excel por sección...`, "info");
+            } else if (event === "progress") {
+              addLog(data.message, "info");
+            } else if (event === "teacher_done") {
+              created += data.created; updated += data.updated; failed += data.failed;
+              if (data.sections > 0) {
+                addLog(`✓ ${data.sections} secciones procesadas (${data.created} nuevas, ${data.updated} actualizadas${data.failed ? `, ${data.failed} fallidas` : ""})`, "ok");
+              }
+            } else if (event === "teacher_error") {
+              addLog(`Error en docente: ${data.error}`, "err");
+            } else if (event === "done") {
+              setSyncResult({ created, updated, failed });
+              addLog(`Completado: ${created} planillas nuevas · ${updated} actualizadas${failed ? ` · ${failed} fallidas` : ""}`, "ok");
+            } else if (event === "error") {
+              addLog(`Error: ${data.message}`, "err");
+            }
+          } catch { /* skip parse errors */ }
+        }
+      }
+
+      await loadUploaded();
+    } catch (err: any) {
+      addLog(`Error de conexión: ${err.message}`, "err");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const exportarCurso = async (c: Row & { sesiones: number }) => {
     const key = `${c.codigo}|${c.seccion}`;
@@ -959,12 +1048,61 @@ export default function PlanillasAsistencia() {
               </div>
             ) : (
               <>
-                <div className="p-4 border-b border-border/50">
-                  <h2 className="text-sm font-semibold flex items-center gap-1.5">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    Cursos de <span className="text-primary">{selected}</span>
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{cursos.length} cursos · click en "Planilla" para importar/ver el Excel y el horario del aula</p>
+                <div className="p-4 border-b border-border/50 space-y-2">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div>
+                      <h2 className="text-sm font-semibold flex items-center gap-1.5">
+                        <BookOpen className="h-4 w-4 text-primary" />
+                        Cursos de <span className="text-primary">{selected}</span>
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">{cursos.length} cursos · click en "Planilla" para importar/ver el Excel y el horario del aula</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2.5 gap-1.5 text-[11px] border-indigo-300 text-indigo-700 hover:bg-indigo-50 shrink-0"
+                      onClick={() => { setSyncLog([]); setSyncResult(null); sincronizarDocente(); }}
+                      disabled={syncing}
+                      title="Descargar asistencias directamente desde la intranet"
+                    >
+                      {syncing
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sincronizando…</>
+                        : <><RefreshCw className="h-3.5 w-3.5" /> Sincronizar desde Intranet</>
+                      }
+                    </Button>
+                  </div>
+
+                  {/* Panel de progreso de sincronización */}
+                  {(syncLog.length > 0) && (
+                    <div className="bg-slate-900 rounded-md p-2 text-[10px] font-mono relative">
+                      <button
+                        onClick={() => { setSyncLog([]); setSyncResult(null); }}
+                        className="absolute top-1 right-1 text-slate-400 hover:text-white"
+                        title="Cerrar"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <div ref={syncLogRef} className="max-h-28 overflow-y-auto space-y-0.5 pr-4">
+                        {syncLog.map((l, i) => (
+                          <div key={i} className={
+                            l.type === "ok" ? "text-emerald-400" :
+                            l.type === "err" ? "text-rose-400" :
+                            "text-slate-300"
+                          }>
+                            {l.msg}
+                          </div>
+                        ))}
+                        {syncing && (
+                          <div className="text-slate-500 animate-pulse">▋</div>
+                        )}
+                      </div>
+                      {syncResult && !syncing && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-700 text-emerald-400 font-semibold">
+                          Listo · {syncResult.created} nuevas · {syncResult.updated} actualizadas{syncResult.failed > 0 ? ` · ${syncResult.failed} fallidas` : ""}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="overflow-auto flex-1">
                   <table className="w-full text-xs">

@@ -24,6 +24,7 @@ import sharedStateRouter from "./shared-state.js";
 import justificacionesRouter from "./justificaciones.js";
 import nominasRouter from "./nominas.js";
 import sincronizarDocentesRouter from "./sincronizar-docentes.js";
+import sincronizarAsistenciasRouter from "./sincronizar-asistencias.js";
 
 const router = Router();
 
@@ -52,5 +53,6 @@ router.use("/shared-state", sharedStateRouter);
 router.use("/justificaciones", justificacionesRouter);
 router.use("/nominas", nominasRouter);
 router.use("/sincronizar-docentes", sincronizarDocentesRouter);
+router.use("/sincronizar-asistencias", sincronizarAsistenciasRouter);
 
 export default router;
