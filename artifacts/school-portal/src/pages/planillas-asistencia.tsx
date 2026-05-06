@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download, RefreshCw, X } from "lucide-react";
+import { Search, ClipboardCheck, User, BookOpen, Loader2, FileSpreadsheet, ChevronRight, CheckCircle2, Download, RefreshCw, X, Trash2 } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import JSZip from "jszip";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLogPageEntry, logActivity } from "@/hooks/use-activity-log";
 import { AsistenciaPlanillaDialog, type CursoCtx } from "@/components/asistencia-planilla-dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Row = {
   carrera: string; carreraFull: string; ciclo: string; seccion: string;
@@ -421,6 +425,8 @@ export default function PlanillasAsistencia() {
   const [syncing, setSyncing] = useState(false);
   const [syncLog, setSyncLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
   const [syncResult, setSyncResult] = useState<{ created: number; updated: number; failed: number } | null>(null);
+  const [confirmLimpiar, setConfirmLimpiar] = useState(false);
+  const [limpiando, setLimpiando] = useState(false);
   const syncLogRef = useRef<HTMLDivElement>(null);
 
   const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
@@ -555,6 +561,26 @@ export default function PlanillasAsistencia() {
       toast({ title: "Error al generar Excel", variant: "destructive" });
     } finally {
       setExportingCurso(null);
+    }
+  };
+
+  const limpiarTodo = async () => {
+    setLimpiando(true);
+    try {
+      const base = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
+      const res = await fetch(`${base}/api/asistencia-planillas`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      toast({ title: "Asistencia 2026-1 limpiada", description: "Todas las planillas fueron eliminadas." });
+      setUploaded(new Set());
+      setUploadedByDocente(new Map());
+    } catch {
+      toast({ title: "Error al limpiar", variant: "destructive" });
+    } finally {
+      setLimpiando(false);
+      setConfirmLimpiar(false);
     }
   };
 
@@ -914,16 +940,26 @@ export default function PlanillasAsistencia() {
             Al ver una planilla aparecerá también el horario por aula que se está formando para esos estudiantes.
           </p>
         </div>
-        <Button
-          onClick={exportarPorCarrera}
-          disabled={exporting}
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
-        >
-          {exporting
-            ? <><Loader2 className="h-4 w-4 animate-spin" /> Generando…</>
-            : <><Download className="h-4 w-4" /> Excel por Carrera</>
-          }
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => setConfirmLimpiar(true)}
+            disabled={limpiando}
+            className="gap-2 border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          >
+            <Trash2 className="h-4 w-4" /> Limpiar Asistencia
+          </Button>
+          <Button
+            onClick={exportarPorCarrera}
+            disabled={exporting}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {exporting
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Generando…</>
+              : <><Download className="h-4 w-4" /> Excel por Carrera</>
+            }
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -1215,6 +1251,30 @@ export default function PlanillasAsistencia() {
           allRows={data}
         />
       )}
+
+      <AlertDialog open={confirmLimpiar} onOpenChange={(o) => { if (!limpiando) setConfirmLimpiar(o); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-rose-700 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> ¿Limpiar toda la Asistencia 2026-1?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará <strong>todas las planillas de asistencia</strong> de todos los docentes.
+              Los datos no se pueden recuperar. Úsalo solo para reiniciar la carga del ciclo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={limpiando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={limpiando}
+              onClick={(e) => { e.preventDefault(); limpiarTodo(); }}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {limpiando ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Limpiando…</> : "Sí, limpiar todo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -132,4 +132,15 @@ router.delete("/:id", requireWriter, async (req, res) => {
   }
 });
 
+/* DELETE /api/asistencia-planillas — borra TODAS las planillas */
+router.delete("/", requireRole("administrador", "coordinador"), async (_req, res) => {
+  try {
+    const result = await db.delete(asistenciaPlanillasTable);
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error("[asistencia-planillas] DELETE ALL error:", err);
+    res.status(500).json({ error: "Error al limpiar planillas" });
+  }
+});
+
 export default router;
