@@ -164,10 +164,11 @@ async function downloadExcel(sectionId: string, cookie: string): Promise<Buffer>
   return Buffer.from(ab);
 }
 
-/* Quitar sufijos de modalidad del intranet (P=presencial, V=virtual, H=híbrido)
-   "BP"→"B", "CP"→"C", "AV"→"A", "BHP"→"B", "BHV"→"B" */
+/* Normaliza sección del intranet: quita trailing P o V (código de modalidad).
+   "AP"→"A", "DV"→"D", "AHP"→"AH", "AHV"→"AH", "BHP"→"BH"
+   H en el medio es parte del nombre de sección (híbrido), NO se elimina. */
 function stripModalidad(s: string): string {
-  return s.replace(/[PVH]+$/, "");
+  return s.replace(/[PV]$/, "");
 }
 
 /* ─── Upsert planilla in DB ─── */
@@ -187,11 +188,10 @@ async function upsertPlanilla(data: {
 
   const docenteKey = data.docente.toUpperCase().trim();
   const codigoKey  = data.codigoCurso.trim();
-  const seccionKey = data.seccion.trim();
-  const seccionAlt = stripModalidad(seccionKey); // "BP" → "B"
+  // Normaliza sección antes de guardar: "AP"→"A", "AHP"→"AH"
+  const seccionKey = stripModalidad(data.seccion.trim());
 
-  // Busca exacto primero; si no, busca con sección sin sufijo de modalidad
-  let existing = await db
+  const existing = await db
     .select({ id: asistenciaPlanillasTable.id })
     .from(asistenciaPlanillasTable)
     .where(
@@ -202,20 +202,6 @@ async function upsertPlanilla(data: {
       )
     )
     .limit(1);
-
-  if (existing.length === 0 && seccionAlt && seccionAlt !== seccionKey) {
-    existing = await db
-      .select({ id: asistenciaPlanillasTable.id })
-      .from(asistenciaPlanillasTable)
-      .where(
-        and(
-          eq(asistenciaPlanillasTable.docente, docenteKey),
-          eq(asistenciaPlanillasTable.codigoCurso, codigoKey),
-          eq(asistenciaPlanillasTable.seccion, seccionAlt),
-        )
-      )
-      .limit(1);
-  }
 
   const payload = {
     encabezadoCrudo: data.encabezadoCrudo,

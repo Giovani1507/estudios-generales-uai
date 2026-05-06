@@ -518,9 +518,9 @@ export default function PlanillasAsistencia() {
       const list = listRes.ok ? (await listRes.json()) as Array<{
         id: number; docente: string|null; codigoCurso: string|null; seccion: string|null;
       }> : [];
-      // normSec: quita sufijos de modalidad del intranet ("AP"→"A", "DV"→"D")
+      // normSec: quita trailing P/V por compatibilidad con datos antiguos
       const normSec2 = (s: string | null | undefined) =>
-        String(s || "").trim().toUpperCase().replace(/[PVH]+$/, "");
+        String(s || "").trim().toUpperCase().replace(/[PV]$/, "");
       const match = list.find(p =>
         (p.docente || "").toUpperCase().trim() === (selected || "").toUpperCase().trim() &&
         (p.codigoCurso || "").trim() === c.codigo &&
@@ -587,8 +587,8 @@ export default function PlanillasAsistencia() {
         `${(d||"").toUpperCase().trim()}|${(c||"").trim()}|${(s||"").trim()}`;
       const planillaMap = new Map<string, typeof planillas[number]>();
       for (const p of planillas) {
-        // normSec: quita sufijos de modalidad ("AP"→"A", "DV"→"D", "BHP"→"B")
-        const nsec = baseSeccion(p.seccion).replace(/[PVH]+$/, "");
+        // normSec: quita trailing P/V por compatibilidad con datos antiguos
+        const nsec = baseSeccion(p.seccion).replace(/[PV]$/, "");
         planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", nsec), p);
       }
 
@@ -741,11 +741,10 @@ export default function PlanillasAsistencia() {
         const dk = p.docente.toUpperCase().trim();
         const codigo = p.codigoCurso.trim();
         const base2 = baseSeccion(p.seccion);
-        // Clave exacta (ej: "BP", "CP", "AV")
+        // Clave exacta (la BD ya guarda normalizado: "A", "B", "AH"…)
         set.add(`${dk}|${codigo}|${base2}`);
-        // Clave normalizada: quita sufijos de modalidad al final
-        // "BP"→"B", "CP"→"C", "AV"→"A", "BHP"→"B", "BHV"→"B"
-        const stripped = base2.replace(/[PVH]+$/, "");
+        // Compatibilidad con datos antiguos: también agregar sin P/V final
+        const stripped = base2.replace(/[PV]$/, "");
         if (stripped && stripped !== base2) set.add(`${dk}|${codigo}|${stripped}`);
         cnt.set(dk, (cnt.get(dk) || 0) + 1);
       }

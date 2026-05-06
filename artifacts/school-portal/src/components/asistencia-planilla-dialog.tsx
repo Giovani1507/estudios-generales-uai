@@ -10,15 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save, Eraser } from "lucide-react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
-/* Normaliza sección quitando sufijos de modalidad del intranet:
-   "AP" → "A", "BP" → "B", "DV" → "D", "BHP" → "B"
-   Permite comparar secciones del intranet con las de planificación */
+/* Normaliza sección: quita trailing P o V (BD ya guarda limpio, esto es por compatibilidad).
+   "AP" → "A", "DV" → "D", "AHP" → "AH" */
 const normSec = (s: string | null | undefined): string =>
-  String(s || "").trim().toUpperCase().replace(/[PVH]+$/, "");
+  String(s || "").trim().toUpperCase().replace(/[PV]$/, "");
 
 // Marca un docente como "sin asistencia válida" para que aparezca en la
 // página "Docentes sin asistencias". Persiste en el estado compartido.
@@ -548,6 +547,22 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
     setDirty(true);
   };
 
+  /* Limpia las marcas de una semana completa (ambos slots T y P) para todos los alumnos */
+  const clearWeek = (weekIdx: number) => {
+    if (!detail) return;
+    const col0 = weekIdx * 2;
+    const col1 = col0 + 1;
+    const alumnos = detail.alumnos.map((a) => {
+      const marcas = a.marcas.slice();
+      marcas[col0] = "";
+      marcas[col1] = "";
+      return { ...a, marcas };
+    });
+    const r = recompute(detail.weeks, alumnos);
+    setDetail({ ...detail, alumnos: r.alumnos, totales: r.totales });
+    setDirty(true);
+  };
+
   const saveDetail = async () => {
     if (!detail) return;
     setSaving(true);
@@ -795,6 +810,13 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
                           <div className="font-semibold">{w.label}</div>
                           <div className="text-[9px] text-muted-foreground font-normal">{w.fecha}</div>
                           <div className="text-[9px] text-muted-foreground font-normal">{w.dia}</div>
+                          <button
+                            title="Limpiar semana"
+                            onClick={() => clearWeek(i)}
+                            className="mt-0.5 text-[9px] text-rose-400 hover:text-rose-600 flex items-center gap-0.5 mx-auto leading-none"
+                          >
+                            <Eraser className="h-2.5 w-2.5" /> Limpiar
+                          </button>
                         </th>
                       ))}
                       <th className="px-2 py-1.5 text-center font-semibold border-l bg-primary/10">% Asist.</th>
