@@ -23,6 +23,7 @@ import studentProblemsRouter from "./student-problems.js";
 import sharedStateRouter from "./shared-state.js";
 import justificacionesRouter from "./justificaciones.js";
 import nominasRouter from "./nominas.js";
+import sincronizarDocentesRouter from "./sincronizar-docentes.js";
 
 const router = Router();
 
@@ -50,5 +51,6 @@ router.use("/student-problems", studentProblemsRouter);
 router.use("/shared-state", sharedStateRouter);
 router.use("/justificaciones", justificacionesRouter);
 router.use("/nominas", nominasRouter);
+router.use("/sincronizar-docentes", sincronizarDocentesRouter);
 
 export default router;

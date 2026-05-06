@@ -45,6 +45,7 @@ import {
   ShieldAlert,
   UserX,
   FileSpreadsheet,
+  RefreshCw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -117,6 +118,12 @@ const menuItems: MenuItem[] = [
     url: "/nomina",
     icon: FileSpreadsheet,
     roles: ["administrador", "coordinador", "administrativo"],
+  },
+  {
+    title: "Sincronizar Docentes",
+    url: "/sincronizar-docentes",
+    icon: RefreshCw,
+    roles: ["administrador", "coordinador"],
   },
   {
     title: "Soporte Justificación",

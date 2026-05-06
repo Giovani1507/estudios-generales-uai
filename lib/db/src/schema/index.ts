@@ -24,3 +24,4 @@ export * from "./student_problems";
 export * from "./shared_state";
 export * from "./justificaciones";
 export * from "./nominas";
+export * from "./docentes_externos";
