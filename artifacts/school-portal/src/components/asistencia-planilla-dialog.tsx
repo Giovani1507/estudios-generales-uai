@@ -14,6 +14,12 @@ import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save } from "
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
+/* Normaliza sección quitando sufijos de modalidad del intranet:
+   "AP" → "A", "BP" → "B", "DV" → "D", "BHP" → "B"
+   Permite comparar secciones del intranet con las de planificación */
+const normSec = (s: string | null | undefined): string =>
+  String(s || "").trim().toUpperCase().replace(/[PVH]+$/, "");
+
 // Marca un docente como "sin asistencia válida" para que aparezca en la
 // página "Docentes sin asistencias". Persiste en el estado compartido.
 async function flagDocenteSinAsistencia(opts: {
@@ -334,7 +340,10 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error(String(res.status));
       const all = (await res.json()) as PlanillaRow[];
-      const filtered = curso.seccion ? all.filter(p => (p.seccion || "") === curso.seccion) : all;
+      // Compara con normSec para tolerar sufijos de modalidad del intranet ("AP" ↔ "A")
+      const filtered = curso.seccion
+        ? all.filter(p => normSec(p.seccion) === normSec(curso.seccion))
+        : all;
       setPlanillas(filtered);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo cargar las planillas", variant: "destructive" });
@@ -413,7 +422,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
       const existente = planillas.find(p =>
         (p.docente || "").toUpperCase().trim() === (curso.docente || "").toUpperCase().trim() &&
         (p.codigoCurso || "") === (curso.codigoCurso || "") &&
-        (p.seccion || "") === (curso.seccion || "")
+        normSec(p.seccion) === normSec(curso.seccion)
       );
 
       if (existente) {

@@ -287,11 +287,31 @@ async function syncTeacher(
         const parsed = parseAttendanceXlsx(excelBuf);
         const enc = parseEncabezado(parsed.encabezadoCrudo);
 
+        // Resolver codigoCurso: Excel header → intranet course text → cualquier código en course.text
+        const resolvedCodigo = enc.codigoCurso
+          || courseCode
+          || (course.text.split(/[-\s]/).find((p) => /^[A-Z]\d+[A-Z]\d+$/.test(p)) ?? null);
+
+        // Resolver seccion: Excel header → primera parte de seccion.text ("AP - CH" → "AP")
+        const resolvedSeccion = enc.seccion
+          || seccion.text.split(" - ")[0]?.trim()
+          || seccion.text;
+
+        if (!resolvedCodigo) {
+          console.error(
+            `[sync-asistencias] No se pudo extraer codigoCurso para sección ${seccion.text}. ` +
+            `course.text="${course.text}" encabezadoCrudo="${parsed.encabezadoCrudo}"`
+          );
+          log(`  ✗ ${seccion.text}: No se pudo determinar el código de curso`);
+          failed++;
+          continue;
+        }
+
         const result = await upsertPlanilla({
           docente: teacher.name,
-          codigoCurso: enc.codigoCurso || courseCode,
+          codigoCurso: resolvedCodigo,
           nombreCurso: enc.nombreCurso,
-          seccion: enc.seccion || seccion.text.split(" - ")[0]?.trim() || seccion.text,
+          seccion: resolvedSeccion,
           encabezadoCrudo: parsed.encabezadoCrudo,
           weeks: parsed.weeks,
           alumnos: parsed.alumnos,

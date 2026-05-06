@@ -518,10 +518,13 @@ export default function PlanillasAsistencia() {
       const list = listRes.ok ? (await listRes.json()) as Array<{
         id: number; docente: string|null; codigoCurso: string|null; seccion: string|null;
       }> : [];
+      // normSec: quita sufijos de modalidad del intranet ("AP"→"A", "DV"→"D")
+      const normSec2 = (s: string | null | undefined) =>
+        String(s || "").trim().toUpperCase().replace(/[PVH]+$/, "");
       const match = list.find(p =>
         (p.docente || "").toUpperCase().trim() === (selected || "").toUpperCase().trim() &&
         (p.codigoCurso || "").trim() === c.codigo &&
-        baseSeccion(p.seccion) === c.seccion
+        normSec2(p.seccion) === normSec2(c.seccion)
       );
       let planilla: PlanillaDetalle | null = null;
       if (match) {
@@ -584,7 +587,9 @@ export default function PlanillasAsistencia() {
         `${(d||"").toUpperCase().trim()}|${(c||"").trim()}|${(s||"").trim()}`;
       const planillaMap = new Map<string, typeof planillas[number]>();
       for (const p of planillas) {
-        planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", baseSeccion(p.seccion)), p);
+        // normSec: quita sufijos de modalidad ("AP"→"A", "DV"→"D", "BHP"→"B")
+        const nsec = baseSeccion(p.seccion).replace(/[PVH]+$/, "");
+        planillaMap.set(planillaKey(p.docente||"", p.codigoCurso||"", nsec), p);
       }
 
       const sanitize = xsanitize;
