@@ -1,71 +1,262 @@
 {
-  "totalEnPlan": 262,
+  "generado": "2026-05-06T22:45:44.300938+00:00",
+  "totalEnPlan": 234,
   "totalEnRegistro": 262,
-  "totalMatch": 262,
-  "enPlanNoRegistro": [],
-  "enRegistroNoPlan": [],
+  "totalMatch": 231,
+  "enPlanNoRegistro": [
+    {
+      "nombre": "CABANILLAS SULCA JAVIER CLEMENTE",
+      "programa": "DERECHO"
+    },
+    {
+      "nombre": "OCHOA CARBAJAL HERNAN",
+      "programa": "INGENIERIA CIVIL"
+    },
+    {
+      "nombre": "RETUERTO FIGUEROA ALEXANDER",
+      "programa": "DERECHO"
+    }
+  ],
+  "enRegistroNoPlan": [
+    {
+      "dni": 21576727,
+      "nombre": "BUENDIA APARCANA ROBERTO REYMUNDO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 46825060,
+      "nombre": "CALLAN BACILIO RICHARD",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 43153608,
+      "nombre": "DIAZ RODRIGUEZ BREITNER GUILLERMO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 70786643,
+      "nombre": "DIAZ VELASQUEZ JULIO CESAR",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 41807593,
+      "nombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 21492225,
+      "nombre": "GARCIA AQUIJE PEDRO CARLOS",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 21447220,
+      "nombre": "GAVILAN ORE ADOLFO GUILLERMO",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 41258221,
+      "nombre": "GIRALDO MENDOZA DANTE MARTIN",
+      "programa": "EEGG"
+    },
+    {
+      "dni": 45023124,
+      "nombre": "GUARDIA PANIURA CANDY HAYDEE",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 21575934,
+      "nombre": "HERNANDEZ MAYTAHUARI PATRICIA DEL ROSARIO",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 40497460,
+      "nombre": "HERRERA MAGUIÑA DANNY EDUARDO",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 46078496,
+      "nombre": "JAYO HIGA JOSE JUAN",
+      "programa": "INGENIERÍA DE SISTEMAS"
+    },
+    {
+      "dni": 71543911,
+      "nombre": "JUAREZ CAQUIAMARCA LUIS MIGUEL",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 43262214,
+      "nombre": "LLANCARES SUXE JORGE ARMANDO",
+      "programa": "TECNOLOGÍA MÉDICA - EEGG"
+    },
+    {
+      "dni": 41519363,
+      "nombre": "MANRIQUE CERVANTES JOSE ANTONIO",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 10658694,
+      "nombre": "MARTINEZ QUISÑAY JULIO RODOLFO",
+      "programa": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 21885297,
+      "nombre": "MESIAS REYES JORGE LUIS",
+      "programa": "OBSTETRICIA - EEGG"
+    },
+    {
+      "dni": 40716850,
+      "nombre": "MISSA FRANCO ALEX RADOMIR",
+      "programa": "TECNOLOGÍA MÉDICA - EEGG"
+    },
+    {
+      "dni": 46075693,
+      "nombre": "MORALES CHAVEZ GISSEL JOCELINE",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 21422843,
+      "nombre": "NAVARRETE VELARDE VICKY MARLENE",
+      "programa": "EEGG"
+    },
+    {
+      "dni": 9596989,
+      "nombre": "PALACIOS CABEL MARTIN EDUARDO",
+      "programa": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 43901199,
+      "nombre": "PAREDES MENDOZA JUAN MIGUEL",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 2885494,
+      "nombre": "QUIROGA PAIVA DAVID EDUARDO",
+      "programa": "CONTABILIDAD"
+    },
+    {
+      "dni": 10622951,
+      "nombre": "QUISPE FARFAN DANTE IQUE",
+      "programa": "TECNOLOGÍA MÉDICA - EEGG"
+    },
+    {
+      "dni": 40435228,
+      "nombre": "RECUAY SALAZAR CARLOS ALBERTO",
+      "programa": "ADMINISTRACIÓN DE EMPRESAS"
+    },
+    {
+      "dni": 44398451,
+      "nombre": "RIOS SANTIAGO WILSON CESAR",
+      "programa": "PSICOLOGÍA - EEGG"
+    },
+    {
+      "dni": 72703241,
+      "nombre": "RODRIGUEZ CRUZ BRYAN SIMON",
+      "programa": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 72608111,
+      "nombre": "SACHUN BECERRA PERCY ALEXANDER",
+      "programa": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 40401768,
+      "nombre": "VASQUEZ GALVEZ DAYANA CRISTY",
+      "programa": "INGENIERIA DE SISTEMAS"
+    },
+    {
+      "dni": 42952070,
+      "nombre": "VEGA BENAVIDES CESAR AUGUSTO",
+      "programa": "DERECHO"
+    },
+    {
+      "dni": 42647316,
+      "nombre": "VIZCARRA MEDINA DAVID SAMUEL",
+      "programa": "DERECHO"
+    }
+  ],
   "match": [
+    {
+      "dni": 26629386,
+      "nombre": "ABANTO MERINO LUIS ALFREDO",
+      "horasRegistro": 8,
+      "horasPlan": 7,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 8689170,
+      "nombre": "ACERO CARDENAS ANA MARIA",
+      "horasRegistro": 10,
+      "horasPlan": 9,
+      "programa26": "ESTUDIOS GENERALES"
+    },
     {
       "dni": 21814921,
       "nombre": "AGUADO APOLAYA RAUL HERNANDO",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 17,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 21522173,
       "nombre": "AGUIRRE ESPINOZA MONICA WENDY",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 8,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": null,
+      "nombre": "ALCANTARA FARFAN JUAN CARLOS",
+      "horasRegistro": 8,
+      "horasPlan": 10,
       "programa26": ""
     },
     {
       "dni": 41461731,
       "nombre": "ALFARO CAYLLAHUA CARLOS HUGO",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 12,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 21814775,
       "nombre": "ALMEYDA AVALOS CESAR AUGUSTO",
       "horasRegistro": 33,
-      "horasPlan": 33,
+      "horasPlan": 21,
       "programa26": "DERECHO"
     },
     {
       "dni": 21783999,
       "nombre": "ALMEYDA CARBAJAL JOSE ARMANDO",
       "horasRegistro": 35,
-      "horasPlan": 35,
+      "horasPlan": 33,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 41074586,
       "nombre": "ALMEYDA MAGALLANES JESUS NEMESIO",
       "horasRegistro": 19,
-      "horasPlan": 16,
+      "horasPlan": 14,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 45912781,
       "nombre": "ALMEYDA MORENO JOSE JOSE",
       "horasRegistro": 37,
-      "horasPlan": 37,
+      "horasPlan": 30,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 43650447,
       "nombre": "AMORETTI ARTEAGA ALEJANDRA GUADALUPE",
       "horasRegistro": 35,
-      "horasPlan": 35,
+      "horasPlan": 24,
       "programa26": "ADMINISTRACIÓN  Y FINANZAS"
     },
     {
       "dni": 45493343,
       "nombre": "ANAMPA ZAMORA SILVIA MARILU",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 17,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
@@ -79,162 +270,218 @@
       "dni": 44435992,
       "nombre": "ANICAMA NAVARRETE EVELYN ALINA",
       "horasRegistro": 14,
-      "horasPlan": 14,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 45879356,
       "nombre": "ANICAMA QUISIVERDE GERALDINE ISABEL",
       "horasRegistro": 39,
-      "horasPlan": 39,
+      "horasPlan": 33,
       "programa26": "INGENIERIA DE SISTEMAS"
+    },
+    {
+      "dni": 72049382,
+      "nombre": "APAZA CHINO GRIMALDO",
+      "horasRegistro": 10,
+      "horasPlan": 10,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 21865174,
       "nombre": "ARIAS LOPEZ SILVIA LUISA",
       "horasRegistro": 32,
-      "horasPlan": 32,
+      "horasPlan": 28,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 44933501,
       "nombre": "AYLLON CARDENAS MARIELA LISSETH",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 29726614,
+      "nombre": "BAHAMONDES GARCIA SINOE GEOFREY",
+      "horasRegistro": 15,
+      "horasPlan": 10,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 41973116,
       "nombre": "BALBUENA CARRASCO LUIS ANTONIO",
       "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
+      "horasPlan": 3,
+      "programa26": "DERECHO"
     },
     {
       "dni": 21884864,
       "nombre": "BARRERA SIGUAS EDGAR DANIEL",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 9,
       "programa26": "EEGG"
     },
     {
       "dni": 40978490,
       "nombre": "BARTRA BAUTISTA MADELEINE KARIN",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 10,
+      "programa26": "DERECHO"
     },
     {
       "dni": 7253926,
       "nombre": "BECERRA GUTIERREZ ETHEEL ROMILA",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 11,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 41060828,
+      "nombre": "BEJARANO PEREZ JUDITH ROSSANA",
+      "horasRegistro": 15,
+      "horasPlan": 12,
+      "programa26": "INGENIERÍA DICIL"
     },
     {
       "dni": 8222581,
       "nombre": "BENAVIDES MIKKELSEN JORGE LUIS",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 13,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
-      "dni": 21576727,
-      "nombre": "BUENDIA APARCANA ROBERTO REYMUNDO",
+      "dni": 40012522,
+      "nombre": "BENDEZU HERNANDEZ JAVIER ORLANDO",
+      "horasRegistro": 10,
+      "horasPlan": 8,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 15607309,
+      "nombre": "BERRIOS VEGA CARMEN LUZ",
       "horasRegistro": 12,
-      "horasPlan": 12,
+      "horasPlan": 10,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": null,
+      "nombre": "BRAVO SENDER RAUL ANTONIO",
+      "horasRegistro": 14,
+      "horasPlan": 3,
       "programa26": ""
+    },
+    {
+      "dni": 70108675,
+      "nombre": "BUITRON LLACSA JOSE MANUEL",
+      "horasRegistro": 9,
+      "horasPlan": 3,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 21854029,
       "nombre": "BUSTAMANTE MATEO MARIA YSABEL",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 41536992,
+      "nombre": "CABEZA MOLINA LUIS FELIPE",
+      "horasRegistro": 8,
+      "horasPlan": 7,
+      "programa26": "DERECHO"
     },
     {
       "dni": 21505996,
       "nombre": "CABRERA HUAMAN GISELLA ROSA",
       "horasRegistro": 14,
-      "horasPlan": 14,
+      "horasPlan": 13,
       "programa26": "EEGG"
     },
     {
       "dni": 44296086,
       "nombre": "CABRERA ZEGOVIA YESSICA JEANETH",
       "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
+      "horasPlan": 5,
+      "programa26": "DERECHO"
     },
     {
       "dni": 44579560,
       "nombre": "CACHO RIOS LUIS ANTONIO",
       "horasRegistro": 35,
-      "horasPlan": 32,
-      "programa26": ""
+      "horasPlan": 22,
+      "programa26": "DERECHO"
     },
     {
       "dni": 44113156,
       "nombre": "CAHUANA CASIANO BRIGNER MARK",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 11,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 16719199,
       "nombre": "CAMONES MAGO LUIS ALBERTO",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 13,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 22319279,
       "nombre": "CANALES SOTOMAYOR JOANNA DIAHANN",
       "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "horasPlan": 3,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 70270373,
       "nombre": "CAPCHA JURADO EDER AROON",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 12,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 21406933,
       "nombre": "CASTAÑEDA RIVEROS JOSEFA ELIZABETH",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 8,
       "programa26": "EEGG"
     },
     {
       "dni": 42679183,
       "nombre": "CASTILLO ORMEÑO ENZO RENAN",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 15,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 41248557,
       "nombre": "CASTILLO SALAZAR REGNER NICOLAS",
       "horasRegistro": 8,
-      "horasPlan": 8,
+      "horasPlan": 7,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 46198443,
       "nombre": "CASTILLO SANCHEZ CLAUDIA LORENA",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 8,
+      "programa26": "DERECHO"
     },
     {
       "dni": 15421219,
       "nombre": "CASTILLON MATOS OVIDIO JULIAN",
       "horasRegistro": 33,
-      "horasPlan": 33,
-      "programa26": ""
+      "horasPlan": 20,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 70073915,
+      "nombre": "CASTILLON SIGUAS LUIS ALFREDO",
+      "horasRegistro": 19,
+      "horasPlan": 11,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 43338252,
@@ -247,42 +494,77 @@
       "dni": 21462443,
       "nombre": "CAVERO TANG MARIA ISABEL",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 7,
+      "programa26": "CONTABILIDAD"
     },
     {
       "dni": 21880139,
       "nombre": "CHANAVA CONTRERAS JOB HERMES",
       "horasRegistro": 34,
-      "horasPlan": 34,
+      "horasPlan": 27,
       "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 40727418,
+      "nombre": "CHANG HERNANDEZ GUILLERMO ANDRES",
+      "horasRegistro": 12,
+      "horasPlan": 7,
+      "programa26": "INGENIERÍA CIVIL"
+    },
+    {
+      "dni": 15428250,
+      "nombre": "CHAVEZ CARRAZCO CECILIA MARCELINA",
+      "horasRegistro": 10,
+      "horasPlan": 8,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 29384319,
+      "nombre": "CHUNG RODRIGUEZ JOSE MARTIN",
+      "horasRegistro": 18,
+      "horasPlan": 12,
+      "programa26": "DERECHO-EEGG"
     },
     {
       "dni": 45919468,
       "nombre": "CONDE CERVANTES GERARDO OMAR",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 12,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 44006023,
+      "nombre": "CONDE REYES JORGE LUIS",
+      "horasRegistro": 8,
+      "horasPlan": 7,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 21447676,
+      "nombre": "CONDORCHOA CAMACHO CARLOS JOHN",
+      "horasRegistro": 37,
+      "horasPlan": 30,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 71844864,
       "nombre": "CORDOVA OSORIO ROLANDO ROTMAN FRIEDERICH",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 9,
       "programa26": "EEGG"
     },
     {
       "dni": 10359700,
       "nombre": "CORDOVA RAMIREZ DORIS IVONNE",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 24,
       "programa26": "EEGG"
     },
     {
       "dni": 21863247,
       "nombre": "CRUZ CHUNGA CARLOS BIENVENIDO",
       "horasRegistro": 35,
-      "horasPlan": 35,
+      "horasPlan": 28,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
@@ -290,335 +572,398 @@
       "nombre": "CUBAS CORDOVA NILS",
       "horasRegistro": 15,
       "horasPlan": 15,
-      "programa26": ""
+      "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 70276881,
       "nombre": "CUSTODIO LOYOLA CRISTIAN MAX",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 14,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 70113719,
       "nombre": "DE LA CRUZ MARTINEZ GABRIELA NATALIA",
       "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "DERECHO"
     },
     {
       "dni": 43517817,
       "nombre": "DE LA CRUZ SOSA JAKELINE MELINA",
       "horasRegistro": 32,
-      "horasPlan": 32,
-      "programa26": ""
-    },
-    {
-      "dni": 43153608,
-      "nombre": "DIAZ RODRIGUEZ BREITNER GUILLERMO",
-      "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": "INGENIERÍA INDUSTRIAL"
+      "horasPlan": 30,
+      "programa26": "PSICOLOGÍA - EEGG"
     },
     {
       "dni": 22101555,
       "nombre": "DONAYRE VEGA JULIO ARMANDO",
       "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
+      "horasPlan": 5,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 44822572,
+      "nombre": "DURÁN RIOS SANDRO ANIBAL",
+      "horasRegistro": 9,
+      "horasPlan": 2,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 43932363,
+      "nombre": "ESPINOZA LEON GUSTAVO FELIPE",
+      "horasRegistro": 9,
+      "horasPlan": 7,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 72176698,
+      "nombre": "ESPINOZA MORE CARLA MILAGROS",
+      "horasRegistro": 6,
+      "horasPlan": 6,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 9857971,
       "nombre": "ESPINOZA SEGURA JAMES WILLIAMS",
       "horasRegistro": 30,
-      "horasPlan": 30,
-      "programa26": ""
+      "horasPlan": 24,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 21863704,
       "nombre": "ESTEBAN MUNAYCO CARLOS ALBERTO",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 12,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 42711303,
+      "nombre": "FABIAN SOBERANIS MIGUEL ANGEL",
+      "horasRegistro": 20,
+      "horasPlan": 16,
+      "programa26": "DERECHO-EEGG"
     },
     {
       "dni": 44070783,
       "nombre": "FARFAN CARRIANO CARLOS MARTIN",
       "horasRegistro": 22,
-      "horasPlan": 18,
-      "programa26": ""
+      "horasPlan": 8,
+      "programa26": "DERECHO"
     },
     {
       "dni": 43437121,
       "nombre": "FELIX BENAVENTE ERICK NIXON",
       "horasRegistro": 27,
-      "horasPlan": 27,
+      "horasPlan": 17,
       "programa26": "DERECHO"
     },
     {
       "dni": 40165347,
       "nombre": "FERREYRA RUIZ PATRICIA DEL CARMEN",
       "horasRegistro": 34,
-      "horasPlan": 34,
-      "programa26": ""
+      "horasPlan": 28,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 2442123,
+      "nombre": "FERREYROS YUCRA JAIR EMERSON",
+      "horasRegistro": 17,
+      "horasPlan": 14,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 41730649,
       "nombre": "FLORES ARRIOLA ADRIANA LORENA",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 15,
       "programa26": "EEGG"
     },
     {
       "dni": 21793368,
       "nombre": "FLORES MENENDEZ LUIS ENRIQUE",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 25662813,
       "nombre": "FLORES MINCHON CARLOS ALBERTO",
       "horasRegistro": 19,
-      "horasPlan": 19,
-      "programa26": ""
+      "horasPlan": 12,
+      "programa26": "INGENIERÍA CIVIL"
+    },
+    {
+      "dni": 6708096,
+      "nombre": "FRIAS LIAU HING MELVA",
+      "horasRegistro": 5,
+      "horasPlan": 4,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 45191542,
       "nombre": "GAGO CHÁVEZ JOHANNA DE JESÚS STEPHANIE",
       "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
+      "horasPlan": 10,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 44699467,
       "nombre": "GALLARDO REYES ALEXANDER DARIO",
       "horasRegistro": 17,
-      "horasPlan": 17,
+      "horasPlan": 14,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 32942379,
       "nombre": "GAMARRA NORIEGA WILLIAN VLADIMIR",
       "horasRegistro": 34,
-      "horasPlan": 34,
+      "horasPlan": 17,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 8681131,
       "nombre": "GAMARRA RAMIREZ HELEN CAROL",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 15,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 41507055,
+      "nombre": "GARAYAR TTITO ANA MELIZA",
+      "horasRegistro": 11,
+      "horasPlan": 7,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 46335754,
       "nombre": "GARCIA DONAYRE JOEIS MIGUEL",
       "horasRegistro": 34,
-      "horasPlan": 34,
-      "programa26": ""
+      "horasPlan": 12,
+      "programa26": "DERECHO"
     },
     {
       "dni": 21884432,
       "nombre": "GARCIA PISCONTE GINO GUSTAVO",
       "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
+      "horasPlan": 7,
+      "programa26": "OBSTETRICIA - EEGG"
     },
     {
       "dni": 21863698,
       "nombre": "GARCIA PISCONTE SILVIA KARINA",
       "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "horasPlan": 11,
+      "programa26": "OBSTETRICIA - EEGG"
     },
     {
-      "dni": 21447220,
-      "nombre": "GAVILAN ORE ADOLFO GUILLERMO",
-      "horasRegistro": 18,
-      "horasPlan": 18,
-      "programa26": ""
+      "dni": 75168136,
+      "nombre": "GAVINO SANCHEZ JOHN STEVENS",
+      "horasRegistro": 6,
+      "horasPlan": 4,
+      "programa26": "DERECHO"
     },
     {
-      "dni": 41258221,
-      "nombre": "GIRALDO MENDOZA DANTE MARTIN",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": "EEGG"
+      "dni": 44114929,
+      "nombre": "GOMERO MANCESIDOR JOHNNY MITCHELL",
+      "horasRegistro": 10,
+      "horasPlan": 8,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 45609294,
       "nombre": "GONZALES FLORES ANA KRISTEL",
       "horasRegistro": 28,
-      "horasPlan": 28,
-      "programa26": ""
+      "horasPlan": 24,
+      "programa26": "DERECHO"
     },
     {
       "dni": 21886134,
       "nombre": "GONZALES MOSQUERA WUILIAN",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 15738084,
+      "nombre": "GUERRERO CERVERA JULIA DEL PILAR",
+      "horasRegistro": 14,
+      "horasPlan": 15,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 17535600,
       "nombre": "GUERRERO MILLONES ANA MARIA",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 6,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 42711623,
       "nombre": "GUERRERO ZELA GUSTAVO ADOLFO",
       "horasRegistro": 30,
-      "horasPlan": 30,
+      "horasPlan": 27,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 45303683,
+      "nombre": "GUTIERREZ JIMENEZ CINDY FIORELLA",
+      "horasRegistro": 9,
+      "horasPlan": 4,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 41112631,
       "nombre": "HAYASHI AMORETTI YADHIRA SALOME",
       "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 72687785,
       "nombre": "HERNANDEZ DIAZ STEFANI MADELHEYN MARGARITA",
       "horasRegistro": 5,
-      "horasPlan": 5,
+      "horasPlan": 9,
       "programa26": "EEGG"
     },
     {
-      "dni": 21575934,
-      "nombre": "HERNANDEZ MAYTAHUARI PATRICIA DEL ROSARIO",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 40497460,
-      "nombre": "HERRERA MAGUIÑA DANNY EDUARDO",
-      "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "dni": 15357430,
+      "nombre": "HERNANDEZ PEVES JUAN GUSTAVO",
+      "horasRegistro": 11,
+      "horasPlan": 6,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 71883055,
       "nombre": "HUALLANCA CARBAJAL JOSE JONATHAN",
       "horasRegistro": 13,
-      "horasPlan": 13,
+      "horasPlan": 12,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 21813726,
       "nombre": "HUALLANCA CONTRERAS MARIO CESAR",
       "horasRegistro": 37,
-      "horasPlan": 37,
+      "horasPlan": 28,
       "programa26": "ADMINISTRACIÓN  Y FINANZAS"
+    },
+    {
+      "dni": 41959229,
+      "nombre": "HUAMAN ESPINO ZORAIDA FELIPA",
+      "horasRegistro": 4,
+      "horasPlan": 3,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 42627418,
       "nombre": "HUAMAN FLORES ELIO JAVIER",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 8,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 43958773,
+      "nombre": "HUAMANI CANALES ANALI MARIELLA",
+      "horasRegistro": 5,
+      "horasPlan": 5,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 41076019,
       "nombre": "HUAMANI SALAZAR CESAR JOEL",
       "horasRegistro": 29,
-      "horasPlan": 29,
+      "horasPlan": 18,
       "programa26": "INGENIERIA DE SISTEMAS"
+    },
+    {
+      "dni": 42734786,
+      "nombre": "HUANCAHUIRE BRAVO CLAUDIO ISAIAS",
+      "horasRegistro": 18,
+      "horasPlan": 9,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 21530042,
       "nombre": "HUAROTO HUACHIN AMALIA ESPERANZA",
       "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
+      "horasPlan": 13,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
       "dni": 21869681,
       "nombre": "HUASASQUICHE ABREGU MIGUEL ANGEL",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 13,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 40744353,
       "nombre": "HUAYTA CONISLLA WALTER OSWALDO",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 21517153,
       "nombre": "INJANTE LIMA EMILIO DOMINGO",
       "horasRegistro": 14,
-      "horasPlan": 14,
+      "horasPlan": 10,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 6187939,
       "nombre": "JORDAN PALOMINO JERRI ARTURO",
       "horasRegistro": 32,
-      "horasPlan": 30,
+      "horasPlan": 31,
       "programa26": "EEGG"
-    },
-    {
-      "dni": 71543911,
-      "nombre": "JUAREZ CAQUIAMARCA LUIS MIGUEL",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
     },
     {
       "dni": 72973076,
       "nombre": "LANDEO LOPEZ CESAR CAMILO",
       "horasRegistro": 39,
-      "horasPlan": 37,
+      "horasPlan": 30,
       "programa26": "EEGG"
     },
     {
       "dni": 72658536,
       "nombre": "LANDEO LOPEZ JEFFERSON OMAR",
       "horasRegistro": 29,
-      "horasPlan": 29,
+      "horasPlan": 27,
       "programa26": "EEGG"
     },
     {
       "dni": 43370751,
       "nombre": "LEVANO MESIAS ADRIAN PASCUAL",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 16,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 70477271,
       "nombre": "LEVANO SARAVIA EMILY BRISEIDA",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 15,
       "programa26": "EEGG"
     },
     {
-      "dni": 43262214,
-      "nombre": "LLANCARES SUXE JORGE ARMANDO",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
+      "dni": 42146692,
+      "nombre": "LINO FLORES LUIS ANTONIO",
+      "horasRegistro": 8,
+      "horasPlan": 15,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 46654470,
       "nombre": "LLANCARES SUXE MINERVA MELCHORITA",
       "horasRegistro": 20,
-      "horasPlan": 20,
+      "horasPlan": 16,
       "programa26": "-"
     },
     {
       "dni": 42707186,
       "nombre": "LOO PARIAN LUIS ALBERTO",
       "horasRegistro": 16,
-      "horasPlan": 14,
+      "horasPlan": 7,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
@@ -632,63 +977,84 @@
       "dni": 45294530,
       "nombre": "LUNA VICTORIA GOMEZ JUAN ANGHIELLO",
       "horasRegistro": 37,
-      "horasPlan": 37,
+      "horasPlan": 30,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 43454918,
       "nombre": "LUYO LOLI TAYMA NAIROBIS",
       "horasRegistro": 16,
-      "horasPlan": 16,
+      "horasPlan": 18,
       "programa26": "EEGG"
     },
     {
       "dni": 46144315,
       "nombre": "MALASPINA CHUQUE JAVIER JESUS",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "CONTABILIDAD"
     },
     {
       "dni": 40428220,
       "nombre": "MANDAMIENTO GRADOS DAMARIS TELMA",
       "horasRegistro": 32,
-      "horasPlan": 32,
-      "programa26": ""
+      "horasPlan": 29,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
       "dni": 46741053,
       "nombre": "MARCELO GUTIERREZ RUTH KATHERINE",
       "horasRegistro": 25,
-      "horasPlan": 25,
+      "horasPlan": 21,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 21575575,
       "nombre": "MARQUEZ JIMENEZ NARDA CRISTINA",
       "horasRegistro": 12,
-      "horasPlan": 12,
+      "horasPlan": 7,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": null,
+      "nombre": "MARTINEZ YATACO JESSICA JULISSA",
+      "horasRegistro": 4,
+      "horasPlan": 8,
       "programa26": ""
+    },
+    {
+      "dni": 15981186,
+      "nombre": "MARTINEZ ZULOAGA NORA TERESA",
+      "horasRegistro": 5,
+      "horasPlan": 4,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 72681156,
+      "nombre": "MAS VILLANUEVA KENY ARNOLD",
+      "horasRegistro": 5,
+      "horasPlan": 3,
+      "programa26": "CONTABILIDAD"
     },
     {
       "dni": 21546491,
       "nombre": "MATTA FERREYRA FRANCIS GISELA",
       "horasRegistro": 13,
-      "horasPlan": 13,
+      "horasPlan": 12,
       "programa26": "EEGG"
     },
     {
       "dni": 40153172,
       "nombre": "MAURTUA FERREYRA MANUEL SANTIAGO",
       "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "DERECHO"
     },
     {
       "dni": 44386497,
       "nombre": "MEDINA ACASIETE JOSE LUIS",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 15,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
@@ -699,32 +1065,32 @@
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
+      "dni": 43608561,
+      "nombre": "MENDOZA CASTILLO JUAN JOSE",
+      "horasRegistro": 5,
+      "horasPlan": 27,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
+    },
+    {
       "dni": 71052752,
       "nombre": "MENESES VASQUEZ KARINA OLENKA",
       "horasRegistro": 9,
-      "horasPlan": 9,
+      "horasPlan": 6,
       "programa26": "EEGG"
     },
     {
-      "dni": 21885297,
-      "nombre": "MESIAS REYES JORGE LUIS",
-      "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "dni": 40444414,
+      "nombre": "MESIAS MEJIA EDGAR YVAN",
+      "horasRegistro": 20,
+      "horasPlan": 16,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
-      "dni": 40716850,
-      "nombre": "MISSA FRANCO ALEX RADOMIR",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 70066929,
-      "nombre": "MORÁN CAMACHO SIRENA STEFANI",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
+      "dni": 40432935,
+      "nombre": "MIRANDA BAZALAR ROBERTO WILLIAM",
+      "horasRegistro": 4,
+      "horasPlan": 2,
+      "programa26": "DERECHO"
     },
     {
       "dni": 18005964,
@@ -737,455 +1103,567 @@
       "dni": 70084444,
       "nombre": "MORON AGUILAR KEVIN CHRISTIAN",
       "horasRegistro": 8,
-      "horasPlan": 8,
+      "horasPlan": 7,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 70066929,
+      "nombre": "MORÁN CAMACHO SIRENA STEFANI",
+      "horasRegistro": 14,
+      "horasPlan": 12,
+      "programa26": "ARQUITECTURA - EEGG"
     },
     {
       "dni": 21857087,
       "nombre": "MUNAYCO VIVANCO JUAN CALIXTO",
       "horasRegistro": 32,
-      "horasPlan": 30,
+      "horasPlan": 23,
       "programa26": "EEGG"
     },
     {
       "dni": 40176163,
       "nombre": "MUÑANTE CAHUA NIDIA PATRICIA",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 8,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 40105460,
+      "nombre": "MUÑANTE SIHUES CESAR ARTURO",
+      "horasRegistro": 10,
+      "horasPlan": 8,
+      "programa26": "DERECHO"
     },
     {
       "dni": 43128103,
       "nombre": "MUÑOZ ALVA FIORELLA DEL PILAR",
       "horasRegistro": 8,
-      "horasPlan": 8,
+      "horasPlan": 10,
       "programa26": "EEGG"
     },
     {
       "dni": 42129291,
       "nombre": "MUÑOZ FELIX ALAN PIER",
       "horasRegistro": 12,
-      "horasPlan": 12,
+      "horasPlan": 9,
       "programa26": "EEGG"
     },
     {
       "dni": 21507863,
       "nombre": "NAVARRETE VELARDE RAUL ANTONIO",
       "horasRegistro": 32,
-      "horasPlan": 32,
+      "horasPlan": 14,
       "programa26": "INGENIERÍA INDUSTRIAL"
-    },
-    {
-      "dni": 21422843,
-      "nombre": "NAVARRETE VELARDE VICKY MARLENE",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": "EEGG"
     },
     {
       "dni": 21541461,
       "nombre": "NUÑEZ ROMAN HUGO",
       "horasRegistro": 17,
-      "horasPlan": 17,
+      "horasPlan": 11,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 16662940,
+      "nombre": "ORDINOLA BRENIS JUAN MANUEL",
+      "horasRegistro": 16,
+      "horasPlan": 8,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 15353604,
       "nombre": "ORDOÑEZ CENTENO CARLOS YTALO",
       "horasRegistro": 30,
-      "horasPlan": 30,
+      "horasPlan": 15,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 21850336,
       "nombre": "ORTIZ ALMEYDA JOSE LUIS",
       "horasRegistro": 33,
-      "horasPlan": 33,
+      "horasPlan": 29,
       "programa26": "EEGG"
     },
     {
       "dni": 21575158,
       "nombre": "ORTIZ ANDRES JULIO ALEX",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 4,
       "programa26": "EEGG"
     },
     {
       "dni": 21839369,
       "nombre": "ORTIZ CASTILLA LUIS ENRIQUE",
       "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
+      "horasPlan": 11,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 70277443,
+      "nombre": "OSCCO INJANTE JOSE LUIS",
+      "horasRegistro": 9,
+      "horasPlan": 6,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 72459969,
       "nombre": "PACHAS BARRIENTOS LUZ MILAGROS",
       "horasRegistro": 19,
-      "horasPlan": 19,
+      "horasPlan": 15,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 41239504,
       "nombre": "PADILLA HIZO PEDRO HERNAN",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
-    },
-    {
-      "dni": 9596989,
-      "nombre": "PALACIOS CABEL MARTIN EDUARDO",
-      "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": "INGENIERÍA INDUSTRIAL"
+      "horasPlan": 15,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
       "dni": 10299078,
       "nombre": "PALOMINO ZARATE JOSE LUIS",
       "horasRegistro": 22,
-      "horasPlan": 22,
-      "programa26": ""
-    },
-    {
-      "dni": 43901199,
-      "nombre": "PAREDES MENDOZA JUAN MIGUEL",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
+      "horasPlan": 2,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 33826021,
       "nombre": "PARIHUAMAN QUINDE GERALDINA REBECA",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 8,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
-      "dni": 21838457,
-      "nombre": "PEÑA ALARCON LUIS ALEJANDRO",
-      "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": "INGENIERIA DE SISTEMAS"
-    },
-    {
-      "dni": 21881487,
-      "nombre": "PEÑA RONCEROS JOSE IVAN",
-      "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "dni": 43596886,
+      "nombre": "PASACHE LAGOS SERGIO LUIS",
+      "horasRegistro": 4,
+      "horasPlan": 3,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 43322342,
       "nombre": "PEREZ CABREJOS RUTH GISSELA",
       "horasRegistro": 17,
-      "horasPlan": 17,
+      "horasPlan": 16,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 42212783,
       "nombre": "PEREZ RETUERTO RONY GEANCARLO",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 8,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 18071852,
+      "nombre": "PESANTES SALAVARRIA MARCO ALFONSO",
+      "horasRegistro": 40,
+      "horasPlan": 20,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 21838457,
+      "nombre": "PEÑA ALARCON LUIS ALEJANDRO",
+      "horasRegistro": 17,
+      "horasPlan": 11,
+      "programa26": "INGENIERIA DE SISTEMAS"
+    },
+    {
+      "dni": 21881487,
+      "nombre": "PEÑA RONCEROS JOSE IVAN",
+      "horasRegistro": 17,
+      "horasPlan": 9,
+      "programa26": "DERECHO"
     },
     {
       "dni": 40822577,
       "nombre": "PIMENTEL RETUERTO CARMEN ANDREA",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 27,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
       "dni": 21563342,
       "nombre": "PINEDA URBANO JORGE LUIS",
       "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "horasPlan": 13,
+      "programa26": "DERECHO"
     },
     {
       "dni": 73788382,
       "nombre": "PISCOCHE CHINCHAY RICHERSON HAROLD",
       "horasRegistro": 14,
-      "horasPlan": 14,
+      "horasPlan": 6,
       "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 42515290,
+      "nombre": "PIZARRO OSORIO BETSABE LILIA",
+      "horasRegistro": 32,
+      "horasPlan": 16,
+      "programa26": "DERECHO"
     },
     {
       "dni": 41391761,
       "nombre": "POZO GUTIERREZ ANGEL ALBERTO",
       "horasRegistro": 33,
-      "horasPlan": 33,
+      "horasPlan": 22,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 21876127,
       "nombre": "POZO GUTIERREZ ROBERTO CARLOS",
       "horasRegistro": 38,
-      "horasPlan": 38,
+      "horasPlan": 33,
       "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 2651788,
       "nombre": "PUPPI UGAZ LUIS MIGUEL",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 9,
       "programa26": "EEGG"
     },
     {
       "dni": 21871273,
       "nombre": "PURIZACA GUERRERO JULIO EDUARDO",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 16,
       "programa26": "INGENIERIA DE SISTEMAS"
+    },
+    {
+      "dni": 15591781,
+      "nombre": "QUINTEROS NICHO LUIS FERNANDO",
+      "horasRegistro": 4,
+      "horasPlan": 4,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 70466213,
       "nombre": "QUIROZ SÁNCHEZ LUPE VIRGINIA",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 3,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 21884462,
       "nombre": "QUISPE ALMEIDA JOSE DAMIAN",
       "horasRegistro": 16,
-      "horasPlan": 12,
+      "horasPlan": 15,
       "programa26": "INGENIERIA DE SISTEMAS"
-    },
-    {
-      "dni": 10622951,
-      "nombre": "QUISPE FARFAN DANTE IQUE",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
     },
     {
       "dni": 21564811,
       "nombre": "QUISPE TINCOPA LINO MARTIN",
       "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
+      "horasPlan": 14,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 70688751,
       "nombre": "RAMIREZ YAÑEZ MAURO ALBERTO",
       "horasRegistro": 30,
-      "horasPlan": 30,
+      "horasPlan": 18,
       "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 21866560,
       "nombre": "RAMOS FERNANDEZ MIRTHA ISABEL",
       "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "TECNOLOGÍA MÉDICA - EEGG"
+    },
+    {
+      "dni": 40382257,
+      "nombre": "REA MORENO FLOR MAGALY",
+      "horasRegistro": 12,
+      "horasPlan": 9,
+      "programa26": "DERECHO"
     },
     {
       "dni": 40339321,
       "nombre": "REATEGUI GUERRA DARWIN",
       "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
+      "horasPlan": 6,
+      "programa26": "DERECHO"
     },
     {
       "dni": 8684196,
       "nombre": "REQUENA GARCIA MARIA DEL ROSARIO",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 13,
       "programa26": "EEGG"
     },
     {
       "dni": 22313729,
       "nombre": "REYES CAMASCA ROSARIO CRISTINA",
       "horasRegistro": 12,
-      "horasPlan": 12,
+      "horasPlan": 4,
       "programa26": "EEGG"
     },
     {
       "dni": 41902268,
       "nombre": "REYES MARTINEZ MARIO GUSTAVO",
       "horasRegistro": 18,
-      "horasPlan": 18,
-      "programa26": ""
+      "horasPlan": 8,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 41208519,
       "nombre": "REYES ROMAN CARLOS ARTURO",
       "horasRegistro": 15,
-      "horasPlan": 15,
+      "horasPlan": 4,
       "programa26": "EEGG"
     },
     {
-      "dni": 44398451,
-      "nombre": "RIOS SANTIAGO WILSON CESAR",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
-    },
-    {
-      "dni": 72703241,
-      "nombre": "RODRIGUEZ CRUZ BRYAN SIMON",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
+      "dni": 15590660,
+      "nombre": "RODRIGUEZ RAMIREZ MARIA ISABEL",
+      "horasRegistro": 4,
+      "horasPlan": 2,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 40021221,
       "nombre": "ROJAS GUTIERREZ WILLIAM JESUS",
       "horasRegistro": 14,
-      "horasPlan": 14,
+      "horasPlan": 11,
       "programa26": "EEGG"
+    },
+    {
+      "dni": 15688249,
+      "nombre": "ROJAS GUZMAN TITO",
+      "horasRegistro": 9,
+      "horasPlan": 8,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
     },
     {
       "dni": 46405327,
       "nombre": "ROMAN VERONA PATRICIA DEL PILAR",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 3,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 46590523,
+      "nombre": "ROMERO CARAZAS RAFAEL",
+      "horasRegistro": 5,
+      "horasPlan": 5,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 70401891,
       "nombre": "RUIZ MAGALLANES GUADALUPE STEFANIA",
       "horasRegistro": 30,
-      "horasPlan": 26,
-      "programa26": ""
+      "horasPlan": 32,
+      "programa26": "INGENIERÍA CIVIL"
     },
     {
       "dni": 6105629,
       "nombre": "SACHUN NUÑEZ FREDDY JHONNY",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 14,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
+    },
+    {
+      "dni": 40740790,
+      "nombre": "SACRAMENTO LAZARO ROSA ALBINA",
+      "horasRegistro": 20,
+      "horasPlan": 17,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 46730566,
+      "nombre": "SALAZAR GAMBOA OSCAR FRITZ ALEXANDER",
+      "horasRegistro": 15,
+      "horasPlan": 13,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 16756416,
+      "nombre": "SALCEDO RODAS PERCY ISMAEL",
+      "horasRegistro": 18,
+      "horasPlan": 18,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
+    },
+    {
+      "dni": 40814844,
+      "nombre": "SALINAS PEREZ HECTOR CLEMENTE",
+      "horasRegistro": 10,
+      "horasPlan": 9,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 15725118,
+      "nombre": "SAMANAMUD VALENTIN MIGUEL ANGEL MOISES",
+      "horasRegistro": 4,
+      "horasPlan": 3,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS"
+    },
+    {
+      "dni": 44859703,
+      "nombre": "SANCHEZ NAVARRETE CARLOS RICARDO",
+      "horasRegistro": 11,
+      "horasPlan": 10,
+      "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 45165102,
       "nombre": "SANCHEZ SOTIL KENNICK ENRIQUE",
       "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
+      "horasPlan": 7,
+      "programa26": "ENFERMERÍA - EEGG"
     },
     {
       "dni": 42862602,
       "nombre": "SANCHEZ TORRES WILLIAM JUNIOR",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 10,
+      "programa26": "TECNOLOGÍA MÉDICA - EEGG"
     },
     {
       "dni": 2183433,
       "nombre": "SANJUAN GARCIA VERONICA",
       "horasRegistro": 9,
-      "horasPlan": 9,
+      "horasPlan": 8,
       "programa26": "EEGG"
     },
     {
       "dni": 46417761,
       "nombre": "SANTIAGO CHOQUE FLOR DE MARIA",
       "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
+      "horasPlan": 4,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 45954213,
       "nombre": "SARAVIA VILCHEZ VICTOR JOE",
       "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
+      "horasPlan": 14,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 21864558,
       "nombre": "SARAVIA YATACO NELLY PATRICIA",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 2,
+      "programa26": "DERECHO"
     },
     {
       "dni": 41126222,
       "nombre": "SEBASTIAN MOSCAIZA CESAR RAUL",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 11,
+      "programa26": "TECNOLOGÍA MÉDICA - EEGG"
     },
     {
       "dni": 44070775,
       "nombre": "SIGUAS FLORES CARLOS JAVIER",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 4,
       "programa26": "EEGG"
     },
     {
       "dni": 21498728,
       "nombre": "SIGUAS HUARHUA GUILLERMO GREGORIO",
       "horasRegistro": 13,
-      "horasPlan": 13,
+      "horasPlan": 8,
       "programa26": "EEGG"
+    },
+    {
+      "dni": null,
+      "nombre": "SILVA HUAMANTUMBA KAROL",
+      "horasRegistro": 5,
+      "horasPlan": 2,
+      "programa26": ""
     },
     {
       "dni": 45770362,
       "nombre": "SOTELO RAZZETO LUIS FELIPE",
       "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
+      "horasPlan": 2,
+      "programa26": "DERECHO"
     },
     {
       "dni": 45207956,
       "nombre": "SOTO CAYHUALLA MARIO YANCARLOS",
       "horasRegistro": 13,
-      "horasPlan": 13,
-      "programa26": ""
+      "horasPlan": 3,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 40583004,
+      "nombre": "SOTOMAYOR ALBITES GEORGE ANTONHY",
+      "horasRegistro": 8,
+      "horasPlan": 6,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 21566262,
+      "nombre": "SUAREZ ESCRIBA MARIELLA ROSARIO",
+      "horasRegistro": 11,
+      "horasPlan": 10,
+      "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 4743751,
       "nombre": "TACO COAYLA RENZO ALBERTO",
       "horasRegistro": 18,
-      "horasPlan": 18,
+      "horasPlan": 12,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 43529007,
       "nombre": "TAFUR HUAMAN ERLITH",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 9,
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     },
     {
       "dni": 43660977,
       "nombre": "TARAZONA VEGA ESHEK",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 8,
       "programa26": "EEGG"
     },
     {
       "dni": 74176001,
       "nombre": "TASAYCO MARTINEZ RENZO LEONARDO",
       "horasRegistro": 29,
-      "horasPlan": 29,
+      "horasPlan": 23,
       "programa26": "ADMINISTRACIÓN  Y FINANZAS"
     },
     {
       "dni": 80063288,
       "nombre": "TASAYCO RODRIGUEZ JOSE LUIS",
       "horasRegistro": 34,
-      "horasPlan": 34,
+      "horasPlan": 25,
       "programa26": "EEGG"
     },
     {
       "dni": 15431618,
       "nombre": "TAYA YACTAYO PEDRO ALEX",
       "horasRegistro": 12,
-      "horasPlan": 10,
+      "horasPlan": 8,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 41876321,
       "nombre": "TEJEDA LEON CARLOS ALBERTO",
       "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
+      "horasPlan": 5,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 41916771,
+      "nombre": "TEMOCHE ALMORA LUIS GERMAN",
+      "horasRegistro": 10,
+      "horasPlan": 8,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 20111776,
       "nombre": "TORALVA GONZALES PAUL EDWARDO",
       "horasRegistro": 10,
-      "horasPlan": 10,
+      "horasPlan": 3,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
@@ -1193,651 +1671,126 @@
       "nombre": "TRELLES CHANG WENDY ELIZABETH",
       "horasRegistro": 12,
       "horasPlan": 12,
-      "programa26": ""
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 43027985,
+      "nombre": "TRUJILLO APONTE WAGNER ABRAHAM",
+      "horasRegistro": 9,
+      "horasPlan": 6,
+      "programa26": "DERECHO"
+    },
+    {
+      "dni": 45007560,
+      "nombre": "ULLOQUE SAMATELO CARLOS AUGUSTO",
+      "horasRegistro": 8,
+      "horasPlan": 7,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 16621586,
+      "nombre": "VALDIVIA SALAZAR CARLOS ALBERTO",
+      "horasRegistro": 11,
+      "horasPlan": 8,
+      "programa26": "INGENIERÍA DE SISTEMAS"
     },
     {
       "dni": 21878050,
       "nombre": "VALLE FUENTES JOSE ANDRES",
       "horasRegistro": 32,
-      "horasPlan": 30,
+      "horasPlan": 14,
       "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 21870795,
       "nombre": "VARGAS DEL RIO MIGUEL ANGEL",
       "horasRegistro": 40,
-      "horasPlan": 37,
+      "horasPlan": 17,
       "programa26": "INGENIERÍA INDUSTRIAL"
-    },
-    {
-      "dni": 40401768,
-      "nombre": "VASQUEZ GALVEZ DAYANA CRISTY",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": "INGENIERIA DE SISTEMAS"
     },
     {
       "dni": 44848536,
       "nombre": "VASQUEZ RAMOS SOLANGE JULISSA",
       "horasRegistro": 6,
       "horasPlan": 6,
-      "programa26": ""
-    },
-    {
-      "dni": 42952070,
-      "nombre": "VEGA BENAVIDES CESAR AUGUSTO",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
+      "programa26": "DERECHO"
     },
     {
       "dni": 10004675,
       "nombre": "VEGA PAVIA CAROLINA NIEVES",
       "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
+      "horasPlan": 7,
+      "programa26": "ADMINISTRACIÓN DE EMPRESAS - EEGG"
+    },
+    {
+      "dni": 45221222,
+      "nombre": "VEGA ROSALES JORGE MARTIN",
+      "horasRegistro": 14,
+      "horasPlan": 6,
+      "programa26": "INGENIERÍA INDUSTRIAL"
+    },
+    {
+      "dni": 76129345,
+      "nombre": "VELASQUEZ CHUNGA JOSE LUIS",
+      "horasRegistro": 8,
+      "horasPlan": 5,
+      "programa26": "ESTUDIOS GENERALES"
     },
     {
       "dni": 21431497,
       "nombre": "VELAZCO LOPEZ ANGELA BETSY",
       "horasRegistro": 28,
-      "horasPlan": 28,
+      "horasPlan": 30,
       "programa26": "EEGG"
     },
     {
       "dni": 42963458,
       "nombre": "VICUÑA VILCA LUIS MIGUEL",
       "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
+      "horasPlan": 5,
+      "programa26": "CONTABILIDAD"
     },
     {
-      "dni": 42647316,
-      "nombre": "VIZCARRA MEDINA DAVID SAMUEL",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
+      "dni": 70179483,
+      "nombre": "VILLANUEVA CAMAC GUILLERMO ARTURO",
+      "horasRegistro": 20,
+      "horasPlan": 18,
+      "programa26": "ESTUDIOS GENERALES"
+    },
+    {
+      "dni": 40793210,
+      "nombre": "WINCHO CHILQUILLO VICTOR MANUEL",
+      "horasRegistro": 35,
+      "horasPlan": 28,
+      "programa26": "ARQUITECTURA"
     },
     {
       "dni": 6767672,
       "nombre": "WU MATTA JULIO",
       "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
+      "horasPlan": 7,
+      "programa26": "INGENIERÍA INDUSTRIAL"
     },
     {
       "dni": 21864691,
       "nombre": "YATACO VALDEZ PALMER EDWIN",
       "horasRegistro": 30,
-      "horasPlan": 28,
+      "horasPlan": 26,
       "programa26": "EEGG"
     },
     {
-      "dni": 44114929,
-      "nombre": "GOMERO MANCESIDOR JOHNNY MITCHELL",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 40435228,
-      "nombre": "RECUAY SALAZAR CARLOS ALBERTO",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 16756416,
-      "nombre": "SALCEDO RODAS PERCY ISMAEL",
-      "horasRegistro": 18,
-      "horasPlan": 18,
-      "programa26": ""
-    },
-    {
-      "dni": 70108675,
-      "nombre": "BUITRON LLACSA JOSE MANUEL",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 46075693,
-      "nombre": "MORALES CHAVEZ GISSEL JOCELINE",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
+      "dni": 45156306,
+      "nombre": "ZAFRA SALAS MARCO ANDRE",
+      "horasRegistro": 17,
+      "horasPlan": 14,
+      "programa26": "DERECHO"
     },
     {
       "dni": 21435528,
       "nombre": "ZUMAETA BERAMENDI JACQUELINE DIANA",
       "horasRegistro": 8,
       "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 70786643,
-      "nombre": "DIAZ VELASQUEZ JULIO CESAR",
-      "horasRegistro": 12,
-      "horasPlan": 6,
-      "programa26": ""
-    },
-    {
-      "dni": 46590523,
-      "nombre": "ROMERO CARAZAS RAFAEL",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 46825060,
-      "nombre": "CALLAN BACILIO RICHARD",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 26629386,
-      "nombre": "ABANTO MERINO LUIS ALFREDO",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 72681156,
-      "nombre": "MAS VILLANUEVA KENY ARNOLD",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 2885494,
-      "nombre": "QUIROGA PAIVA DAVID EDUARDO",
-      "horasRegistro": 3,
-      "horasPlan": 3,
-      "programa26": ""
-    },
-    {
-      "dni": 45156306,
-      "nombre": "ZAFRA SALAS MARCO ANDRE",
-      "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
-    },
-    {
-      "dni": 41519363,
-      "nombre": "MANRIQUE CERVANTES JOSE ANTONIO",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 46730566,
-      "nombre": "SALAZAR GAMBOA OSCAR FRITZ ALEXANDER",
-      "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
-    },
-    {
-      "dni": 41536992,
-      "nombre": "CABEZA MOLINA LUIS FELIPE",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 40105460,
-      "nombre": "MUÑANTE SIHUES CESAR ARTURO",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 42515290,
-      "nombre": "PIZARRO OSORIO BETSABE LILIA",
-      "horasRegistro": 32,
-      "horasPlan": 32,
-      "programa26": ""
-    },
-    {
-      "dni": 45007560,
-      "nombre": "ULLOQUE SAMATELO CARLOS AUGUSTO",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 29726614,
-      "nombre": "BAHAMONDES GARCIA SINOE GEOFREY",
-      "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
-    },
-    {
-      "dni": 76129345,
-      "nombre": "VELASQUEZ CHUNGA JOSE LUIS",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 72049382,
-      "nombre": "APAZA CHINO GRIMALDO",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 15981186,
-      "nombre": "MARTINEZ ZULOAGA NORA TERESA",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 40583004,
-      "nombre": "SOTOMAYOR ALBITES GEORGE ANTONHY",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 10658694,
-      "nombre": "MARTINEZ QUISÑAY JULIO RODOLFO",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 15428250,
-      "nombre": "CHAVEZ CARRAZCO CECILIA MARCELINA",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 8689170,
-      "nombre": "ACERO CARDENAS ANA MARIA",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 45303683,
-      "nombre": "GUTIERREZ JIMENEZ CINDY FIORELLA",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 70277443,
-      "nombre": "OSCCO INJANTE JOSE LUIS",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 43958773,
-      "nombre": "HUAMANI CANALES ANALI MARIELLA",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 6708096,
-      "nombre": "FRIAS LIAU HING MELVA",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 43596886,
-      "nombre": "PASACHE LAGOS SERGIO LUIS",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 41060828,
-      "nombre": "BEJARANO PEREZ JUDITH ROSSANA",
-      "horasRegistro": 15,
-      "horasPlan": 15,
-      "programa26": ""
-    },
-    {
-      "dni": 21447676,
-      "nombre": "CONDORCHOA CAMACHO CARLOS JOHN",
-      "horasRegistro": 37,
-      "horasPlan": 31,
-      "programa26": ""
-    },
-    {
-      "dni": 46078496,
-      "nombre": "JAYO HIGA JOSE JUAN",
-      "horasRegistro": 11,
-      "horasPlan": 11,
-      "programa26": ""
-    },
-    {
-      "dni": 45221222,
-      "nombre": "VEGA ROSALES JORGE MARTIN",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
-    },
-    {
-      "dni": 45023124,
-      "nombre": "GUARDIA PANIURA CANDY HAYDEE",
-      "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
-    },
-    {
-      "dni": 16662940,
-      "nombre": "ORDINOLA BRENIS JUAN MANUEL",
-      "horasRegistro": 16,
-      "horasPlan": 16,
-      "programa26": ""
-    },
-    {
-      "dni": 44859703,
-      "nombre": "SANCHEZ NAVARRETE CARLOS RICARDO",
-      "horasRegistro": 11,
-      "horasPlan": 11,
-      "programa26": ""
-    },
-    {
-      "dni": 18071852,
-      "nombre": "PESANTES SALAVARRIA MARCO ALFONSO",
-      "horasRegistro": 40,
-      "horasPlan": 40,
-      "programa26": ""
-    },
-    {
-      "dni": 15590660,
-      "nombre": "RODRIGUEZ RAMIREZ MARIA ISABEL",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 43608561,
-      "nombre": "MENDOZA CASTILLO JUAN JOSE",
-      "horasRegistro": 5,
-      "horasPlan": 5,
-      "programa26": ""
-    },
-    {
-      "dni": 15725118,
-      "nombre": "SAMANAMUD VALENTIN MIGUEL ANGEL MOISES",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 15688249,
-      "nombre": "ROJAS GUZMAN TITO",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 15738084,
-      "nombre": "GUERRERO CERVERA JULIA DEL PILAR",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
-    },
-    {
-      "dni": 72176698,
-      "nombre": "ESPINOZA MORE CARLA MILAGROS",
-      "horasRegistro": 6,
-      "horasPlan": 6,
-      "programa26": ""
-    },
-    {
-      "dni": 75168136,
-      "nombre": "GAVINO SANCHEZ JOHN STEVENS",
-      "horasRegistro": 6,
-      "horasPlan": 6,
-      "programa26": ""
-    },
-    {
-      "dni": 41807593,
-      "nombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS",
-      "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
-    },
-    {
-      "dni": 43027985,
-      "nombre": "TRUJILLO APONTE WAGNER ABRAHAM",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 42146692,
-      "nombre": "LINO FLORES LUIS ANTONIO",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 70179483,
-      "nombre": "VILLANUEVA CAMAC GUILLERMO ARTURO",
-      "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
-    },
-    {
-      "dni": 40740790,
-      "nombre": "SACRAMENTO LAZARO ROSA ALBINA",
-      "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
-    },
-    {
-      "dni": 15591781,
-      "nombre": "QUINTEROS NICHO LUIS FERNANDO",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 2442123,
-      "nombre": "FERREYROS YUCRA JAIR EMERSON",
-      "horasRegistro": 17,
-      "horasPlan": 17,
-      "programa26": ""
-    },
-    {
-      "dni": 15357430,
-      "nombre": "HERNANDEZ PEVES JUAN GUSTAVO",
-      "horasRegistro": 11,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 16621586,
-      "nombre": "VALDIVIA SALAZAR CARLOS ALBERTO",
-      "horasRegistro": 11,
-      "horasPlan": 11,
-      "programa26": ""
-    },
-    {
-      "dni": 21492225,
-      "nombre": "GARCIA AQUIJE PEDRO CARLOS",
-      "horasRegistro": 8,
-      "horasPlan": 6,
-      "programa26": ""
-    },
-    {
-      "dni": 21566262,
-      "nombre": "SUAREZ ESCRIBA MARIELLA ROSARIO",
-      "horasRegistro": 11,
-      "horasPlan": 11,
-      "programa26": ""
-    },
-    {
-      "dni": 40012522,
-      "nombre": "BENDEZU HERNANDEZ JAVIER ORLANDO",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 40727418,
-      "nombre": "CHANG HERNANDEZ GUILLERMO ANDRES",
-      "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
-    },
-    {
-      "dni": 40793210,
-      "nombre": "WINCHO CHILQUILLO VICTOR MANUEL",
-      "horasRegistro": 35,
-      "horasPlan": 31,
-      "programa26": ""
-    },
-    {
-      "dni": 40814844,
-      "nombre": "SALINAS PEREZ HECTOR CLEMENTE",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 41507055,
-      "nombre": "GARAYAR TTITO ANA MELIZA",
-      "horasRegistro": 11,
-      "horasPlan": 11,
-      "programa26": ""
-    },
-    {
-      "dni": 41916771,
-      "nombre": "TEMOCHE ALMORA LUIS GERMAN",
-      "horasRegistro": 10,
-      "horasPlan": 10,
-      "programa26": ""
-    },
-    {
-      "dni": 41959229,
-      "nombre": "HUAMAN ESPINO ZORAIDA FELIPA",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 42734786,
-      "nombre": "HUANCAHUIRE BRAVO CLAUDIO ISAIAS",
-      "horasRegistro": 18,
-      "horasPlan": 14,
-      "programa26": ""
-    },
-    {
-      "dni": 43932363,
-      "nombre": "ESPINOZA LEON GUSTAVO FELIPE",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 72608111,
-      "nombre": "SACHUN BECERRA PERCY ALEXANDER",
-      "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
-    },
-    {
-      "dni": 70073915,
-      "nombre": "CASTILLON SIGUAS LUIS ALFREDO",
-      "horasRegistro": 19,
-      "horasPlan": 15,
-      "programa26": ""
-    },
-    {
-      "dni": 40444414,
-      "nombre": "MESIAS MEJIA EDGAR YVAN",
-      "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
-    },
-    {
-      "dni": 44822572,
-      "nombre": "DURÁN RIOS SANDRO ANIBAL",
-      "horasRegistro": 9,
-      "horasPlan": 9,
-      "programa26": ""
-    },
-    {
-      "dni": 40432935,
-      "nombre": "MIRANDA BAZALAR ROBERTO WILLIAM",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": 40382257,
-      "nombre": "REA MORENO FLOR MAGALY",
-      "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
-    },
-    {
-      "dni": 15607309,
-      "nombre": "BERRIOS VEGA CARMEN LUZ",
-      "horasRegistro": 12,
-      "horasPlan": 12,
-      "programa26": ""
-    },
-    {
-      "dni": 44006023,
-      "nombre": "CONDE REYES JORGE LUIS",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": 29384319,
-      "nombre": "CHUNG RODRIGUEZ JOSE MARTIN",
-      "horasRegistro": 18,
-      "horasPlan": 18,
-      "programa26": ""
-    },
-    {
-      "dni": 42711303,
-      "nombre": "FABIAN SOBERANIS MIGUEL ANGEL",
-      "horasRegistro": 20,
-      "horasPlan": 20,
-      "programa26": ""
-    },
-    {
-      "dni": null,
-      "nombre": "ALCANTARA FARFAN JUAN CARLOS",
-      "horasRegistro": 8,
-      "horasPlan": 8,
-      "programa26": ""
-    },
-    {
-      "dni": null,
-      "nombre": "BRAVO SENDER RAUL ANTONIO",
-      "horasRegistro": 14,
-      "horasPlan": 14,
-      "programa26": ""
-    },
-    {
-      "dni": null,
-      "nombre": "MARTINEZ YATACO JESSICA JULISSA",
-      "horasRegistro": 4,
-      "horasPlan": 4,
-      "programa26": ""
-    },
-    {
-      "dni": null,
-      "nombre": "SILVA HUAMANTUMBA KAROL",
-      "horasRegistro": 5,
-      "horasPlan": 7,
-      "programa26": ""
+      "programa26": "ADMINISTRACIÓN Y FINANZAS"
     }
   ]
 }

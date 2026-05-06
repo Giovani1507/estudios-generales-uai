@@ -1,7 +1,145 @@
 {
-  "enArchivoNuevo": 262,
+  "enArchivoNuevo": 234,
   "enListaActual": 262,
-  "faltanEnActual": [],
-  "sobranEnActual": [],
-  "generadoEl": "2026-03-27T17:09:14.997Z"
+  "faltanEnActual": [
+    {
+      "nombre": "CABANILLAS SULCA JAVIER CLEMENTE",
+      "dni": null
+    },
+    {
+      "nombre": "OCHOA CARBAJAL HERNAN",
+      "dni": null
+    },
+    {
+      "nombre": "RETUERTO FIGUEROA ALEXANDER",
+      "dni": null
+    }
+  ],
+  "sobranEnActual": [
+    {
+      "nombre": "BUENDIA APARCANA ROBERTO REYMUNDO",
+      "dni": 21576727
+    },
+    {
+      "nombre": "CALLAN BACILIO RICHARD",
+      "dni": 46825060
+    },
+    {
+      "nombre": "DIAZ RODRIGUEZ BREITNER GUILLERMO",
+      "dni": 43153608
+    },
+    {
+      "nombre": "DIAZ VELASQUEZ JULIO CESAR",
+      "dni": 70786643
+    },
+    {
+      "nombre": "EVANGELISTA HUAYNALAYA FRANCISCO DE JESUS",
+      "dni": 41807593
+    },
+    {
+      "nombre": "GARCIA AQUIJE PEDRO CARLOS",
+      "dni": 21492225
+    },
+    {
+      "nombre": "GAVILAN ORE ADOLFO GUILLERMO",
+      "dni": 21447220
+    },
+    {
+      "nombre": "GIRALDO MENDOZA DANTE MARTIN",
+      "dni": 41258221
+    },
+    {
+      "nombre": "GUARDIA PANIURA CANDY HAYDEE",
+      "dni": 45023124
+    },
+    {
+      "nombre": "HERNANDEZ MAYTAHUARI PATRICIA DEL ROSARIO",
+      "dni": 21575934
+    },
+    {
+      "nombre": "HERRERA MAGUIÑA DANNY EDUARDO",
+      "dni": 40497460
+    },
+    {
+      "nombre": "JAYO HIGA JOSE JUAN",
+      "dni": 46078496
+    },
+    {
+      "nombre": "JUAREZ CAQUIAMARCA LUIS MIGUEL",
+      "dni": 71543911
+    },
+    {
+      "nombre": "LLANCARES SUXE JORGE ARMANDO",
+      "dni": 43262214
+    },
+    {
+      "nombre": "MANRIQUE CERVANTES JOSE ANTONIO",
+      "dni": 41519363
+    },
+    {
+      "nombre": "MARTINEZ QUISÑAY JULIO RODOLFO",
+      "dni": 10658694
+    },
+    {
+      "nombre": "MESIAS REYES JORGE LUIS",
+      "dni": 21885297
+    },
+    {
+      "nombre": "MISSA FRANCO ALEX RADOMIR",
+      "dni": 40716850
+    },
+    {
+      "nombre": "MORALES CHAVEZ GISSEL JOCELINE",
+      "dni": 46075693
+    },
+    {
+      "nombre": "NAVARRETE VELARDE VICKY MARLENE",
+      "dni": 21422843
+    },
+    {
+      "nombre": "PALACIOS CABEL MARTIN EDUARDO",
+      "dni": 9596989
+    },
+    {
+      "nombre": "PAREDES MENDOZA JUAN MIGUEL",
+      "dni": 43901199
+    },
+    {
+      "nombre": "QUIROGA PAIVA DAVID EDUARDO",
+      "dni": 2885494
+    },
+    {
+      "nombre": "QUISPE FARFAN DANTE IQUE",
+      "dni": 10622951
+    },
+    {
+      "nombre": "RECUAY SALAZAR CARLOS ALBERTO",
+      "dni": 40435228
+    },
+    {
+      "nombre": "RIOS SANTIAGO WILSON CESAR",
+      "dni": 44398451
+    },
+    {
+      "nombre": "RODRIGUEZ CRUZ BRYAN SIMON",
+      "dni": 72703241
+    },
+    {
+      "nombre": "SACHUN BECERRA PERCY ALEXANDER",
+      "dni": 72608111
+    },
+    {
+      "nombre": "VASQUEZ GALVEZ DAYANA CRISTY",
+      "dni": 40401768
+    },
+    {
+      "nombre": "VEGA BENAVIDES CESAR AUGUSTO",
+      "dni": 42952070
+    },
+    {
+      "nombre": "VIZCARRA MEDINA DAVID SAMUEL",
+      "dni": 42647316
+    }
+  ],
+  "generadoEl": "2026-05-06T22:45:44.307217+00:00"
 }
