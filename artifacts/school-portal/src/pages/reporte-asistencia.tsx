@@ -77,11 +77,22 @@ export default function ReporteAsistencia() {
     setFilas([]);
 
     try {
-      const r = await fetch(`${apiBase}/api/asistencia-planillas`, {
-        credentials: "include", signal: ctrl.signal,
-      });
+      const base = `${apiBase}/`;
+      const [r, ficaPlan, fcsPlan] = await Promise.all([
+        fetch(`${apiBase}/api/asistencia-planillas`, { credentials: "include", signal: ctrl.signal }),
+        fetch(`${base}planificacion-fica-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
+        fetch(`${base}planificacion-fcs-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
+      ]);
       if (!r.ok) throw new Error("list");
       const list = (await r.json()) as PlanillaItem[];
+
+      // Mapa codigo_upper → ciclo desde los JSON de planificación
+      const codigoCicloMap = new Map<string, string>();
+      for (const row of [...(Array.isArray(ficaPlan) ? ficaPlan : []), ...(Array.isArray(fcsPlan) ? fcsPlan : [])]) {
+        if (row?.codigo && row?.ciclo) {
+          codigoCicloMap.set(String(row.codigo).toUpperCase().trim(), String(row.ciclo).trim());
+        }
+      }
 
       const detalles = await Promise.all(
         list.map(async (p) => {
@@ -98,10 +109,11 @@ export default function ReporteAsistencia() {
       const out: Fila[] = [];
       for (const det of detalles) {
         if (!det) continue;
+        // Obtener ciclo desde el mapa de planificación
+        const codigoKey = (det.codigoCurso || "").toUpperCase().trim();
+        const ciclo = codigoCicloMap.get(codigoKey) ?? "";
         // Solo ciclos 1 y 2
-        const cicloNum = parseInt(det.ciclo || "", 10);
-        if (cicloNum !== 1 && cicloNum !== 2) continue;
-        const ciclo = String(cicloNum);
+        if (ciclo !== "1" && ciclo !== "2") continue;
 
         const weeksLen = det.weeks?.length || 0;
         let maxMarcas = 0;
