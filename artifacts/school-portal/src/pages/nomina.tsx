@@ -1,291 +1,576 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLogPageEntry } from "@/hooks/use-activity-log";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  FileText, Upload, Download, Loader2, Trash2, Save, Plus, RefreshCw, FileSpreadsheet, ChevronLeft,
+  Loader2,
+  Trash2,
+  Save,
+  ChevronLeft,
+  Upload,
+  Download,
+  Layers,
+  FileCheck,
+  AlertCircle,
+  CheckCircle2,
+  FileSpreadsheet,
+  RefreshCw,
+  Plus,
+  FilePlus,
 } from "lucide-react";
-import { parseNominaPdf, buildGrupos, type NominaGrupo } from "@/lib/parse-nomina-pdf";
+import { parseNominaPdf, buildGrupos } from "@/lib/parse-nomina-pdf";
 import { exportNominaXlsx } from "@/lib/export-nomina-excel";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
-type NominaListItem = {
-  id: number;
-  periodo: string;
-  codigoCarrera: string;
-  carrera: string;
-  estado: string;
-  createdByName: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type NominaFull = NominaListItem & {
-  data: { grupos: NominaGrupo[] };
-};
-
-function recalcParents(grupos: NominaGrupo[]): NominaGrupo[] {
-  return grupos.map(g => {
-    const matriculados = g.cursos.length
-      ? Math.max(...g.cursos.map(c => c.matriculados))
-      : g.matriculados;
-    const retOctda    = Math.max(0, ...g.cursos.map(c => c.retOctda));
-    const retInasist  = Math.max(0, ...g.cursos.map(c => c.retInasist));
-    const totalActivos = Math.max(0, matriculados - retOctda - retInasist);
-    const cursosWithTotal = g.cursos.map(c => ({
-      ...c,
-      totalActivos: Math.max(0, (c.matriculados || 0) - (c.retOctda || 0) - (c.retInasist || 0)),
-    }));
-    return { ...g, matriculados, retOctda, retInasist, totalActivos, cursos: cursosWithTotal };
-  });
-}
-
 export default function NominaPage() {
   useLogPageEntry("Nómina");
-
-  const [list, setList] = useState<NominaListItem[]>([]);
+  const [list, setList] = useState<any[]>([]);
   const [loadingList, setLoadingList] = useState(true);
-  const [editing, setEditing] = useState<NominaFull | null>(null);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const editorFileRef = useRef<HTMLInputElement>(null);
 
-  // Load list
   async function loadList() {
     setLoadingList(true);
     try {
-      const res = await fetch(`${apiBase}/api/nominas`, { credentials: "include" });
+      const res = await fetch(`${apiBase}/api/nominas`, {
+        credentials: "include",
+      });
       if (res.ok) setList(await res.json());
     } finally {
       setLoadingList(false);
     }
   }
-  useEffect(() => { loadList(); }, []);
 
-  // Load full nómina
-  async function openNomina(id: number) {
-    setError(null);
-    const res = await fetch(`${apiBase}/api/nominas/${id}`, { credentials: "include" });
-    if (!res.ok) {
-      setError("No se pudo cargar la nómina");
-      return;
-    }
-    const full: NominaFull = await res.json();
-    setEditing(full);
-  }
+  useEffect(() => {
+    loadList();
+  }, []);
 
-  // Upload PDF and start a new nómina draft
-  async function handleFile(file: File) {
-    setError(null);
+  // Procesa un PDF y lo agrega al editor (sin guardar todavía)
+  const procesarPdf = async (file: File) => {
     setParsing(true);
     try {
-      const parsed = await parseNominaPdf(file);
-      if (!parsed.carrera || !parsed.periodo) {
-        setError("No se pudo leer carrera o periodo del PDF. Verifica el archivo.");
-        setParsing(false);
-        return;
+      const reports = await parseNominaPdf(file);
+      if (reports.length === 0)
+        throw new Error("No se encontraron datos en el PDF.");
+      const nuevosGrupos = buildGrupos(reports);
+      const periodo = reports[0]?.periodo || "2026-1";
+
+      if (editing) {
+        // Agrega al editor existente
+        setEditing((prev: any) => ({
+          ...prev,
+          data: { grupos: [...prev.data.grupos, ...nuevosGrupos] },
+        }));
+      } else {
+        // Abre el editor con la primera carrera
+        setEditing({
+          id: null,
+          periodo,
+          carrera: `NÓMINA CONSOLIDADA ${periodo}`,
+          codigoCarrera: "CONSOLIDADO",
+          estado: "BORRADOR",
+          data: { grupos: nuevosGrupos },
+        });
       }
-      const grupos = buildGrupos(parsed);
-      if (grupos.length === 0) {
-        setError("El PDF no contiene cursos de ciclo 1 ni 2.");
-        setParsing(false);
-        return;
-      }
-      setEditing({
-        id: 0, // not saved yet
-        periodo: parsed.periodo,
-        codigoCarrera: parsed.codigoCarrera,
-        carrera: parsed.carrera,
-        estado: "BORRADOR",
-        createdByName: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        data: { grupos },
-      });
     } catch (e: any) {
-      console.error(e);
-      setError("Error al leer el PDF: " + (e?.message || "desconocido"));
+      alert(e.message || "Error al procesar el PDF.");
     } finally {
       setParsing(false);
     }
-  }
+  };
 
-  // Persist (create or update)
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    for (const file of Array.from(files)) {
+      await procesarPdf(file);
+    }
+    if (fileRef.current) fileRef.current.value = "";
+    if (editorFileRef.current) editorFileRef.current.value = "";
+  };
+
   async function saveNomina() {
     if (!editing) return;
     setSaving(true);
-    setError(null);
     try {
-      const fixed = recalcParents(editing.data.grupos);
-      const payload = {
-        periodo: editing.periodo,
-        codigoCarrera: editing.codigoCarrera,
-        carrera: editing.carrera,
-        data: { grupos: fixed },
-        estado: editing.estado,
-      };
-      const url = editing.id ? `${apiBase}/api/nominas/${editing.id}` : `${apiBase}/api/nominas`;
-      const method = editing.id ? "PUT" : "POST";
+      const url = editing.id
+        ? `${apiBase}/api/nominas/${editing.id}`
+        : `${apiBase}/api/nominas`;
       const res = await fetch(url, {
-        method,
+        method: editing.id ? "PUT" : "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(editing),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setError(err.error || "Error al guardar");
-        return;
+      if (res.ok) {
+        await loadList();
+        setEditing(null);
+      } else {
+        let msg = `Error HTTP ${res.status}`;
+        try {
+          const b = await res.json();
+          msg = b.message || b.error || msg;
+        } catch {}
+        alert(msg);
       }
-      const saved: NominaFull = await res.json();
-      setEditing({ ...saved, data: { grupos: fixed } });
-      await loadList();
     } finally {
       setSaving(false);
     }
   }
 
   async function deleteNomina(id: number) {
-    if (!confirm("¿Eliminar esta nómina? Esta acción no se puede deshacer.")) return;
-    const res = await fetch(`${apiBase}/api/nominas/${id}`, { method: "DELETE", credentials: "include" });
-    if (res.ok) {
-      if (editing?.id === id) setEditing(null);
-      await loadList();
-    }
+    if (!confirm("¿Eliminar esta nómina?")) return;
+    await fetch(`${apiBase}/api/nominas/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    await loadList();
   }
 
-  function exportExcel() {
-    if (!editing) return;
-    const fixed = recalcParents(editing.data.grupos);
-    exportNominaXlsx(editing.carrera, editing.periodo, fixed);
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────
+  // ── Vista del editor ────────────────────────────────────────────────────────
   if (editing) {
+    const grupos = editing.data.grupos;
+    const carrerasUnicas = [
+      ...new Set(grupos.map((g: any) => g.carrera)),
+    ] as string[];
+
+    function updateCurso(
+      gIdx: number,
+      cIdx: number,
+      field: string,
+      val: number,
+    ) {
+      const next = [...grupos];
+      const g = { ...next[gIdx], cursos: [...next[gIdx].cursos] };
+      g.cursos[cIdx] = { ...g.cursos[cIdx], [field]: val };
+      g.cursos[cIdx].totalActivos =
+        (g.cursos[cIdx].matriculados || 0) -
+        (g.cursos[cIdx].retOctda || 0) -
+        (g.cursos[cIdx].retInasist || 0);
+      g.matriculados = Math.max(...g.cursos.map((c: any) => c.matriculados));
+      g.retOctda = Math.max(...g.cursos.map((c: any) => c.retOctda || 0));
+      g.retInasist = Math.max(...g.cursos.map((c: any) => c.retInasist || 0));
+      g.totalActivos = g.matriculados - g.retOctda - g.retInasist;
+      next[gIdx] = g;
+      setEditing({ ...editing, data: { grupos: next } });
+    }
+
+    const byCiclo = {
+      1: grupos
+        .map((g: any, i: any) => ({ g, i }))
+        .filter((x: any) => x.g.ciclo === 1),
+      2: grupos
+        .map((g: any, i: any) => ({ g, i }))
+        .filter((x: any) => x.g.ciclo === 2),
+    };
+
     return (
-      <NominaEditor
-        nomina={editing}
-        setNomina={setEditing}
-        onBack={() => { setEditing(null); setError(null); }}
-        onSave={saveNomina}
-        onExport={exportExcel}
-        saving={saving}
-        error={error}
-      />
-    );
-  }
+      <div className="min-h-screen bg-slate-50">
+        {/* Header fijo */}
+        <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3 shadow-sm">
+          <div className="max-w-7xl mx-auto flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => setEditing(null)}
+              className="shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" /> Volver
+            </Button>
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <FileSpreadsheet className="w-7 h-7 text-blue-700" />
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Nómina</h1>
-          <p className="text-sm text-muted-foreground">
-            Sube el reporte PDF de matriculados de una carrera y arma la nómina de Ciclo 1 y 2 automáticamente.
-          </p>
-        </div>
-      </div>
-
-      {/* Uploader */}
-      <div className="bg-white border border-blue-200 rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
-              <Upload className="w-5 h-5 text-blue-700" />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800">Nueva nómina desde PDF</p>
-              <p className="text-xs text-muted-foreground">
-                Reporte de Matriculados por Curso (PDF). Solo se procesan los ciclos 1 y 2.
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-black text-blue-900 truncate">
+                {editing.carrera}
+              </h2>
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest">
+                Periodo {editing.periodo} · {carrerasUnicas.length} carrera
+                {carrerasUnicas.length !== 1 ? "s" : ""}
               </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-                e.target.value = "";
-              }}
-            />
+
+            {/* Chips de carreras cargadas */}
+            <div className="hidden md:flex gap-2 flex-wrap max-w-sm">
+              {carrerasUnicas.slice(0, 3).map((c: string) => (
+                <span
+                  key={c}
+                  className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full truncate max-w-[140px]"
+                >
+                  {c}
+                </span>
+              ))}
+              {carrerasUnicas.length > 3 && (
+                <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded-full">
+                  +{carrerasUnicas.length - 3} más
+                </span>
+              )}
+            </div>
+
+            {/* Botón agregar carrera */}
             <Button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => editorFileRef.current?.click()}
               disabled={parsing}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              variant="outline"
+              className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-50"
             >
               {parsing ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Procesando…</>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (
-                <><Plus className="w-4 h-4 mr-2" /> Subir PDF</>
+                <FilePlus className="w-4 h-4 mr-2" />
               )}
+              Agregar Carrera
+            </Button>
+
+            <Button
+              onClick={saveNomina}
+              disabled={saving}
+              className="shrink-0 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Guardar
+            </Button>
+
+            <Button
+              onClick={() => exportNominaXlsx(editing.periodo, grupos)}
+              className="shrink-0 bg-[#1e3a8a] hover:bg-[#162e6d]"
+            >
+              <Download className="w-4 h-4 mr-2" /> Descargar
             </Button>
           </div>
         </div>
-        {error && (
-          <div className="mt-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-            {error}
+
+        <input
+          ref={editorFileRef}
+          type="file"
+          accept="application/pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+
+        {/* Banner de carreras cargadas */}
+        {carrerasUnicas.length > 0 && (
+          <div className="bg-blue-600 text-white px-6 py-2">
+            <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-widest opacity-70">
+                Carreras en este documento:
+              </span>
+              {carrerasUnicas.map((c: string) => (
+                <span
+                  key={c}
+                  className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Tablas por ciclo */}
+        <div className="p-6 max-w-7xl mx-auto space-y-8 pb-20">
+          {[1, 2].map((c) => (
+            <div
+              key={c}
+              className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100"
+            >
+              <div className="px-6 py-4 bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-xl">
+                    <FileCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase tracking-tight">
+                      Nómina del Ciclo {c === 1 ? "I" : "II"}
+                    </h3>
+                    <p className="text-blue-200 text-xs mt-0.5">
+                      {byCiclo[c as 1 | 2].length} grupo
+                      {byCiclo[c as 1 | 2].length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
+                <Badge className="bg-white/20 text-white border-white/30 border">
+                  Consolidado
+                </Badge>
+              </div>
+
+              {byCiclo[c as 1 | 2].length === 0 ? (
+                <div className="p-12 text-center text-slate-400 italic text-sm">
+                  No hay grupos para este ciclo. Agrega más PDFs con el botón
+                  "Agregar Carrera".
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-widest border-b border-slate-100">
+                        <th className="p-4 text-left w-2/5 italic">
+                          Carrera / Curso Académico
+                        </th>
+                        <th className="p-4 text-center">Matriculados</th>
+                        <th className="p-4 text-center">Ret. OCTDA</th>
+                        <th className="p-4 text-center">Ret. INAS.</th>
+                        <th className="p-4 text-center bg-blue-50 text-blue-700">
+                          Total Activos
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {byCiclo[c as 1 | 2].map(({ g, i }: any) => (
+                        <React.Fragment key={i}>
+                          <tr className="bg-blue-50/50 hover:bg-blue-50 transition-colors">
+                            <td className="p-4 font-black text-[#1e3a8a] text-sm uppercase">
+                              {g.carrera}
+                              <span className="ml-2 px-2 py-0.5 bg-blue-200 text-blue-800 rounded text-[10px] font-bold">
+                                {g.seccion}
+                              </span>
+                              <span className="ml-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">
+                                {g.modalidad}
+                              </span>
+                            </td>
+                            <td className="text-center font-black text-slate-800">
+                              {g.matriculados}
+                            </td>
+                            <td className="text-center font-bold text-slate-400">
+                              {g.retOctda}
+                            </td>
+                            <td className="text-center font-bold text-slate-400">
+                              {g.retInasist}
+                            </td>
+                            <td className="text-center bg-blue-100/50 text-blue-900 font-black">
+                              {g.totalActivos}
+                            </td>
+                          </tr>
+                          {g.cursos.map((curso: any, cIdx: number) => (
+                            <tr key={cIdx} className="hover:bg-slate-50 group">
+                              <td className="pl-10 p-3 text-slate-500 font-medium border-l-2 border-transparent group-hover:border-blue-300 group-hover:text-slate-800 transition-all">
+                                {curso.nombre}
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  value={curso.matriculados}
+                                  onChange={(e) =>
+                                    updateCurso(
+                                      i,
+                                      cIdx,
+                                      "matriculados",
+                                      parseInt(e.target.value),
+                                    )
+                                  }
+                                  className="w-16 mx-auto block border border-slate-200 text-center rounded-lg h-8 focus:ring-2 focus:ring-blue-400 outline-none text-xs"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  value={curso.retOctda}
+                                  onChange={(e) =>
+                                    updateCurso(
+                                      i,
+                                      cIdx,
+                                      "retOctda",
+                                      parseInt(e.target.value),
+                                    )
+                                  }
+                                  className="w-16 mx-auto block border border-slate-200 text-center rounded-lg h-8 focus:ring-2 focus:ring-blue-400 outline-none text-xs"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  value={curso.retInasist}
+                                  onChange={(e) =>
+                                    updateCurso(
+                                      i,
+                                      cIdx,
+                                      "retInasist",
+                                      parseInt(e.target.value),
+                                    )
+                                  }
+                                  className="w-16 mx-auto block border border-slate-200 text-center rounded-lg h-8 focus:ring-2 focus:ring-blue-400 outline-none text-xs"
+                                />
+                              </td>
+                              <td className="text-center font-black text-emerald-600 bg-emerald-50/30">
+                                {curso.totalActivos}
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Vista principal (lista) ─────────────────────────────────────────────────
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <header>
+        <div className="flex items-center gap-2 text-blue-700 mb-1">
+          <FileSpreadsheet className="w-5 h-5" />
+          <span className="text-sm font-bold uppercase tracking-wider">
+            Gestión Académica
+          </span>
+        </div>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+          Nómina <span className="text-blue-600">UAI</span>
+        </h1>
+        <p className="text-slate-500 mt-1">
+          Sube el reporte PDF de matriculados de una carrera y arma la nómina de
+          Ciclo 1 y 2 automáticamente.
+        </p>
+      </header>
+
+      {/* Zona de carga */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          handleFiles(e.dataTransfer.files);
+        }}
+        onClick={() => fileRef.current?.click()}
+        className={`cursor-pointer border-2 border-dashed rounded-2xl p-10 text-center transition-all ${
+          isDragging
+            ? "border-blue-500 bg-blue-50 scale-[1.01]"
+            : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/30"
+        }`}
+      >
+        {parsing ? (
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
+            <p className="text-blue-600 font-bold">Procesando PDF...</p>
+          </div>
+        ) : (
+          <>
+            <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
+            <p className="text-slate-700 font-bold text-lg">
+              Arrastra uno o varios PDFs aquí
+            </p>
+            <p className="text-slate-400 text-sm mt-1">
+              Cada PDF se agrega al mismo documento — puedes combinar varias
+              carreras
+            </p>
+            <Button
+              className="mt-5 bg-blue-600 hover:bg-blue-700 pointer-events-none"
+              size="lg"
+            >
+              <Upload className="mr-2 w-4 h-4" /> Subir PDF
+            </Button>
+          </>
         )}
       </div>
 
-      {/* Saved nóminas */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      {/* Lista de nóminas guardadas */}
+      <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
           <div>
-            <h2 className="font-semibold text-slate-800">Nóminas guardadas</h2>
-            <p className="text-xs text-muted-foreground">{list.length} registradas</p>
+            <h2 className="font-bold text-slate-800 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-slate-400" /> Nóminas guardadas
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {list.length} registradas
+            </p>
           </div>
-          <Button variant="outline" size="sm" onClick={loadList} disabled={loadingList}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loadingList ? "animate-spin" : ""}`} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadList}
+            className="text-slate-500"
+          >
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${loadingList ? "animate-spin" : ""}`}
+            />
             Actualizar
           </Button>
         </div>
 
-        {loadingList ? (
-          <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
-        ) : list.length === 0 ? (
-          <div className="p-10 text-center text-muted-foreground">
-            <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Aún no has creado ninguna nómina. Sube un PDF para empezar.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
               <tr>
-                <th className="text-left px-4 py-2 font-semibold">Carrera</th>
-                <th className="text-left px-4 py-2 font-semibold">Periodo</th>
-                <th className="text-left px-4 py-2 font-semibold">Estado</th>
-                <th className="text-left px-4 py-2 font-semibold">Creado por</th>
-                <th className="text-left px-4 py-2 font-semibold">Actualizado</th>
-                <th className="text-right px-4 py-2 font-semibold">Acciones</th>
+                <th className="px-6 py-4 text-left">Carrera / Nómina</th>
+                <th className="px-6 py-4 text-left">Periodo</th>
+                <th className="px-6 py-4 text-center">Estado</th>
+                <th className="px-6 py-4 text-left">Actualizado</th>
+                <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {list.map(n => (
-                <tr key={n.id} className="border-t border-slate-100 hover:bg-blue-50/40 transition">
-                  <td className="px-4 py-2 font-medium text-slate-800">{n.carrera}</td>
-                  <td className="px-4 py-2">{n.periodo}</td>
-                  <td className="px-4 py-2">
-                    <Badge variant={n.estado === "FINAL" ? "default" : "secondary"}>{n.estado}</Badge>
+            <tbody className="divide-y divide-slate-100">
+              {list.map((n) => (
+                <tr
+                  key={n.id}
+                  className="hover:bg-blue-50/30 transition-colors group"
+                >
+                  <td className="px-6 py-4 font-semibold text-slate-700">
+                    {n.carrera}
                   </td>
-                  <td className="px-4 py-2 text-slate-600">{n.createdByName || "—"}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
-                    {new Date(n.updatedAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}
+                  <td className="px-6 py-4 text-slate-500 text-sm">
+                    {n.periodo}
                   </td>
-                  <td className="px-4 py-2 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => openNomina(n.id)}>Abrir</Button>
-                    <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => deleteNomina(n.id)}>
+                  <td className="px-6 py-4 text-center">
+                    <Badge
+                      variant={n.estado === "FINAL" ? "default" : "secondary"}
+                      className="rounded-full px-3"
+                    >
+                      {n.estado}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-slate-400 text-sm">
+                    {n.updatedAt
+                      ? new Date(n.updatedAt).toLocaleString("es-PE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "—"}
+                  </td>
+                  <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold"
+                      onClick={() =>
+                        fetch(`${apiBase}/api/nominas/${n.id}`, {
+                          credentials: "include",
+                        })
+                          .then((r) => r.json())
+                          .then(setEditing)
+                      }
+                    >
+                      Abrir
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => deleteNomina(n.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>
@@ -293,246 +578,13 @@ export default function NominaPage() {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Editor ─────────────────────────────────────────────────────────────────
-function NominaEditor({
-  nomina, setNomina, onBack, onSave, onExport, saving, error,
-}: {
-  nomina: NominaFull;
-  setNomina: (n: NominaFull) => void;
-  onBack: () => void;
-  onSave: () => void;
-  onExport: () => void;
-  saving: boolean;
-  error: string | null;
-}) {
-  const grupos = nomina.data.grupos;
-
-  function updateCurso(gIdx: number, cIdx: number, field: "matriculados" | "retOctda" | "retInasist", val: number) {
-    const next = [...grupos];
-    const g = { ...next[gIdx], cursos: [...next[gIdx].cursos] };
-    g.cursos[cIdx] = { ...g.cursos[cIdx], [field]: Math.max(0, val || 0) };
-    g.cursos[cIdx].totalActivos = Math.max(0,
-      (g.cursos[cIdx].matriculados || 0) - (g.cursos[cIdx].retOctda || 0) - (g.cursos[cIdx].retInasist || 0)
-    );
-    // recompute parent
-    g.matriculados = Math.max(...g.cursos.map(c => c.matriculados));
-    g.retOctda    = Math.max(...g.cursos.map(c => c.retOctda));
-    g.retInasist  = Math.max(...g.cursos.map(c => c.retInasist));
-    g.totalActivos = Math.max(0, g.matriculados - g.retOctda - g.retInasist);
-    next[gIdx] = g;
-    setNomina({ ...nomina, data: { grupos: next } });
-  }
-
-  function updateGrupoMeta(gIdx: number, field: "turno" | "local" | "modalidad" | "seccion", val: string) {
-    const next = [...grupos];
-    next[gIdx] = { ...next[gIdx], [field]: val } as NominaGrupo;
-    setNomina({ ...nomina, data: { grupos: next } });
-  }
-
-  // Group by ciclo for rendering
-  const byCiclo = useMemo(() => ({
-    1: grupos.map((g, i) => ({ g, i })).filter(x => x.g.ciclo === 1),
-    2: grupos.map((g, i) => ({ g, i })).filter(x => x.g.ciclo === 2),
-  }), [grupos]);
-
-  const totals = useMemo(() => ({
-    1: byCiclo[1].reduce((s, x) => s + x.g.matriculados, 0),
-    2: byCiclo[2].reduce((s, x) => s + x.g.matriculados, 0),
-    activos1: byCiclo[1].reduce((s, x) => s + x.g.totalActivos, 0),
-    activos2: byCiclo[2].reduce((s, x) => s + x.g.totalActivos, 0),
-  }), [byCiclo]);
-
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={onBack}>
-            <ChevronLeft className="w-4 h-4 mr-1" /> Volver
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800">{nomina.carrera}</h1>
-            <p className="text-xs text-muted-foreground">
-              Periodo {nomina.periodo} · {nomina.codigoCarrera} · {grupos.length} secciones
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={nomina.estado} onValueChange={v => setNomina({ ...nomina, estado: v })}>
-            <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="BORRADOR">Borrador</SelectItem>
-              <SelectItem value="FINAL">Final</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={onSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Guardar
-          </Button>
-          <Button variant="outline" onClick={onExport}>
-            <Download className="w-4 h-4 mr-2" /> Excel
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {/* Totals */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Matric. Ciclo 1"  value={totals[1]}        color="bg-blue-50 border-blue-200 text-blue-700" />
-        <KPI label="Activos Ciclo 1"  value={totals.activos1}  color="bg-emerald-50 border-emerald-200 text-emerald-700" />
-        <KPI label="Matric. Ciclo 2"  value={totals[2]}        color="bg-indigo-50 border-indigo-200 text-indigo-700" />
-        <KPI label="Activos Ciclo 2"  value={totals.activos2}  color="bg-teal-50 border-teal-200 text-teal-700" />
-      </div>
-
-      {/* Per-ciclo tables */}
-      {[1, 2].map(c => {
-        const items = byCiclo[c as 1 | 2];
-        if (items.length === 0) return (
-          <div key={c} className="bg-white border border-slate-200 rounded-xl p-6 text-center text-muted-foreground">
-            No hay secciones en el Ciclo {c}.
-          </div>
-        );
-        return (
-          <div key={c} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-gradient-to-r from-blue-700 to-blue-600 text-white font-semibold">
-              CICLO {c}
+          {list.length === 0 && !loadingList && (
+            <div className="p-20 text-center text-slate-400 italic">
+              No hay nóminas guardadas. Sube un PDF para empezar.
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                  <tr>
-                    <th className="text-left px-3 py-2">Carrera / Curso</th>
-                    <th className="px-2 py-2">Modalidad</th>
-                    <th className="px-2 py-2">Local</th>
-                    <th className="px-2 py-2">Sección</th>
-                    <th className="px-2 py-2">Turno</th>
-                    <th className="px-2 py-2 w-24">Matric.</th>
-                    <th className="px-2 py-2 w-24">Ret. OCTDA</th>
-                    <th className="px-2 py-2 w-24">Ret. Inasist.</th>
-                    <th className="px-2 py-2 w-24">Activos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map(({ g, i }) => (
-                    <GrupoRows
-                      key={i}
-                      g={g}
-                      gIdx={i}
-                      updateCurso={updateCurso}
-                      updateMeta={updateGrupoMeta}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function GrupoRows({
-  g, gIdx, updateCurso, updateMeta,
-}: {
-  g: NominaGrupo;
-  gIdx: number;
-  updateCurso: (gIdx: number, cIdx: number, field: "matriculados" | "retOctda" | "retInasist", val: number) => void;
-  updateMeta: (gIdx: number, field: "turno" | "local" | "modalidad" | "seccion", val: string) => void;
-}) {
-  return (
-    <>
-      <tr className="bg-blue-50/60 border-t border-slate-200 font-semibold text-slate-800">
-        <td className="px-3 py-2">{g.carrera}</td>
-        <td className="px-2 py-2 text-center">
-          <Select value={g.modalidad} onValueChange={v => updateMeta(gIdx, "modalidad", v)}>
-            <SelectTrigger className="h-7 px-2 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PRESENCIAL">PRESENCIAL</SelectItem>
-              <SelectItem value="VIRTUAL">VIRTUAL</SelectItem>
-            </SelectContent>
-          </Select>
-        </td>
-        <td className="px-2 py-2 text-center">
-          <Select value={g.local} onValueChange={v => updateMeta(gIdx, "local", v)}>
-            <SelectTrigger className="h-7 px-2 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="HUACHO">HUACHO</SelectItem>
-              <SelectItem value="SEDE">SEDE</SelectItem>
-              <SelectItem value="FILIAL">FILIAL</SelectItem>
-            </SelectContent>
-          </Select>
-        </td>
-        <td className="px-2 py-2 text-center">
-          <Input
-            value={g.seccion}
-            onChange={e => updateMeta(gIdx, "seccion", e.target.value.toUpperCase().slice(0, 4))}
-            className="h-7 text-xs text-center"
-          />
-        </td>
-        <td className="px-2 py-2 text-center">
-          <Select value={g.turno || ""} onValueChange={v => updateMeta(gIdx, "turno", v)}>
-            <SelectTrigger className="h-7 px-2 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DIURNO">DIURNO</SelectItem>
-              <SelectItem value="NOCTURNO">NOCTURNO</SelectItem>
-            </SelectContent>
-          </Select>
-        </td>
-        <td className="px-2 py-2 text-center font-bold">{g.matriculados}</td>
-        <td className="px-2 py-2 text-center font-bold">{g.retOctda}</td>
-        <td className="px-2 py-2 text-center font-bold">{g.retInasist}</td>
-        <td className="px-2 py-2 text-center font-bold text-emerald-700">{g.totalActivos}</td>
-      </tr>
-      {g.cursos.map((c, cIdx) => (
-        <tr key={cIdx} className="border-t border-slate-100 hover:bg-slate-50/60">
-          <td className="pl-8 pr-3 py-1.5 text-slate-700">{c.nombre}</td>
-          <td colSpan={3} className="px-2 py-1.5 text-center text-xs text-muted-foreground">{c.seccion}</td>
-          <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">{c.codigo}</td>
-          <td className="px-1 py-1.5">
-            <NumInput value={c.matriculados} onChange={v => updateCurso(gIdx, cIdx, "matriculados", v)} />
-          </td>
-          <td className="px-1 py-1.5">
-            <NumInput value={c.retOctda} onChange={v => updateCurso(gIdx, cIdx, "retOctda", v)} />
-          </td>
-          <td className="px-1 py-1.5">
-            <NumInput value={c.retInasist} onChange={v => updateCurso(gIdx, cIdx, "retInasist", v)} />
-          </td>
-          <td className="px-2 py-1.5 text-center text-emerald-700 font-medium">{c.totalActivos}</td>
-        </tr>
-      ))}
-    </>
-  );
-}
-
-function NumInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  return (
-    <Input
-      type="number"
-      min={0}
-      value={value}
-      onChange={e => onChange(parseInt(e.target.value) || 0)}
-      className="h-7 text-xs text-center px-1"
-    />
-  );
-}
-
-function KPI({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className={`rounded-xl border px-4 py-3 ${color}`}>
-      <p className="text-xs uppercase tracking-wide opacity-70">{label}</p>
-      <p className="text-2xl font-bold mt-1">{value}</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
