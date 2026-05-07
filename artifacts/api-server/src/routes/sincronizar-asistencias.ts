@@ -190,6 +190,12 @@ async function getOrRefreshCookie(): Promise<string> {
   return loginToIntranet();
 }
 
+/* Normaliza nombre para comparación: quita acentos y convierte a mayúsculas.
+   Ej: "SALAZAR MUNAYCO LUISA MARÍA" → "SALAZAR MUNAYCO LUISA MARIA" */
+function normalizeName(s: string): string {
+  return (s || "").toUpperCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 /* ─── Set de combinaciones válidas según planificación 2026-1 ─── */
 function buildPlanningSet(): Set<string> {
   const set = new Set<string>();
@@ -199,7 +205,7 @@ function buildPlanningSet(): Set<string> {
       for (const r of rows) {
         if (!r.docente || !r.codigo || !r.seccion) continue;
         const key = [
-          r.docente.trim().toUpperCase(),
+          normalizeName(r.docente),
           r.codigo.trim().toUpperCase(),
           r.seccion.trim().toUpperCase().replace(/[PV]$/, ""),
         ].join("|");
@@ -391,7 +397,7 @@ async function upsertPlanilla(data: {
   weeks: PlanillaWeek[];
   alumnos: PlanillaAlumno[];
   totales: PlanillaTotales;
-}): Promise<"created" | "updated"> {
+}): Promise<"created" | "updated" | "unchanged"> {
   if (!data.docente || !data.codigoCurso || !data.seccion) {
     throw new Error("Faltan campos requeridos");
   }
@@ -422,6 +428,17 @@ async function upsertPlanilla(data: {
   };
 
   if (existing.length > 0) {
+    // Detectar si los datos cambiaron realmente para no contar como "actualizada" si es igual
+    const [current] = await db
+      .select({ weeks: asistenciaPlanillasTable.weeks, alumnos: asistenciaPlanillasTable.alumnos })
+      .from(asistenciaPlanillasTable)
+      .where(eq(asistenciaPlanillasTable.id, existing[0].id));
+    if (
+      JSON.stringify(current?.weeks) === JSON.stringify(data.weeks) &&
+      JSON.stringify(current?.alumnos) === JSON.stringify(data.alumnos)
+    ) {
+      return "unchanged";
+    }
     await db
       .update(asistenciaPlanillasTable)
       .set(payload)
@@ -452,9 +469,9 @@ async function syncTeacher(
   termId: string,
   planningSet: Set<string>,
   onProgress?: (msg: string) => void,
-): Promise<{ created: number; updated: number; failed: number; skipped: number; sections: number }> {
+): Promise<{ created: number; updated: number; failed: number; skipped: number; unchanged: number; sections: number }> {
   const log = (msg: string) => onProgress?.(msg);
-  let created = 0, updated = 0, failed = 0, skipped = 0, sections = 0;
+  let created = 0, updated = 0, failed = 0, skipped = 0, unchanged = 0, sections = 0;
 
   log(`Obteniendo cursos de ${teacher.name}...`);
   const courses: Array<{ id: string; text: string }> = await intranetGet(
@@ -507,7 +524,7 @@ async function syncTeacher(
         // ── Validar contra planificación: solo guardar si el combo existe ──
         const normSecPlan = resolvedSeccion.trim().toUpperCase().replace(/[PV]$/, "");
         const planKey = [
-          teacher.name.trim().toUpperCase(),
+          normalizeName(teacher.name),
           resolvedCodigo.trim().toUpperCase(),
           normSecPlan,
         ].join("|");
@@ -529,7 +546,8 @@ async function syncTeacher(
         });
 
         if (result === "created") created++;
-        else updated++;
+        else if (result === "updated") updated++;
+        else unchanged++;
       } catch (err: any) {
         console.error(
           `[sync-asistencias] Error in section ${seccion.id} (${seccion.text}):`,
@@ -541,7 +559,7 @@ async function syncTeacher(
     }
   }
 
-  return { created, updated, failed, skipped, sections };
+  return { created, updated, failed, skipped, unchanged, sections };
 }
 
 /* ─── Función central de sync (usada por el endpoint y el scheduler) ─── */
@@ -662,7 +680,7 @@ router.post(
               } else throw e;
             }
             const found = (listRaw.data || []).find(
-              (d: any) => d.name?.toUpperCase().trim() === docenteName.toUpperCase().trim(),
+              (d: any) => normalizeName(d.name || "") === normalizeName(docenteName),
             );
             if (found) {
               teacher = { id: found.id, name: found.name?.toUpperCase().trim(), username: found.username ?? "" };
@@ -742,7 +760,7 @@ router.post(
           } else throw e;
         }
         const found = (listRaw.data || []).find(
-          (d: any) => d.name?.toUpperCase().trim() === docenteName.toUpperCase().trim(),
+          (d: any) => normalizeName(d.name || "") === normalizeName(docenteName),
         );
         if (found) teacher = { id: found.id, name: found.name?.toUpperCase().trim(), username: found.username ?? "" };
       }

@@ -21,7 +21,7 @@ type Flag = {
   ciclo: string | null;
   seccion: string | null;
   sede: string | null;
-  motivo: "VACIO" | "REPETIDO";
+  motivo: "VACIO" | "REPETIDO" | "IGUAL";
   flaggedAt: string;
   flaggedByName: string | null;
   correoEnviado: boolean;
@@ -183,6 +183,8 @@ export default function DocentesSinAsistencias() {
       `${f.seccion ? ` — sección ${f.seccion}` : ""}.\n\n` +
       (f.motivo === "VACIO"
         ? `El archivo de asistencia subido no contiene marcas registradas. Le pedimos por favor regularizar las asistencias en el sistema y volver a generar el reporte.\n\n`
+        : f.motivo === "IGUAL"
+        ? `Al sincronizar su asistencia no se encontraron cambios respecto a la información anterior. Le pedimos verificar que las marcas estén registradas en el sistema y volver a sincronizar.\n\n`
         : `El archivo de asistencia subido es idéntico al del periodo anterior, por lo que no se reflejan nuevas marcas. Le pedimos verificar y subir la versión actualizada.\n\n`) +
       `Quedamos atentos.\nCoordinación Académica UAI`
     );
@@ -330,6 +332,8 @@ export default function DocentesSinAsistencias() {
                       <td className="px-3 py-2 text-center">
                         {f.motivo === "VACIO" ? (
                           <Badge className="bg-rose-500 text-white border-0 text-[10px]">Sin marcas</Badge>
+                        ) : f.motivo === "IGUAL" ? (
+                          <Badge className="bg-sky-500 text-white border-0 text-[10px]">Sin cambios</Badge>
                         ) : (
                           <Badge className="bg-amber-500 text-white border-0 text-[10px]">Repetido</Badge>
                         )}

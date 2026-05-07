@@ -427,7 +427,7 @@ export default function PlanillasAsistencia() {
   const [exportingCurso, setExportingCurso] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncLog, setSyncLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
-  const [syncResult, setSyncResult] = useState<{ created: number; updated: number; failed: number } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ created: number; updated: number; failed: number; unchanged: number } | null>(null);
   const [confirmLimpiar, setConfirmLimpiar] = useState(false);
   const [limpiando, setLimpiando] = useState(false);
   const [confirmSyncAll, setConfirmSyncAll] = useState(false);
@@ -480,7 +480,7 @@ export default function PlanillasAsistencia() {
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let created = 0, updated = 0, failed = 0;
+      let created = 0, updated = 0, failed = 0, unchanged = 0;
 
       while (reader) {
         const { done, value } = await reader.read();
@@ -500,14 +500,58 @@ export default function PlanillasAsistencia() {
               addLog(data.message, "info");
             } else if (event === "teacher_done") {
               created += data.created; updated += data.updated; failed += data.failed;
+              unchanged += data.unchanged ?? 0;
               if (data.sections > 0) {
-                addLog(`✓ ${data.sections} secciones procesadas (${data.created} nuevas, ${data.updated} actualizadas${data.failed ? `, ${data.failed} fallidas` : ""})`, "ok");
+                const sinCambios = data.unchanged > 0 && data.created === 0 && data.updated === 0;
+                if (sinCambios) {
+                  addLog(`= ${data.sections} secciones — asistencia igual, no cambió nada`, "ok");
+                } else {
+                  addLog(`✓ ${data.sections} secciones procesadas (${data.created} nuevas, ${data.updated} actualizadas${data.failed ? `, ${data.failed} fallidas` : ""})`, "ok");
+                }
               }
             } else if (event === "teacher_error") {
               addLog(`Error en docente: ${data.error}`, "err");
             } else if (event === "done") {
-              setSyncResult({ created, updated, failed });
-              addLog(`Completado: ${created} planillas nuevas · ${updated} actualizadas${failed ? ` · ${failed} fallidas` : ""}`, "ok");
+              setSyncResult({ created, updated, failed, unchanged });
+              if (created === 0 && updated === 0 && unchanged > 0) {
+                addLog("Asistencia sin cambios — la planilla ya estaba actualizada", "ok");
+                // Agregar a docentes sin asistencias con motivo IGUAL
+                try {
+                  const r2 = await fetch(`${apiBase}/api/shared-state/docentesSinAsistencias`, { credentials: "include" });
+                  if (r2.ok) {
+                    const stateData = await r2.json();
+                    const existing2: any[] = Array.isArray(stateData?.value) ? stateData.value : [];
+                    const filtered2 = existing2.filter((f: any) =>
+                      !(f.docente === selected && f.motivo === "IGUAL")
+                    );
+                    const now = new Date().toISOString();
+                    const newFlags = cursos.map((c) => ({
+                      id: `${selected}|${c.codigo}|${c.seccion}|IGUAL|${Date.now()}`,
+                      docente: selected,
+                      codigoCurso: c.codigo,
+                      nombreCurso: c.curso,
+                      carrera: c.carrera,
+                      ciclo: String(c.ciclo),
+                      seccion: c.seccion,
+                      sede: sedeFromLocal(c.local),
+                      motivo: "IGUAL",
+                      flaggedAt: now,
+                      flaggedByName: null,
+                      correoEnviado: false,
+                      correoEnviadoAt: null,
+                      correoEnviadoByName: null,
+                    }));
+                    await fetch(`${apiBase}/api/shared-state/docentesSinAsistencias`, {
+                      method: "PUT",
+                      credentials: "include",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ value: [...filtered2, ...newFlags] }),
+                    });
+                  }
+                } catch { /* ignorar error al guardar flag */ }
+              } else {
+                addLog(`Completado: ${created} planillas nuevas · ${updated} actualizadas${failed ? ` · ${failed} fallidas` : ""}`, "ok");
+              }
             } else if (event === "error") {
               addLog(`Error: ${data.message}`, "err");
             }
@@ -1248,8 +1292,14 @@ export default function PlanillasAsistencia() {
                         )}
                       </div>
                       {syncResult && !syncing && (
-                        <div className="mt-1.5 pt-1.5 border-t border-slate-700 text-emerald-400 font-semibold">
-                          Listo · {syncResult.created} nuevas · {syncResult.updated} actualizadas{syncResult.failed > 0 ? ` · ${syncResult.failed} fallidas` : ""}
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-700 font-semibold">
+                          {syncResult.created === 0 && syncResult.updated === 0 && syncResult.unchanged > 0 ? (
+                            <span className="text-sky-400">Asistencia igual, no cambió nada</span>
+                          ) : (
+                            <span className="text-emerald-400">
+                              Listo · {syncResult.created} nuevas · {syncResult.updated} actualizadas{syncResult.failed > 0 ? ` · ${syncResult.failed} fallidas` : ""}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
