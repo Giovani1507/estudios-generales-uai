@@ -17,9 +17,13 @@ const DEFAULT_TERM = "08de1730-801b-4d3d-81a8-e840d74c49fa";
 /* ─── Set de combinaciones válidas según planificación 2026-1 ─── */
 function buildPlanningSet(): Set<string> {
   const set = new Set<string>();
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  // Desde src/routes/ → ../../../school-portal/public/
-  const publicDir = path.resolve(__dirname, "../../../school-portal/public");
+  // Busca desde process.cwd() (raíz del workspace) — funciona tanto en dev (tsx) como en prod (CJS bundle)
+  const candidates = [
+    path.resolve(process.cwd(), "artifacts/school-portal/public"),
+    // fallback: ruta relativa al archivo actual (solo dev)
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../school-portal/public"),
+  ];
+  const publicDir = candidates.find(d => fs.existsSync(path.join(d, "planificacion-fica-2026-1.json"))) ?? candidates[0];
   const files = [
     "planificacion-fica-2026-1.json",
     "planificacion-fcs-2026-1.json",
@@ -193,6 +197,9 @@ async function downloadExcel(sectionId: string, cookie: string): Promise<Buffer>
   });
   if (res.status === 401 || res.status === 403) throw new Error("AUTH_EXPIRED");
   if (!res.ok) throw new Error(`HTTP_${res.status}`);
+  // Si la cookie expiró la intranet devuelve HTML (página de login) con status 200
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("text/html")) throw new Error("AUTH_EXPIRED");
   const ab = await res.arrayBuffer();
   return Buffer.from(ab);
 }
