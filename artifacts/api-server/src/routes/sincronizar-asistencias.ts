@@ -22,53 +22,86 @@ let cachedCookie: string = process.env.INTRANET_COOKIE || "";
 export function getActiveCookie(): string { return cachedCookie; }
 export function setActiveCookie(c: string) { cachedCookie = c; }
 
+/* Combina mapas de cookies (las nuevas sobreescriben las viejas por nombre) */
+function mergeCookies(base: string, extra: string[]): string {
+  const map = new Map<string, string>();
+  for (const part of base.split(";").map(s => s.trim()).filter(Boolean)) {
+    const [k, ...v] = part.split("=");
+    if (k) map.set(k.trim(), v.join("="));
+  }
+  for (const raw of extra) {
+    const kv = raw.split(";")[0].trim();
+    const [k, ...v] = kv.split("=");
+    if (k) map.set(k.trim(), v.join("="));
+  }
+  return [...map.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
+}
+
+/* Sigue redirects manualmente acumulando cookies en cada salto */
+async function fetchFollowingCookies(
+  url: string,
+  options: { method?: string; headers?: Record<string, string>; body?: string },
+  cookieJar: string,
+  maxRedirects = 8,
+): Promise<{ res: Awaited<ReturnType<typeof undiciFetch>>; cookieJar: string; html: string }> {
+  let currentUrl = url;
+  let res!: Awaited<ReturnType<typeof undiciFetch>>;
+  let html = "";
+  for (let i = 0; i < maxRedirects; i++) {
+    res = await undiciFetch(currentUrl, {
+      dispatcher: tlsAgent,
+      method: options.method ?? "GET",
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html,application/xhtml+xml", Cookie: cookieJar, ...options.headers },
+      body: options.body,
+      redirect: "manual",
+    });
+    const newCookies = (res.headers as any).getSetCookie?.() ?? [];
+    if (newCookies.length) cookieJar = mergeCookies(cookieJar, newCookies);
+
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location") ?? "";
+      currentUrl = loc.startsWith("http") ? loc : `${BASE_URL}${loc}`;
+      // Siguiente salto siempre GET (como haría un browser)
+      options = {};
+    } else {
+      html = await res.text();
+      break;
+    }
+  }
+  return { res, cookieJar, html };
+}
+
 /* ─── Auto-login a la intranet ─── */
 export async function loginToIntranet(): Promise<string> {
   const username = process.env.INTRANET_USERNAME;
   const password = process.env.INTRANET_PASSWORD;
   if (!username || !password) throw new Error("INTRANET_USERNAME / INTRANET_PASSWORD no configurados.");
 
-  // 1. GET /login → extraer CSRF token
-  const loginPage = await undiciFetch(`${BASE_URL}/login`, {
-    dispatcher: tlsAgent,
-    headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
-    redirect: "follow",
-  });
-  const html = await loginPage.text();
+  // 1. GET /login siguiendo todos los redirects y acumulando cookies
+  const { html, cookieJar: jar1 } = await fetchFollowingCookies(`${BASE_URL}/login`, {}, "");
+  console.log(`[sync] GET /login OK, jar: ${jar1.split(";").length} cookies`);
+
   const tokenMatch = html.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
   if (!tokenMatch) throw new Error("No se pudo obtener el token CSRF del login.");
   const csrfToken = tokenMatch[1];
 
-  // Guardar cookies de sesión de la página de login
-  const loginSetCookie = loginPage.headers.getSetCookie?.() ?? [];
-  const initialCookies = loginSetCookie.map((c: string) => c.split(";")[0]).join("; ");
+  // 2. POST /login con credenciales + CSRF, siguiendo redirects
+  const formBody = new URLSearchParams({ username, password, __RequestVerificationToken: csrfToken }).toString();
+  const { res: postRes, cookieJar: jar2, html: postHtml } = await fetchFollowingCookies(
+    `${BASE_URL}/login`,
+    { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: `${BASE_URL}/login` }, body: formBody },
+    jar1,
+  );
+  console.log(`[sync] POST /login final status ${postRes.status}, jar: ${jar2.split(";").length} cookies`);
 
-  // 2. POST /login con credenciales
-  const formBody = new URLSearchParams({
-    username,
-    password,
-    __RequestVerificationToken: csrfToken,
-  });
-  const postRes = await undiciFetch(`${BASE_URL}/login`, {
-    dispatcher: tlsAgent,
-    method: "POST",
-    headers: {
-      "User-Agent": "Mozilla/5.0",
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: initialCookies,
-      Referer: `${BASE_URL}/login`,
-    },
-    body: formBody.toString(),
-    redirect: "manual",
-  });
+  // Si el HTML final aún contiene el formulario de login, las credenciales son incorrectas
+  if (postHtml.includes('id="main_form_login"') || postHtml.includes('name="__RequestVerificationToken"')) {
+    throw new Error("Login fallido: credenciales incorrectas o usuario no autorizado.");
+  }
 
-  // 3. Extraer cookie de sesión de la respuesta
-  const setCookies = (postRes.headers as any).getSetCookie?.() ?? [];
-  if (!setCookies.length) throw new Error("Login fallido: no se recibieron cookies de sesión.");
-  const sessionCookie = setCookies.map((c: string) => c.split(";")[0]).join("; ");
   console.log("[sync] Login automático exitoso. Cookie renovada.");
-  cachedCookie = sessionCookie;
-  return sessionCookie;
+  cachedCookie = jar2;
+  return jar2;
 }
 
 /* Obtiene cookie activa, hace login automático si no hay o está vacía */
@@ -236,6 +269,13 @@ async function intranetGet(url: string, cookie: string): Promise<any> {
   });
   if (res.status === 401 || res.status === 403) throw new Error("AUTH_EXPIRED");
   if (!res.ok) throw new Error(`HTTP_${res.status}`);
+  // Si la cookie expiró, la intranet devuelve la página de login (HTML) con status 200
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("text/html")) {
+    const snippet = (await res.text()).slice(0, 300).replace(/\s+/g, " ");
+    console.warn(`[sync] intranetGet HTML (AUTH_EXPIRED). URL: ${url.slice(0, 80)} | Snippet: ${snippet}`);
+    throw new Error("AUTH_EXPIRED");
+  }
   return await res.json();
 }
 
