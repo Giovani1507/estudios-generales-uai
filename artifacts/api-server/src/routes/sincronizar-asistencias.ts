@@ -14,6 +14,67 @@ const tlsAgent = new Agent({ connect: { rejectUnauthorized: false } });
 const BASE_URL = "https://intranet.autonomadeica.edu.pe";
 const DEFAULT_TERM = "08de1730-801b-4d3d-81a8-e840d74c49fa";
 
+/* ─── Cookie caché en memoria ─── */
+let cachedCookie: string = process.env.INTRANET_COOKIE || "";
+
+export function getActiveCookie(): string { return cachedCookie; }
+export function setActiveCookie(c: string) { cachedCookie = c; }
+
+/* ─── Auto-login a la intranet ─── */
+export async function loginToIntranet(): Promise<string> {
+  const username = process.env.INTRANET_USERNAME;
+  const password = process.env.INTRANET_PASSWORD;
+  if (!username || !password) throw new Error("INTRANET_USERNAME / INTRANET_PASSWORD no configurados.");
+
+  // 1. GET /login → extraer CSRF token
+  const loginPage = await undiciFetch(`${BASE_URL}/login`, {
+    dispatcher: tlsAgent,
+    headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+    redirect: "follow",
+  });
+  const html = await loginPage.text();
+  const tokenMatch = html.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
+  if (!tokenMatch) throw new Error("No se pudo obtener el token CSRF del login.");
+  const csrfToken = tokenMatch[1];
+
+  // Guardar cookies de sesión de la página de login
+  const loginSetCookie = loginPage.headers.getSetCookie?.() ?? [];
+  const initialCookies = loginSetCookie.map((c: string) => c.split(";")[0]).join("; ");
+
+  // 2. POST /login con credenciales
+  const formBody = new URLSearchParams({
+    username,
+    password,
+    __RequestVerificationToken: csrfToken,
+  });
+  const postRes = await undiciFetch(`${BASE_URL}/login`, {
+    dispatcher: tlsAgent,
+    method: "POST",
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: initialCookies,
+      Referer: `${BASE_URL}/login`,
+    },
+    body: formBody.toString(),
+    redirect: "manual",
+  });
+
+  // 3. Extraer cookie de sesión de la respuesta
+  const setCookies = (postRes.headers as any).getSetCookie?.() ?? [];
+  if (!setCookies.length) throw new Error("Login fallido: no se recibieron cookies de sesión.");
+  const sessionCookie = setCookies.map((c: string) => c.split(";")[0]).join("; ");
+  console.log("[sync] Login automático exitoso. Cookie renovada.");
+  cachedCookie = sessionCookie;
+  return sessionCookie;
+}
+
+/* Obtiene cookie activa, hace login automático si no hay o está vacía */
+async function getOrRefreshCookie(): Promise<string> {
+  if (cachedCookie) return cachedCookie;
+  return loginToIntranet();
+}
+
 /* ─── Set de combinaciones válidas según planificación 2026-1 ─── */
 function buildPlanningSet(): Set<string> {
   const set = new Set<string>();
@@ -374,23 +435,75 @@ async function syncTeacher(
   return { created, updated, failed, skipped, sections };
 }
 
+/* ─── Función central de sync (usada por el endpoint y el scheduler) ─── */
+export async function runFullSync(termId = DEFAULT_TERM, onEvent?: (event: string, data: object) => void) {
+  const send = onEvent ?? (() => {});
+  let cookie = await getOrRefreshCookie();
+  const planningSet = buildPlanningSet();
+
+  // Obtener lista de docentes
+  let raw: any;
+  try {
+    raw = await intranetGet(
+      `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=1000&termId=${termId}&_=${Date.now()}`,
+      cookie,
+    );
+  } catch (err: any) {
+    if (err.message === "AUTH_EXPIRED") {
+      cookie = await loginToIntranet();
+      raw = await intranetGet(
+        `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=1000&termId=${termId}&_=${Date.now()}`,
+        cookie,
+      );
+    } else throw err;
+  }
+
+  const teachers: Array<{ id: string; name: string; username: string }> =
+    (raw.data || []).map((d: any) => ({ id: d.id, name: d.name?.toUpperCase().trim(), username: d.username }));
+
+  send("start", { total: teachers.length });
+  let totalCreated = 0, totalUpdated = 0, totalFailed = 0, totalSkipped = 0;
+
+  for (let i = 0; i < teachers.length; i++) {
+    const t = teachers[i];
+    send("teacher", { index: i + 1, total: teachers.length, name: t.name });
+    try {
+      const r = await syncTeacher(t, cookie, termId, planningSet, (msg) => send("progress", { message: msg }));
+      totalCreated += r.created; totalUpdated += r.updated;
+      totalFailed  += r.failed;  totalSkipped  += r.skipped;
+      send("teacher_done", { name: t.name, ...r });
+    } catch (err: any) {
+      if (err.message === "AUTH_EXPIRED") {
+        // Cookie expiró a mitad del sync → hacer re-login y reintentar este docente
+        try {
+          cookie = await loginToIntranet();
+          const r = await syncTeacher(t, cookie, termId, planningSet, (msg) => send("progress", { message: msg }));
+          totalCreated += r.created; totalUpdated += r.updated;
+          totalFailed  += r.failed;  totalSkipped  += r.skipped;
+          send("teacher_done", { name: t.name, ...r });
+        } catch (retryErr: any) {
+          send("teacher_error", { name: t.name, error: retryErr.message });
+          totalFailed++;
+        }
+      } else {
+        send("teacher_error", { name: t.name, error: err.message });
+        totalFailed++;
+      }
+    }
+  }
+
+  send("done", { created: totalCreated, updated: totalUpdated, failed: totalFailed, skipped: totalSkipped });
+  return { created: totalCreated, updated: totalUpdated, failed: totalFailed, skipped: totalSkipped };
+}
+
 /* ─── POST /api/sincronizar-asistencias ─── */
 router.post(
   "/",
   requireAuth,
   requireRole("administrador", "coordinador"),
   async (req: any, res) => {
-    const cookie: string =
-      req.body?.cookie || process.env.INTRANET_COOKIE || "";
     const termId: string = req.body?.termId || DEFAULT_TERM;
     const docenteName: string | undefined = req.body?.docenteName;
-
-    if (!cookie) {
-      return res.status(400).json({
-        error: "COOKIE_REQUERIDA",
-        message: "La cookie de la intranet no está configurada.",
-      });
-    }
 
     // If SSE mode is requested, stream progress
     const useSSE = req.headers.accept?.includes("text/event-stream") || req.body?.sse;
@@ -405,10 +518,9 @@ router.post(
       };
 
       try {
-        let teachers: Array<{ id: string; name: string; username: string }> = [];
-
         if (docenteName) {
-          // Look up teacher in docentes_externos
+          // Sync individual de un docente
+          let cookie = await getOrRefreshCookie();
           const rows = await db
             .select()
             .from(docentesExternosTable)
@@ -422,51 +534,34 @@ router.post(
             return;
           }
           const raw = rows[0].rawData as any;
-          teachers = [{ id: raw.id, name: rows[0].name, username: rows[0].username }];
-        } else {
-          // Fetch all from intranet teacher list
-          const raw: any = await intranetGet(
-            `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=1000&termId=${termId}&_=${Date.now()}`,
-            cookie,
-          );
-          teachers = (raw.data || []).map((d: any) => ({ id: d.id, name: d.name?.toUpperCase().trim(), username: d.username }));
-        }
-
-        const planningSet = buildPlanningSet();
-        send("start", { total: teachers.length });
-
-        let totalCreated = 0, totalUpdated = 0, totalFailed = 0, totalSkipped = 0;
-
-        for (let i = 0; i < teachers.length; i++) {
-          const t = teachers[i];
-          send("teacher", { index: i + 1, total: teachers.length, name: t.name });
-
+          const teacher = { id: raw.id, name: rows[0].name, username: rows[0].username };
+          const planningSet = buildPlanningSet();
+          send("start", { total: 1 });
+          send("teacher", { index: 1, total: 1, name: teacher.name });
           try {
-            const r = await syncTeacher(t, cookie, termId, planningSet, (msg) => {
-              send("progress", { message: msg });
-            });
-            totalCreated += r.created;
-            totalUpdated += r.updated;
-            totalFailed += r.failed;
-            totalSkipped += r.skipped;
-            send("teacher_done", { name: t.name, ...r });
+            const r = await syncTeacher(teacher, cookie, termId, planningSet, (msg) => send("progress", { message: msg }));
+            send("teacher_done", { name: teacher.name, ...r });
+            send("done", r);
           } catch (err: any) {
             if (err.message === "AUTH_EXPIRED") {
-              send("error", { message: "Cookie expirada. Renueva la sesión de la intranet." });
-              break;
+              cookie = await loginToIntranet();
+              const r = await syncTeacher(teacher, cookie, termId, planningSet, (msg) => send("progress", { message: msg }));
+              send("teacher_done", { name: teacher.name, ...r });
+              send("done", r);
+            } else {
+              send("teacher_error", { name: teacher.name, error: err.message });
+              send("done", { created: 0, updated: 0, failed: 1, skipped: 0 });
             }
-            send("teacher_error", { name: t.name, error: err.message });
-            totalFailed++;
           }
+        } else {
+          // Sync masivo
+          await runFullSync(termId, send);
         }
-
-        send("done", { created: totalCreated, updated: totalUpdated, failed: totalFailed, skipped: totalSkipped });
-        res.write("event: done\ndata: {}\n\n");
-        res.end();
       } catch (err: any) {
         send("error", { message: err.message || "Error interno" });
-        res.end();
       }
+      res.write("event: done\ndata: {}\n\n");
+      res.end();
       return;
     }
 
@@ -475,7 +570,7 @@ router.post(
       if (!docenteName) {
         return res.status(400).json({ error: "DOCENTE_REQUERIDO", message: "Proporciona docenteName para sync individual." });
       }
-
+      let cookie = await getOrRefreshCookie();
       const rows = await db
         .select()
         .from(docentesExternosTable)
@@ -483,23 +578,24 @@ router.post(
         .limit(1);
 
       if (rows.length === 0 || !(rows[0].rawData as any)?.id) {
-        return res.status(404).json({
-          error: "DOCENTE_NO_ENCONTRADO",
-          message: "Docente no encontrado en la intranet. Sincroniza docentes primero.",
-        });
+        return res.status(404).json({ error: "DOCENTE_NO_ENCONTRADO", message: "Docente no encontrado." });
       }
-
       const raw = rows[0].rawData as any;
       const teacher = { id: raw.id, name: rows[0].name, username: rows[0].username };
-
       const planningSet = buildPlanningSet();
-      const result = await syncTeacher(teacher, cookie, termId, planningSet);
-      res.json({ ok: true, docente: teacher.name, ...result });
+      try {
+        const result = await syncTeacher(teacher, cookie, termId, planningSet);
+        return res.json({ ok: true, docente: teacher.name, ...result });
+      } catch (err: any) {
+        if (err.message === "AUTH_EXPIRED") {
+          cookie = await loginToIntranet();
+          const result = await syncTeacher(teacher, cookie, termId, planningSet);
+          return res.json({ ok: true, docente: teacher.name, ...result });
+        }
+        throw err;
+      }
     } catch (err: any) {
       console.error("[sincronizar-asistencias] error:", err);
-      if (err.message === "AUTH_EXPIRED") {
-        return res.status(401).json({ error: "AUTH_EXPIRED", message: "Cookie expirada. Renueva la sesión de la intranet." });
-      }
       res.status(500).json({ error: "SYNC_ERROR", message: err.message || "Error al sincronizar" });
     }
   },
