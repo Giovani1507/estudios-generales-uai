@@ -4,6 +4,11 @@ import { asistenciaPlanillasTable } from "@workspace/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 
+/** Elimina acentos y convierte a mayúsculas para comparación insensible a tildes */
+function normDocente(s: string): string {
+  return (s || "").toUpperCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 const router = Router();
 
 router.use(requireAuth);
@@ -17,7 +22,7 @@ router.get("/", async (req, res) => {
       docente?: string; codigoCurso?: string; carrera?: string; ciclo?: string; seccion?: string;
     };
     const conds = [];
-    if (docente) conds.push(eq(asistenciaPlanillasTable.docente, String(docente).toUpperCase().trim()));
+    if (docente) conds.push(eq(asistenciaPlanillasTable.docente, normDocente(String(docente))));
     if (codigoCurso) conds.push(eq(asistenciaPlanillasTable.codigoCurso, String(codigoCurso).trim()));
     if (carrera) conds.push(eq(asistenciaPlanillasTable.carrera, String(carrera).trim()));
     if (ciclo) conds.push(eq(asistenciaPlanillasTable.ciclo, String(ciclo).trim()));
@@ -84,7 +89,7 @@ router.post("/", requireWriter, async (req, res) => {
   if (!Array.isArray(alumnos)) return res.status(400).json({ error: "Lista de alumnos inválida" });
   try {
     const [row] = await db.insert(asistenciaPlanillasTable).values({
-      docente: docente ? String(docente).toUpperCase().trim() : null,
+      docente: docente ? normDocente(String(docente)) : null,
       carrera: carrera ?? null,
       ciclo: ciclo ?? null,
       seccion: seccion ?? null,
