@@ -71,37 +71,117 @@ async function fetchFollowingCookies(
   return { res, cookieJar, html };
 }
 
-/* ─── Auto-login a la intranet ─── */
+/* ─── Auto-login a la intranet (flujo OIDC completo vía Campus Virtual) ─── */
 export async function loginToIntranet(): Promise<string> {
   const username = process.env.INTRANET_USERNAME;
   const password = process.env.INTRANET_PASSWORD;
   if (!username || !password) throw new Error("INTRANET_USERNAME / INTRANET_PASSWORD no configurados.");
 
-  // 1. GET /login siguiendo todos los redirects y acumulando cookies
-  const { html, cookieJar: jar1 } = await fetchFollowingCookies(`${BASE_URL}/login`, {}, "");
-  console.log(`[sync] GET /login OK, jar: ${jar1.split(";").length} cookies`);
+  const CV_BASE = "https://campusvirtual.autonomadeica.edu.pe";
 
-  const tokenMatch = html.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
-  if (!tokenMatch) throw new Error("No se pudo obtener el token CSRF del login.");
-  const csrfToken = tokenMatch[1];
+  // 1. GET intranet raíz → redirige al Campus Virtual (OIDC authorize)
+  //    Acumulamos cookies de intranet y campus virtual por separado
+  let intranetJar = "";
+  let cvJar = "";
 
-  // 2. POST /login con credenciales + CSRF, siguiendo redirects
-  const formBody = new URLSearchParams({ username, password, __RequestVerificationToken: csrfToken }).toString();
-  const { res: postRes, cookieJar: jar2, html: postHtml } = await fetchFollowingCookies(
-    `${BASE_URL}/login`,
-    { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: `${BASE_URL}/login` }, body: formBody },
-    jar1,
+  // Seguir redirects manualmente para separar cookies por dominio
+  let url = `${BASE_URL}/`;
+  let authorizeUrl = "";
+  for (let i = 0; i < 5; i++) {
+    const res = await undiciFetch(url, {
+      dispatcher: tlsAgent,
+      method: "GET",
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html", Cookie: url.includes("campusvirtual") ? cvJar : intranetJar },
+      redirect: "manual",
+    });
+    const cookies = (res.headers as any).getSetCookie?.() ?? [];
+    if (url.includes("campusvirtual")) cvJar = mergeCookies(cvJar, cookies);
+    else intranetJar = mergeCookies(intranetJar, cookies);
+
+    const loc = res.headers.get("location") ?? "";
+    if (!loc) { break; }
+    url = loc.startsWith("http") ? loc : (url.includes("campusvirtual") ? `${CV_BASE}${loc}` : `${BASE_URL}${loc}`);
+    if (url.includes("/connect/authorize")) { authorizeUrl = url; }
+  }
+  console.log(`[sync] OIDC: authorize URL obtenida, cvJar: ${cvJar.split(";").length} cookies`);
+
+  // 2. GET Campus Virtual login page (con el authorize URL)
+  const { html: cvLoginHtml, cookieJar: cvJar2 } = await fetchFollowingCookies(
+    authorizeUrl || `${CV_BASE}/`,
+    {},
+    cvJar,
   );
-  console.log(`[sync] POST /login final status ${postRes.status}, jar: ${jar2.split(";").length} cookies`);
 
-  // Si el HTML final aún contiene el formulario de login, las credenciales son incorrectas
-  if (postHtml.includes('id="main_form_login"') || postHtml.includes('name="__RequestVerificationToken"')) {
-    throw new Error("Login fallido: credenciales incorrectas o usuario no autorizado.");
+  // Extraer acción del form y tokens CSRF
+  const actionMatch = cvLoginHtml.match(/action="([^"]+)"/);
+  const csrfMatch = cvLoginHtml.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
+  const tokenMatch = cvLoginHtml.match(/name="Token"[^>]*value="([^"]*)"/);
+  if (!csrfMatch) throw new Error("No se encontró CSRF token en Campus Virtual.");
+
+  const formAction = actionMatch ? actionMatch[1] : "/login";
+  const csrfToken = csrfMatch[1];
+  const hiddenToken = tokenMatch ? tokenMatch[1] : "";
+  const loginUrl = formAction.startsWith("http") ? formAction : `${CV_BASE}${formAction}`;
+  console.log(`[sync] CV login form → ${loginUrl}, csrf: ${csrfToken.slice(0, 20)}...`);
+
+  // 3. POST credenciales al Campus Virtual (UserName/Password, no username/password)
+  const formBody = new URLSearchParams({
+    UserName: username,
+    Password: password,
+    Token: hiddenToken,
+    __RequestVerificationToken: csrfToken,
+  }).toString();
+
+  const { cookieJar: cvJar3, html: postHtml } = await fetchFollowingCookies(
+    loginUrl,
+    { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: authorizeUrl || `${CV_BASE}/` }, body: formBody },
+    cvJar2,
+  );
+
+  // Verificar que el login del campus virtual funcionó
+  if (postHtml.includes('id="main_form_login"') || postHtml.includes('"m_login_signin_submit"')) {
+    throw new Error("Login fallido en Campus Virtual: credenciales incorrectas.");
+  }
+  console.log(`[sync] CV login OK, cvJar: ${cvJar3.split(";").length} cookies`);
+
+  // 4. Ahora que estamos autenticados en CV, hacer GET al returnurl (authorize/callback)
+  //    para obtener el form_post con el código OIDC que se enviará a intranet/signin-oidc
+  const returnurlMatch = loginUrl.match(/[?&]returnurl=([^&]+)/i);
+  let formPostHtml = postHtml;
+  if (returnurlMatch) {
+    const callbackPath = decodeURIComponent(returnurlMatch[1]);
+    const callbackUrl = callbackPath.startsWith("http") ? callbackPath : `${CV_BASE}${callbackPath}`;
+    console.log(`[sync] GET authorize/callback → ${callbackUrl.slice(0, 80)}...`);
+    const { html: cbHtml } = await fetchFollowingCookies(callbackUrl, {}, cvJar3);
+    formPostHtml = cbHtml;
+  } else {
+    console.warn(`[sync] returnurl no encontrado en loginUrl, usando postHtml directo`);
   }
 
-  console.log("[sync] Login automático exitoso. Cookie renovada.");
-  cachedCookie = jar2;
-  return jar2;
+  // Buscar form_post con signin-oidc
+  const signinForm = formPostHtml.match(/action=['"]([^'"]*signin-oidc[^'"]*)['"]/i);
+  if (signinForm) {
+    const hiddenInputs: Record<string, string> = {};
+    // El HTML del form_post puede usar comillas simples o dobles
+    const inputRegex = /name=['"]([^'"]+)['"]\s[^>]*value=['"]([^'"]*)['"]/g;
+    let m: RegExpExecArray | null;
+    while ((m = inputRegex.exec(formPostHtml)) !== null) {
+      hiddenInputs[m[1]] = m[2];
+    }
+    const signinUrl = signinForm[1].startsWith("http") ? signinForm[1] : `${BASE_URL}${signinForm[1]}`;
+    const signinBody = new URLSearchParams(hiddenInputs).toString();
+    const { cookieJar: finalJar } = await fetchFollowingCookies(
+      signinUrl,
+      { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: `${CV_BASE}/` }, body: signinBody },
+      intranetJar,
+    );
+    console.log("[sync] Login automático exitoso (OIDC). Cookie renovada.");
+    cachedCookie = finalJar;
+    return finalJar;
+  }
+
+  console.error(`[sync] formPostHtml snippet: ${formPostHtml.slice(0, 300).replace(/\s+/g, " ")}`);
+  throw new Error("No se encontró el callback OIDC signin-oidc en la respuesta del Campus Virtual.");
 }
 
 /* Obtiene cookie activa, hace login automático si no hay o está vacía */
@@ -272,8 +352,8 @@ async function intranetGet(url: string, cookie: string): Promise<any> {
   // Si la cookie expiró, la intranet devuelve la página de login (HTML) con status 200
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("text/html")) {
-    const snippet = (await res.text()).slice(0, 300).replace(/\s+/g, " ");
-    console.warn(`[sync] intranetGet HTML (AUTH_EXPIRED). URL: ${url.slice(0, 80)} | Snippet: ${snippet}`);
+    await res.text();
+    console.warn(`[sync] Cookie expirada (HTML redirect). URL: ${url.slice(0, 80)}`);
     throw new Error("AUTH_EXPIRED");
   }
   return await res.json();
