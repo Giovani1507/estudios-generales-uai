@@ -44,6 +44,12 @@ const sedeFromLocal = (local?: string): Sede => {
   return "SEDE";
 };
 
+/* Normaliza nombre de docente para comparación: quita acentos y convierte a mayúsculas.
+   Evita mismatch entre el nombre del planning JSON (con acentos) y la BD/intranet (sin acentos).
+   Ej: "SALAZAR MUNAYCO LUISA MARÍA" → "SALAZAR MUNAYCO LUISA MARIA" */
+const normalizeDocente = (s: string) =>
+  (s || "").toUpperCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 const DIAS = ["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"] as const;
 const normDia = (d?: string): typeof DIAS[number] | "" => {
   const x = (d || "").toUpperCase().trim()
@@ -903,7 +909,8 @@ export default function PlanillasAsistencia() {
       const cnt = new Map<string, number>();
       for (const p of list) {
         if (!p.docente || !p.codigoCurso) continue;
-        const dk = p.docente.toUpperCase().trim();
+        // Normalizar el nombre (quitar acentos) para que coincida con el planning JSON
+        const dk = normalizeDocente(p.docente);
         const codigo = p.codigoCurso.trim();
         const base2 = baseSeccion(p.seccion);
         // Clave exacta (la BD ya guarda normalizado: "A", "B", "AH"…)
@@ -1215,10 +1222,10 @@ export default function PlanillasAsistencia() {
                               <Badge key={c} variant="outline" className="text-[9px] px-1 py-0 h-4">{c}</Badge>
                             ))}
                             <span className="ml-1">{t.sesiones} ses.</span>
-                            {(uploadedByDocente.get(t.nombre) || 0) > 0 && (
+                            {(uploadedByDocente.get(normalizeDocente(t.nombre)) || 0) > 0 && (
                               <span className="inline-flex items-center gap-0.5 ml-1 text-emerald-600 font-semibold">
                                 <CheckCircle2 className="h-3 w-3" />
-                                {uploadedByDocente.get(t.nombre)}
+                                {uploadedByDocente.get(normalizeDocente(t.nombre))}
                               </span>
                             )}
                           </div>
@@ -1323,7 +1330,7 @@ export default function PlanillasAsistencia() {
                     </thead>
                     <tbody>
                       {cursos.map((c, i) => {
-                        const isUploaded = uploaded.has(`${selected}|${c.codigo}|${c.seccion}`);
+                        const isUploaded = uploaded.has(`${normalizeDocente(selected || "")}|${c.codigo}|${c.seccion}`);
                         return (
                         <tr key={i} className={`${i % 2 ? "bg-muted/20" : ""} ${isUploaded ? "bg-emerald-50/40" : ""}`}>
                           <td className="px-3 py-2 text-center">
