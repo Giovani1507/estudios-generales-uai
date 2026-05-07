@@ -136,7 +136,7 @@
     "docente": "VELAZCO LOPEZ ANGELA BETSY",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "20:10",
@@ -160,7 +160,7 @@
     "docente": "VELAZCO LOPEZ ANGELA BETSY",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "DOMINGO",
     "hora": "21:50",
@@ -184,7 +184,7 @@
     "docente": "RAMIREZ YAÑEZ MAURO ALBERTO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "18:30",
@@ -208,7 +208,7 @@
     "docente": "RAMIREZ YAÑEZ MAURO ALBERTO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "21:00",
@@ -256,7 +256,7 @@
     "docente": "SIGUAS FLORES CARLOS JAVIER",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "DOMINGO",
     "hora": "21:00",
@@ -280,7 +280,7 @@
     "docente": "SIGUAS FLORES CARLOS JAVIER",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "21:50",
@@ -328,7 +328,7 @@
     "docente": "CASTAÑEDA RIVEROS JOSEFA ELIZABETH",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "DOMINGO",
     "hora": "17:40",
@@ -1096,7 +1096,7 @@
     "docente": "PUPPI UGAZ LUIS MIGUEL",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "07:40",
@@ -3688,7 +3688,7 @@
     "docente": "MARTINEZ YATACO JESSICA JULISSA",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "18:30",
@@ -3736,7 +3736,7 @@
     "docente": "MUNAYCO VIVANCO JUAN CALIXTO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "21:50",
@@ -3808,7 +3808,7 @@
     "docente": "LUYO LOLI TAYMA NAIROBIS",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "JUEVES",
     "hora": "18:30",
@@ -4192,7 +4192,7 @@
     "docente": "LUYO LOLI TAYMA NAIROBIS",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "11:50",
@@ -5080,7 +5080,7 @@
     "docente": "YATACO VALDEZ PALMER EDWIN",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "18:30",
@@ -5128,7 +5128,7 @@
     "docente": "ULLOQUE SAMATELO CARLOS AUGUSTO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "DOMINGO",
     "hora": "19:20",
@@ -5152,7 +5152,7 @@
     "docente": "ULLOQUE SAMATELO CARLOS AUGUSTO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "21:50",
@@ -5248,7 +5248,7 @@
     "docente": "CORDOVA RAMIREZ DORIS IVONNE",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "18:30",
@@ -5392,7 +5392,7 @@
     "docente": "OSCCO INJANTE JOSE LUIS",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MIERCOLES",
     "hora": "18:30",
@@ -6088,7 +6088,7 @@
     "docente": "MUÑOZ ALVA FIORELLA DEL PILAR",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MIERCOLES",
     "hora": "07:40",
@@ -6429,7 +6429,7 @@
     "dia": "DOMINGO",
     "hora": "18:30",
     "horaFin": "22:40",
-    "horasAcad": 0
+    "horasAcad": 5
   },
   {
     "local": "PRINCIPAL",
@@ -6453,7 +6453,7 @@
     "dia": "MIERCOLES",
     "hora": "18:30",
     "horaFin": "22:40",
-    "horasAcad": 0
+    "horasAcad": 5
   },
   {
     "local": "PRINCIPAL",
@@ -6477,7 +6477,7 @@
     "dia": "LUNES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -6501,7 +6501,7 @@
     "dia": "MARTES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -6525,7 +6525,7 @@
     "dia": "MARTES",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -6549,7 +6549,7 @@
     "dia": "JUEVES",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -6573,7 +6573,7 @@
     "dia": "JUEVES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -7845,7 +7845,7 @@
     "dia": "MARTES",
     "hora": "18:30",
     "horaFin": "22:40",
-    "horasAcad": 0
+    "horasAcad": 5
   },
   {
     "local": "PRINCIPAL",
@@ -7869,7 +7869,7 @@
     "dia": "LUNES",
     "hora": "18:30",
     "horaFin": "22:40",
-    "horasAcad": 0
+    "horasAcad": 5
   },
   {
     "local": "PRINCIPAL",
@@ -7893,7 +7893,7 @@
     "dia": "MIERCOLES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -7917,7 +7917,7 @@
     "dia": "DOMINGO",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -7941,7 +7941,7 @@
     "dia": "MIERCOLES",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -7965,7 +7965,7 @@
     "dia": "DOMINGO",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -7989,7 +7989,7 @@
     "dia": "JUEVES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -8320,7 +8320,7 @@
     "docente": "CASTILLON SIGUAS LUIS ALFREDO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "18:30",
@@ -8344,7 +8344,7 @@
     "docente": "CASTILLON SIGUAS LUIS ALFREDO",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "LUNES",
     "hora": "19:20",
@@ -8397,7 +8397,7 @@
     "dia": "VIERNES",
     "hora": "18:30",
     "horaFin": "22:40",
-    "horasAcad": 0
+    "horasAcad": 5
   },
   {
     "local": "PRINCIPAL",
@@ -8421,7 +8421,7 @@
     "dia": "JUEVES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -8445,7 +8445,7 @@
     "dia": "JUEVES",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -8469,7 +8469,7 @@
     "dia": "MIERCOLES",
     "hora": "21:50",
     "horaFin": "23:30",
-    "horasAcad": 0
+    "horasAcad": 2
   },
   {
     "local": "PRINCIPAL",
@@ -8493,7 +8493,7 @@
     "dia": "DOMINGO",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -8517,7 +8517,7 @@
     "dia": "MIERCOLES",
     "hora": "18:30",
     "horaFin": "21:50",
-    "horasAcad": 0
+    "horasAcad": 4
   },
   {
     "local": "PRINCIPAL",
@@ -8992,7 +8992,7 @@
     "docente": "HERNANDEZ DIAZ STEFANI MADELHEYN MARGARITA",
     "modalidad": "VIRTUAL",
     "pabellon": null,
-    "aula": "ZOOM",
+    "aula": null,
     "laboratorio": null,
     "dia": "MARTES",
     "hora": "09:20",
