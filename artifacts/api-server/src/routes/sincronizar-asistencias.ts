@@ -630,20 +630,52 @@ router.post(
         if (docenteName) {
           // Sync individual de un docente
           let cookie = await getOrRefreshCookie();
+
+          // 1. Intentar resolver el docente desde la tabla local (tiene rawData.id)
           const rows = await db
             .select()
             .from(docentesExternosTable)
             .where(sql`upper(trim(${docentesExternosTable.name})) = upper(trim(${docenteName}))`)
             .limit(1);
 
-          if (rows.length === 0 || !(rows[0].rawData as any)?.id) {
-            send("error", { message: "Docente no encontrado en la intranet. Sincroniza docentes primero." });
+          let teacher: { id: string; name: string; username: string } | null = null;
+
+          if (rows.length > 0 && (rows[0].rawData as any)?.id) {
+            const raw = rows[0].rawData as any;
+            teacher = { id: raw.id, name: rows[0].name, username: rows[0].username ?? "" };
+          } else {
+            // 2. Fallback: buscar directamente en la intranet
+            send("progress", { message: "Buscando docente en la intranet..." });
+            let listRaw: any;
+            try {
+              listRaw = await intranetGet(
+                `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`,
+                cookie,
+              );
+            } catch (e: any) {
+              if (e.message === "AUTH_EXPIRED") {
+                cookie = await loginToIntranet();
+                listRaw = await intranetGet(
+                  `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`,
+                  cookie,
+                );
+              } else throw e;
+            }
+            const found = (listRaw.data || []).find(
+              (d: any) => d.name?.toUpperCase().trim() === docenteName.toUpperCase().trim(),
+            );
+            if (found) {
+              teacher = { id: found.id, name: found.name?.toUpperCase().trim(), username: found.username ?? "" };
+            }
+          }
+
+          if (!teacher) {
+            send("error", { message: "Docente no encontrado en la Intranet para este período." });
             res.write("event: done\ndata: {}\n\n");
             res.end();
             return;
           }
-          const raw = rows[0].rawData as any;
-          const teacher = { id: raw.id, name: rows[0].name, username: rows[0].username };
+
           const planningSet = buildPlanningSet();
           send("start", { total: 1 });
           send("teacher", { index: 1, total: 1, name: teacher.name });
@@ -680,17 +712,44 @@ router.post(
         return res.status(400).json({ error: "DOCENTE_REQUERIDO", message: "Proporciona docenteName para sync individual." });
       }
       let cookie = await getOrRefreshCookie();
+
+      // 1. Intentar resolver desde la tabla local
       const rows = await db
         .select()
         .from(docentesExternosTable)
         .where(sql`upper(trim(${docentesExternosTable.name})) = upper(trim(${docenteName}))`)
         .limit(1);
 
-      if (rows.length === 0 || !(rows[0].rawData as any)?.id) {
-        return res.status(404).json({ error: "DOCENTE_NO_ENCONTRADO", message: "Docente no encontrado." });
+      let teacher: { id: string; name: string; username: string } | null = null;
+      if (rows.length > 0 && (rows[0].rawData as any)?.id) {
+        const raw = rows[0].rawData as any;
+        teacher = { id: raw.id, name: rows[0].name, username: rows[0].username ?? "" };
+      } else {
+        // 2. Fallback: buscar en la intranet
+        let listRaw: any;
+        try {
+          listRaw = await intranetGet(
+            `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`,
+            cookie,
+          );
+        } catch (e: any) {
+          if (e.message === "AUTH_EXPIRED") {
+            cookie = await loginToIntranet();
+            listRaw = await intranetGet(
+              `${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`,
+              cookie,
+            );
+          } else throw e;
+        }
+        const found = (listRaw.data || []).find(
+          (d: any) => d.name?.toUpperCase().trim() === docenteName.toUpperCase().trim(),
+        );
+        if (found) teacher = { id: found.id, name: found.name?.toUpperCase().trim(), username: found.username ?? "" };
       }
-      const raw = rows[0].rawData as any;
-      const teacher = { id: raw.id, name: rows[0].name, username: rows[0].username };
+
+      if (!teacher) {
+        return res.status(404).json({ error: "DOCENTE_NO_ENCONTRADO", message: "Docente no encontrado en la Intranet para este período." });
+      }
       const planningSet = buildPlanningSet();
       try {
         const result = await syncTeacher(teacher, cookie, termId, planningSet);
