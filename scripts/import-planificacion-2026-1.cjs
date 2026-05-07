@@ -24,15 +24,15 @@ const fcsXlsx  = process.argv[3] ||
 const outPublic  = "artifacts/school-portal/public";
 const outApiData = "artifacts/api-server/src/data";
 
-// ── DIA_MAP: Excel WEEKDAY(date,1) → Sunday=1, Monday=2, …, Saturday=7 ─────
+// ── DIA_MAP: 1=LUNES, 2=MARTES, …, 6=SABADO, 7=DOMINGO ─────────────────────
 const DIA_MAP = {
-  1: "DOMINGO",
-  2: "LUNES",
-  3: "MARTES",
-  4: "MIERCOLES",
-  5: "JUEVES",
-  6: "VIERNES",
-  7: "SABADO",
+  1: "LUNES",
+  2: "MARTES",
+  3: "MIERCOLES",
+  4: "JUEVES",
+  5: "VIERNES",
+  6: "SABADO",
+  7: "DOMINGO",
 };
 
 const PROG_MAP = {
