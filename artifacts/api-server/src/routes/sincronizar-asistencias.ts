@@ -335,7 +335,9 @@ function parseAttendanceXlsx(buf: Buffer): ParsedXlsx {
 /* ─── Parsear encabezadoCrudo ─── */
 function parseEncabezado(enc: string) {
   // Format: "P06-20261-P06A1103 MÉTODOS DE ESTUDIO UNIVERSITARIO - BP - CH"
-  const codeMatch = enc.match(/\b([A-Z]\d{2}[A-Z]\d{4})\b/);
+  //         "P53-20261-P531102 MATEMÁTICA - AP - CH"
+  // Soporta: P02A2105 ([A-Z]\d{2}[A-Z]\d{4}) y P531102 ([A-Z]\d{5,7})
+  const codeMatch = enc.match(/\b([A-Z]\d{2}[A-Z]\d{4}|[A-Z]\d{5,7})\b/);
   const codigoCurso = codeMatch ? codeMatch[1] : null;
   const afterCode = codeMatch
     ? enc.slice(enc.indexOf(codeMatch[0]) + codeMatch[0].length).trim()
@@ -480,13 +482,15 @@ async function syncTeacher(
   );
 
   for (const course of courses) {
-    // Extract codigoCurso from course text: "P38-20261-P38A1104-FILOSOFÍA Y ÉTICA"
-    // Regex: one uppercase letter + 2 digits + one uppercase letter + 4 digits (e.g. P38A1104)
-    const courseCodeMatch = course.text.match(/\b([A-Z]\d{2}[A-Z]\d{4})\b/);
-    // Fallback: split by "-" and take the element that looks like a course code
+    // Extract codigoCurso from course text: "P53-20261-P531102-MATEMÁTICA" or "P02-20261-P02A2105-INTRO..."
+    // Soporta: P02A2105 ([A-Z]\d{2}[A-Z]\d{4}) y P531102 ([A-Z]\d{5,7})
+    const courseCodeMatch = course.text.match(/\b([A-Z]\d{2}[A-Z]\d{4}|[A-Z]\d{5,7})\b/);
+    // Fallback robusto: tomar el elemento [2] del split por "-" (LOCAL-TERM-CODE-NOMBRE)
+    const splitParts = course.text.split("-");
+    const splitCode = splitParts.length >= 3 ? splitParts[2].trim() : null;
     const courseCode = courseCodeMatch
       ? courseCodeMatch[1]
-      : (course.text.split("-").find((p) => /^[A-Z]\d{2}[A-Z]\d{4}$/.test(p.trim())) ?? null);
+      : (splitCode && splitCode.length >= 4 && !/^\d{6}$/.test(splitCode) ? splitCode : null);
 
     const secciones: Array<{ id: string; text: string }> = await intranetGet(
       `${BASE_URL}/secciones-por-curso/${course.id}/docente/${teacher.id}?termId=${termId}`,
