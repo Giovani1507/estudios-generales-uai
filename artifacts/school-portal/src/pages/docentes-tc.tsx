@@ -18,7 +18,6 @@ interface DocenteTC {
   ciclos: string[];
   carreras: string[];
   cursos: { ciclo: string; carrera: string; curso: string; horas: number }[];
-  tieneCicloExtra: boolean;
 }
 
 export default function DocentesTC() {
@@ -36,15 +35,13 @@ export default function DocentesTC() {
         // Solo sede PRINCIPAL
         const principal = json.filter((r) => r.local === "PRINCIPAL");
 
-        // 1. Docentes que dictan en ciclo 1 o 2 en PRINCIPAL
-        const docsCiclo12 = new Set(
-          principal.filter((r) => r.ciclo === "1" || r.ciclo === "2").map((r) => r.docente)
-        );
+        // Solo ciclos 1 y 2 en PRINCIPAL
+        const ciclo12 = principal.filter((r) => r.ciclo === "1" || r.ciclo === "2");
 
-        // 2. Acumular TODAS sus horas (incluyendo otros ciclos, pero solo PRINCIPAL)
+        // Acumular horas ciclos 1 y 2
         const map: Record<string, { horas: number; ciclos: Set<string>; carreras: Set<string>; cursos: DocenteTC["cursos"] }> = {};
-        principal.forEach((r) => {
-          if (!docsCiclo12.has(r.docente)) return;
+        ciclo12.forEach((r) => {
+          if (!r.docente) return;
           if (!map[r.docente])
             map[r.docente] = { horas: 0, ciclos: new Set(), carreras: new Set(), cursos: [] };
           map[r.docente].horas += r.horasAcad;
@@ -53,7 +50,7 @@ export default function DocentesTC() {
           map[r.docente].cursos.push({ ciclo: r.ciclo, carrera: r.carrera, curso: r.curso, horas: r.horasAcad });
         });
 
-        // 3. Filtrar TC: ≥ 29 horas
+        // Filtrar TC: ≥ 29 horas
         const tc: DocenteTC[] = Object.entries(map)
           .filter(([, v]) => v.horas >= 29)
           .map(([docente, v]) => ({
@@ -62,7 +59,6 @@ export default function DocentesTC() {
             ciclos: [...v.ciclos].sort((a, b) => Number(a) - Number(b)),
             carreras: [...v.carreras].sort(),
             cursos: v.cursos,
-            tieneCicloExtra: [...v.ciclos].some((c) => c !== "1" && c !== "2"),
           }))
           .sort((a, b) => b.totalHoras - a.totalHoras);
 
@@ -86,7 +82,6 @@ export default function DocentesTC() {
     () => (data.length ? Math.round(data.reduce((s, d) => s + d.totalHoras, 0) / data.length) : 0),
     [data]
   );
-  const conCicloExtra = useMemo(() => data.filter((d) => d.tieneCicloExtra).length, [data]);
 
   const barColor = (h: number) =>
     h >= 38 ? "bg-[#001F5F]" : h >= 33 ? "bg-blue-600" : "bg-blue-400";
@@ -97,7 +92,7 @@ export default function DocentesTC() {
     wb.creator = "Sistema UAI";
     wb.created = new Date();
     const navy = "001F5F", gold = "C9A84C", white = "FFFFFF";
-    const NCOLS = 7;
+    const NCOLS = 6;
     const ws = wb.addWorksheet("Docentes TC FICA", { pageSetup: { paperSize: 9, orientation: "landscape" } });
 
     let logoId: number | null = null;
@@ -126,14 +121,14 @@ export default function DocentesTC() {
     addTitle("UNIVERSIDAD AUTÓNOMA DE ICA", 3, true, 16);
     addTitle("Docentes Tiempo Completo (TC) — FICA 2026-I · Sede Principal  ·  Criterio: ≥ 29 horas académicas", 4, false, 11, "AABBD4");
     addTitle(
-      `Generado: ${new Date().toLocaleDateString("es-PE")}  ·  Total TC: ${filtered.length}  ·  Incluye horas en todos los ciclos`,
+      `Generado: ${new Date().toLocaleDateString("es-PE")}  ·  Total TC: ${filtered.length}  ·  Ciclos 1 y 2 · Sede Principal`,
       5, false, 10, "AABBD4"
     );
     for (let c = 1; c <= NCOLS; c++)
       ws.getRow(6).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: gold } };
 
-    const COLS = ["#", "Docente", "Total Horas", "Ciclos que dicta", "Carreras", "Carga extra (>ciclo 2)", "Clasificación"];
-    const WIDTHS = [5, 36, 13, 18, 20, 22, 14];
+    const COLS = ["#", "Docente", "Total Horas", "Ciclos", "Carreras", "Clasificación"];
+    const WIDTHS = [5, 36, 13, 18, 24, 14];
     COLS.forEach((h, i) => { ws.getColumn(i + 1).width = WIDTHS[i]; });
     const hr = ws.getRow(7); hr.height = 18;
     COLS.forEach((h, i) => {
@@ -148,10 +143,8 @@ export default function DocentesTC() {
     filtered.forEach((d, i) => {
       const row = ws.getRow(8 + i); row.height = 14;
       const bg = i % 2 === 0 ? "FFFFFF" : "EEF3FF";
-      const ciclosExtra = d.ciclos.filter((c) => c !== "1" && c !== "2");
       const vals = [
         i + 1, d.docente, d.totalHoras, d.ciclos.join(", "), d.carreras.join(", "),
-        ciclosExtra.length ? `Ciclos: ${ciclosExtra.join(", ")}` : "—",
         d.totalHoras >= 38 ? "TC Alto" : d.totalHoras >= 33 ? "TC" : "TC Mínimo",
       ];
       vals.forEach((v, ci) => {
@@ -180,8 +173,7 @@ export default function DocentesTC() {
             <h1 className="text-2xl font-bold text-[#001F5F]">Docentes Tiempo Completo — FICA · Sede Principal</h1>
             <p className="text-sm text-gray-500 mt-1">
               Docentes de ciclos 1 y 2 con{" "}
-              <span className="font-semibold text-[#001F5F]">≥ 29 horas académicas</span> en la sede Principal
-              (se suman sus horas en todos los ciclos de la sede Principal)
+              <span className="font-semibold text-[#001F5F]">≥ 29 horas académicas</span> en la sede Principal · solo ciclos 1 y 2
             </p>
           </div>
           <button
@@ -198,7 +190,7 @@ export default function DocentesTC() {
           {[
             { icon: <Star className="w-5 h-5" />, label: "Docentes TC", value: data.length, color: "text-[#001F5F]", bg: "bg-blue-50 border-blue-200" },
             { icon: <Clock className="w-5 h-5" />, label: "Promedio Horas", value: promedioHoras, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-            { icon: <BarChart2 className="w-5 h-5" />, label: "Con carga extra (>ciclo 2)", value: conCicloExtra, color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
+            { icon: <BarChart2 className="w-5 h-5" />, label: "Ciclos 1 y 2 únicamente", value: "1 y 2", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
             { icon: <Users className="w-5 h-5" />, label: "Carreras involucradas", value: carreras.length, color: "text-violet-700", bg: "bg-violet-50 border-violet-200" },
           ].map(({ icon, label, value, color, bg }) => (
             <div key={label} className={`border rounded-2xl p-4 shadow-sm ${bg}`}>
@@ -270,7 +262,7 @@ export default function DocentesTC() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#001F5F]">
-                    {["#", "Docente", "Horas", "Ciclos", "Carreras", "Carga extra"].map((h, i) => (
+                    {["#", "Docente", "Horas", "Ciclos", "Carreras"].map((h, i) => (
                       <th
                         key={h}
                         className={`px-3 py-2.5 text-[10px] font-bold text-white/80 uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-0 ${i === 1 ? "text-left" : "text-center"}`}
@@ -279,13 +271,12 @@ export default function DocentesTC() {
                       </th>
                     ))}
                   </tr>
-                  <tr><td colSpan={6} className="p-0"><div className="h-[3px] bg-[#C9A84C]" /></td></tr>
+                  <tr><td colSpan={5} className="p-0"><div className="h-[3px] bg-[#C9A84C]" /></td></tr>
                 </thead>
                 <tbody>
                   {filtered.map((d, i) => {
                     const isEven = i % 2 === 0;
                     const isExp = expandido === d.docente;
-                    const ciclosExtra = d.ciclos.filter((c) => c !== "1" && c !== "2");
                     const pct = Math.min(100, Math.round((d.totalHoras / 40) * 100));
 
                     return (
@@ -315,42 +306,25 @@ export default function DocentesTC() {
                           <td className="px-3 py-2.5 text-center border-r border-[#001F5F]/8">
                             <div className="flex flex-wrap gap-1 justify-center">
                               {d.ciclos.map((c) => (
-                                <span
-                                  key={c}
-                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                    c === "1" || c === "2"
-                                      ? "bg-[#001F5F] text-white"
-                                      : "bg-amber-100 text-amber-800 border border-amber-300"
-                                  }`}
-                                >
+                                <span key={c} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#001F5F] text-white">
                                   {c}
                                 </span>
                               ))}
                             </div>
                           </td>
 
-                          <td className="px-3 py-2.5 text-center border-r border-[#001F5F]/8">
+                          <td className="px-3 py-2.5 text-center">
                             <div className="flex flex-wrap gap-1 justify-center">
                               {d.carreras.map((c) => (
                                 <span key={c} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">{c}</span>
                               ))}
                             </div>
                           </td>
-
-                          <td className="px-3 py-2.5 text-center">
-                            {ciclosExtra.length > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                ⚠ ciclos {ciclosExtra.join(", ")}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-gray-400">—</span>
-                            )}
-                          </td>
                         </tr>
 
                         {isExp && (
                           <tr key={`${d.docente}-detail`} className="bg-[#f8faff] border-b border-[#001F5F]/10">
-                            <td colSpan={6} className="px-6 py-3">
+                            <td colSpan={5} className="px-6 py-3">
                               <p className="text-[11px] font-bold text-[#001F5F] mb-2 uppercase tracking-wide">
                                 Detalle de cursos — {d.docente}
                               </p>
@@ -358,17 +332,8 @@ export default function DocentesTC() {
                                 {[...d.cursos]
                                   .sort((a, b) => Number(a.ciclo) - Number(b.ciclo))
                                   .map((c, ci) => (
-                                    <div
-                                      key={ci}
-                                      className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
-                                        c.ciclo === "1" || c.ciclo === "2"
-                                          ? "border-blue-200 bg-blue-50"
-                                          : "border-amber-200 bg-amber-50"
-                                      }`}
-                                    >
-                                      <span className={`font-bold w-14 shrink-0 ${c.ciclo === "1" || c.ciclo === "2" ? "text-[#001F5F]" : "text-amber-700"}`}>
-                                        Ciclo {c.ciclo}
-                                      </span>
+                                    <div key={ci} className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50">
+                                      <span className="font-bold w-14 shrink-0 text-[#001F5F]">Ciclo {c.ciclo}</span>
                                       <span className="text-gray-500 w-8 shrink-0">[{c.carrera}]</span>
                                       <span className="text-gray-700 flex-1 truncate">{c.curso}</span>
                                       <span className="font-semibold text-gray-600 shrink-0">{c.horas}h</span>
