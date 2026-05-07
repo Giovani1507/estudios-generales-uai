@@ -8,6 +8,8 @@ import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import planificacionFica from "../data/planificacion-fica-2026-1.json" assert { type: "json" };
+import planificacionFcs from "../data/planificacion-fcs-2026-1.json" assert { type: "json" };
 
 const router = Router();
 const tlsAgent = new Agent({ connect: { rejectUnauthorized: false } });
@@ -78,22 +80,9 @@ async function getOrRefreshCookie(): Promise<string> {
 /* ─── Set de combinaciones válidas según planificación 2026-1 ─── */
 function buildPlanningSet(): Set<string> {
   const set = new Set<string>();
-  // Busca desde process.cwd() (raíz del workspace) — funciona tanto en dev (tsx) como en prod (CJS bundle)
-  const candidates = [
-    path.resolve(process.cwd(), "artifacts/school-portal/public"),
-    // fallback: ruta relativa al archivo actual (solo dev)
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../school-portal/public"),
-  ];
-  const publicDir = candidates.find(d => fs.existsSync(path.join(d, "planificacion-fica-2026-1.json"))) ?? candidates[0];
-  const files = [
-    "planificacion-fica-2026-1.json",
-    "planificacion-fcs-2026-1.json",
-  ];
-  for (const f of files) {
-    const fpath = path.join(publicDir, f);
-    if (!fs.existsSync(fpath)) { console.warn(`[sync] Planning file not found: ${fpath}`); continue; }
+  const allFiles = [planificacionFica, planificacionFcs] as Array<Array<{ docente?: string; codigo?: string; seccion?: string }>>;
+  for (const rows of allFiles) {
     try {
-      const rows: Array<{ docente?: string; codigo?: string; seccion?: string }> = JSON.parse(fs.readFileSync(fpath, "utf-8"));
       for (const r of rows) {
         if (!r.docente || !r.codigo || !r.seccion) continue;
         const key = [
@@ -103,7 +92,7 @@ function buildPlanningSet(): Set<string> {
         ].join("|");
         set.add(key);
       }
-    } catch (e) { console.error(`[sync] Error loading ${f}:`, e); }
+    } catch (e) { console.error("[sync] Error al procesar planificación:", e); }
   }
   console.log(`[sync] Planning set cargado: ${set.size} combos válidos`);
   return set;
