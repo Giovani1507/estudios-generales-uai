@@ -43,6 +43,18 @@ type Fila = {
 
 type SortKey = keyof Fila;
 
+// Normaliza nombres para cruzar la planilla del intranet (que NO trae código)
+// contra el consolidado de matrícula y la lista oficial de convalidantes.
+// Mayúsculas, sin tildes, sin puntuación, espacios colapsados.
+const normalizaNombre = (s: string): string =>
+  (s || "")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const sedeLabel = (v: string | null | undefined) => {
   const s = (v || "").toUpperCase().trim();
   if (!s || s === "PRINCIPAL" || s === "ICA") return "PRINCIPAL";
@@ -80,12 +92,14 @@ export default function ReporteAsistencia() {
 
     try {
       const base = `${apiBase}/`;
-      const [r, ficaPlan, fcsPlan, carreraMapRaw, convalRaw] = await Promise.all([
+      const [r, ficaPlan, fcsPlan, alumnosInfoRaw, convalRaw] = await Promise.all([
         fetch(`${apiBase}/api/asistencia-planillas/all-full`, { credentials: "include", signal: ctrl.signal }),
         fetch(`${base}planificacion-fica-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
         fetch(`${base}planificacion-fcs-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
-        // Lookup oficial de carreras: cod_alumno → { carrera, nombre } (consolidado de matrícula)
-        fetch(`${base}codigo-carrera-2026-1.json`).then(x => x.ok ? x.json() : {}).catch(() => ({})),
+        // Lookup desde el consolidado de matrícula: nombre_normalizado → { codigo, carrera }
+        // (las planillas del intranet NO traen el código, solo número de fila, así que
+        // cruzamos por nombre para obtener el código real y la carrera).
+        fetch(`${base}alumnos-info-2026-1.json`).then(x => x.ok ? x.json() : {}).catch(() => ({})),
         // Lista oficial de convalidantes 2026-1
         fetch(`${base}convalidantes-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
       ]);
@@ -100,16 +114,18 @@ export default function ReporteAsistencia() {
         }
       }
 
-      // Mapa codAlumno_upper → carrera (programa académico)
-      const carreraPorCodigo = new Map<string, string>();
-      for (const [k, v] of Object.entries(carreraMapRaw as Record<string, { carrera?: string }>)) {
-        if (k && v?.carrera) carreraPorCodigo.set(k.toUpperCase().trim(), v.carrera);
+      // Mapa nombre_normalizado → { codigo, carrera }
+      const infoPorNombre = new Map<string, { codigo: string; carrera: string }>();
+      for (const [k, v] of Object.entries(alumnosInfoRaw as Record<string, { codigo?: string; carrera?: string }>)) {
+        if (k) infoPorNombre.set(k, { codigo: v?.codigo || "", carrera: v?.carrera || "" });
       }
 
-      // Set de códigos convalidantes (uppercase)
-      const convalSet = new Set<string>();
-      for (const c of (convalRaw as Array<{ codigo?: string }>)) {
-        if (c?.codigo) convalSet.add(String(c.codigo).toUpperCase().trim());
+      // Set de NOMBRES convalidantes normalizados (las planillas no traen código,
+      // así que cotejamos por nombre — coherente con la lógica de jalados).
+      const convalNombres = new Set<string>();
+      for (const c of (convalRaw as Array<{ nombre?: string }>)) {
+        const n = normalizaNombre(c?.nombre || "");
+        if (n) convalNombres.add(n);
       }
 
       const out: Fila[] = [];
@@ -138,7 +154,12 @@ export default function ReporteAsistencia() {
           }
           const total = pres + inas;
           const pct = total > 0 ? Math.round((pres / total) * 10000) / 100 : 0;
-          const codAlu = (a.numero || "").toUpperCase().trim();
+          const nombreUp = (a.nombre || "").toUpperCase();
+          const nombreKey = normalizaNombre(nombreUp);
+          const info = infoPorNombre.get(nombreKey);
+          // Si encontramos al alumno en el consolidado, usamos su código real;
+          // si no, mostramos el número de fila de la planilla como respaldo.
+          const codAlu = info?.codigo || (a.numero || "").toUpperCase().trim();
           out.push({
             docente:   (det.docente   || "").toUpperCase(),
             curso:     (det.nombreCurso || "").toUpperCase(),
@@ -147,9 +168,9 @@ export default function ReporteAsistencia() {
             local:     sedeLabel(det.sede),
             ciclo,
             codAlumno: codAlu,
-            alumno:    (a.nombre  || "").toUpperCase(),
-            carrera:   carreraPorCodigo.get(codAlu) || "",
-            convalidante: convalSet.has(codAlu),
+            alumno:    nombreUp,
+            carrera:   info?.carrera || "",
+            convalidante: convalNombres.has(nombreKey),
             presentes: pres,
             ausentes:  inas,
             pct,
