@@ -80,28 +80,10 @@ const menuItems: MenuItem[] = [
     roles: ["administrador"],
   },
   {
-    title: "Reporte de Estudiantes",
-    url: "/reporte-estudiantes",
-    icon: ClipboardList,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Mapeo Estudiantes",
-    url: "/mapeo-estudiantes",
-    icon: Map,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,
     roles: ["administrador"],
-  },
-  {
-    title: "Reportes de Problemas",
-    url: "/problemas-estudiantes",
-    icon: AlertTriangle,
-    roles: ["administrador", "coordinador", "administrativo"],
   },
   {
     title: "Justificación de Falta",
@@ -365,7 +347,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                               {estudiantesOpen && (
                                 <div className="bg-black/15">
                                   {[
-                                    { href: "/estudiantes/delegados", label: "Delegados", Icon: Users },
+                                    { href: "/reporte-estudiantes",   label: "Reporte de Estudiantes", Icon: ClipboardList },
+                                    { href: "/mapeo-estudiantes",     label: "Mapeo de Estudiantes",   Icon: Map },
+                                    { href: "/problemas-estudiantes", label: "Reporte de Problemas",   Icon: AlertTriangle },
+                                    { href: "/estudiantes/delegados", label: "Delegados",              Icon: Users },
                                   ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}
