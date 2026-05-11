@@ -205,14 +205,20 @@ export default function RutaSupervision() {
       return true;
     });
 
-    // Solo primera clase del día por docente: para cada (docente + día) conservar
-    // únicamente el registro con la hora más temprana.
+    // Cada docente aparece UNA SOLA VEZ en toda la semana, en su clase más
+    // temprana (primero por orden de día Lunes→Domingo, luego por hora).
+    // Así la ruta del Martes contiene docentes distintos a los del Lunes.
+    const rank = (r: Row) => {
+      const di = DIAS_ORDER.indexOf(r.dia);
+      // Días desconocidos van al final
+      const dayKey = di === -1 ? 999 : di;
+      return dayKey * 10000 + toMinutes(r.hora);
+    };
     const earliest = new Map<string, Row>();
     for (const r of base) {
-      const key = `${r.docente}||${r.dia}`;
-      const prev = earliest.get(key);
-      if (!prev || toMinutes(r.hora) < toMinutes(prev.hora)) {
-        earliest.set(key, r);
+      const prev = earliest.get(r.docente);
+      if (!prev || rank(r) < rank(prev)) {
+        earliest.set(r.docente, r);
       }
     }
     return Array.from(earliest.values());
