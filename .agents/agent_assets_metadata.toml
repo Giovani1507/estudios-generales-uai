@@ -12,3 +12,9 @@ id = "EzvGNK6d5VKqv2dwFqpWw"
 uri = "file://exports/portal-academico-dump.sql.tar.gz"
 type = "unspecified"
 title = "Respaldo completo de la base de datos del Portal Académico (.sql comprimido)"
+
+[[outputs]]
+id = "azUyiwMVmq0103p_MRFDu"
+uri = "file://exports/portal-academico-bundle.tar.gz"
+type = "unspecified"
+title = "Paquete completo del Portal Académico (base de datos + Excels fuente + instrucciones)"
