@@ -396,6 +396,27 @@ export default function ReporteEstudiantes() {
 
   useEffect(() => { load(); loadSavedCodes(); }, []);
 
+  // ── Lista de CONVALIDANTES (códigos oficiales 2026-1) ─────────────────────
+  // Estos estudiantes deben quedar detectados/marcados en el reporte y son los
+  // que se descargan en el Excel "Convalidantes" para informe junto con la
+  // planilla de asistencia subida desde el intranet.
+  const [convalidantesSet, setConvalidantesSet] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}convalidantes-2026-1.json`)
+      .then(r => r.ok ? r.json() : [])
+      .then((arr: Array<{ codigo: string }>) => {
+        const s = new Set<string>();
+        for (const c of arr) {
+          const k = (c.codigo || "").trim().toUpperCase();
+          if (k) s.add(k);
+        }
+        setConvalidantesSet(s);
+      })
+      .catch(() => { /* lista no disponible: simplemente no hay marcas */ });
+  }, []);
+  const esConvalidante = (s: StudentReg) =>
+    !!s.codigoEstudiante && convalidantesSet.has(s.codigoEstudiante.trim().toUpperCase());
+
   async function toggleHorario(s: StudentReg) {
     setToggling(s.id);
     const newVal = !s.horarioAsignado;
@@ -450,6 +471,153 @@ export default function ReporteEstudiantes() {
   const totalCiclo2    = students.filter(s => s.ciclo === "2").length;
   const totalPagado    = students.filter(s => s.pagado).length;
   const totalNoPagado  = students.filter(s => !s.pagado).length;
+  const convalidantesDetectados = useMemo(
+    () => filtered.filter(esConvalidante).length,
+    [filtered, convalidantesSet],
+  );
+
+  // ── Descarga "Convalidantes": solo NOMBRE + CARRERA, para informe que va
+  // junto con la planilla de asistencia subida desde el intranet 2026-1.
+  async function downloadConvalidantesExcel() {
+    const NAV = "001F5F", GOLD = "C9A84C", WHITE = "FFFFFF", AMB_BG = "FEF3C7", AMB_TX = "92400E";
+
+    // Filtra los estudiantes detectados como convalidantes y los ordena
+    // alfabéticamente por nombre (más útil para cotejar con la planilla).
+    const conv = filtered
+      .filter(esConvalidante)
+      .map(s => ({
+        nombre: s.apellidosNombres || `${s.apellidos} ${s.nombres}`.trim() || "—",
+        carrera: s.carreraIngresante || s.carrera || "—",
+        codigo: s.codigoEstudiante || "—",
+      }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+    if (conv.length === 0) {
+      alert("No se detectaron estudiantes convalidantes en los registros actuales.");
+      return;
+    }
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Portal Académico UAI";
+    wb.created = new Date();
+    const ws  = wb.addWorksheet("Convalidantes", {
+      pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1 },
+    });
+
+    ws.columns = [
+      { key: "n",       width: 6  },
+      { key: "nombre",  width: 42 },
+      { key: "carrera", width: 38 },
+    ];
+    const TOTAL_COLS = 3;
+
+    // Header con logo
+    try {
+      const resp = await fetch(`${window.location.origin}${apiBase}/escudo.png`);
+      if (resp.ok) {
+        const buf = await resp.arrayBuffer();
+        const id = wb.addImage({ buffer: buf, extension: "png" });
+        ws.addImage(id, { tl: { col: 0.08, row: 0.12 }, ext: { width: 78, height: 78 }, editAs: "oneCell" } as any);
+      }
+    } catch { /* sin logo */ }
+
+    ws.mergeCells(1, 1, 4, 1);
+    ws.mergeCells(1, 2, 1, TOTAL_COLS);
+    ws.mergeCells(2, 2, 2, TOTAL_COLS);
+    ws.mergeCells(3, 2, 3, TOTAL_COLS);
+    ws.mergeCells(4, 2, 4, TOTAL_COLS);
+    for (let r = 1; r <= 4; r++) {
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        ws.getCell(r, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      }
+      ws.getRow(r).height = r === 1 ? 30 : r === 2 ? 22 : 18;
+    }
+    const setHdr = (row: number, txt: string, opts: { size?: number; bold?: boolean; color?: string; italic?: boolean } = {}) => {
+      const c = ws.getCell(row, 2);
+      c.value = txt;
+      c.font  = { name: "Calibri", size: opts.size ?? 11, bold: opts.bold ?? false, italic: opts.italic ?? false, color: { argb: "FF" + (opts.color ?? WHITE) } };
+      c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    };
+    setHdr(1, "UNIVERSIDAD AUTÓNOMA DE ICA", { size: 15, bold: true });
+    setHdr(2, "Dirección Académica · Semestre 2026-1", { size: 10, color: "BBCFEE", italic: true });
+    setHdr(3, "ESTUDIANTES CONVALIDANTES", { size: 13, bold: true, color: GOLD });
+    const now = new Date();
+    setHdr(4, `Generado: ${now.toLocaleDateString("es-PE", { dateStyle: "long" })} · Total: ${conv.length} estudiante${conv.length !== 1 ? "s" : ""}`, { size: 9, color: "BBCFEE" });
+
+    ws.getRow(5).height = 6;
+
+    // Aviso de uso
+    ws.mergeCells(6, 1, 6, TOTAL_COLS);
+    const aviso = ws.getCell(6, 1);
+    aviso.value = "Listado para informe — usar en conjunto con la planilla de asistencia subida en Asistencia 2026-1.";
+    aviso.font = { name: "Calibri", size: 9, italic: true, color: { argb: "FF" + AMB_TX } };
+    aviso.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + AMB_BG } };
+    aviso.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    ws.getRow(6).height = 18;
+
+    ws.getRow(7).height = 4;
+
+    // Encabezado de columnas
+    const HEAD = ["N°", "APELLIDOS Y NOMBRES", "CARRERA"];
+    const headerRow = ws.getRow(8);
+    headerRow.height = 22;
+    HEAD.forEach((h, idx) => {
+      const cell = headerRow.getCell(idx + 1);
+      cell.value = h;
+      cell.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FF" + WHITE } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      cell.alignment = { horizontal: idx === 0 ? "center" : "left", vertical: "middle" };
+      cell.border = {
+        top:    { style: "thin", color: { argb: "FF" + GOLD } },
+        bottom: { style: "thin", color: { argb: "FF" + GOLD } },
+        left:   { style: "thin", color: { argb: "FF304B80" } },
+        right:  { style: "thin", color: { argb: "FF304B80" } },
+      };
+    });
+
+    // Filas de datos
+    conv.forEach((c, i) => {
+      const r = ws.getRow(9 + i);
+      r.height = 16;
+      const bg = i % 2 === 1 ? "F2F5FB" : "FFFFFF";
+      const cells: [number, string | number, "center" | "left"][] = [
+        [1, i + 1, "center"],
+        [2, c.nombre, "left"],
+        [3, c.carrera, "left"],
+      ];
+      for (const [col, val, align] of cells) {
+        const cell = r.getCell(col);
+        cell.value = val;
+        cell.font  = { name: "Calibri", size: 10, color: { argb: "FF374151" } };
+        cell.alignment = { horizontal: align, vertical: "middle" };
+        cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + bg } };
+        cell.border = {
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left:   { style: "thin", color: { argb: "FFE2E8F0" } },
+          right:  { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+      }
+    });
+
+    // Footer
+    const footRow = 9 + conv.length + 1;
+    ws.mergeCells(footRow, 1, footRow, TOTAL_COLS);
+    const f = ws.getCell(footRow, 1);
+    f.value = "Documento generado por el Portal Académico — Universidad Autónoma de Ica";
+    f.font = { name: "Calibri", size: 8, italic: true, color: { argb: "FF9CA3AF" } };
+    f.alignment = { horizontal: "center", vertical: "middle" };
+    f.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFF" } };
+    ws.getRow(footRow).height = 14;
+
+    ws.views = [{ state: "frozen", xSplit: 0, ySplit: 8, activeCell: "A9" }];
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `UAI-Convalidantes-${now.toISOString().slice(0,10)}.xlsx`;
+    a.click();
+  }
 
   async function downloadExcel() {
     const NAV   = "001F5F";
@@ -803,6 +971,24 @@ export default function ReporteEstudiantes() {
           </button>
 
           <button
+            onClick={downloadConvalidantesExcel}
+            disabled={convalidantesDetectados === 0}
+            title={convalidantesDetectados === 0
+              ? "No se detectaron convalidantes en los registros actuales"
+              : `Descargar ${convalidantesDetectados} convalidante(s) — solo nombre y carrera, para informe`}
+            className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}
+          >
+            <Download className="w-4 h-4" />
+            Convalidantes
+            {convalidantesDetectados > 0 && (
+              <span className="text-[10px] font-bold bg-amber-700 text-white rounded-full px-1.5 py-px">
+                {convalidantesDetectados}
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={downloadExcel}
             className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition"
           >
@@ -852,11 +1038,22 @@ export default function ReporteEstudiantes() {
                       {s.apellidosNombres ? (
                         <>
                           <p className="font-semibold text-gray-800 text-xs leading-snug">{s.apellidosNombres}</p>
-                          {s.codigoEstudiante && (
-                            <span className="inline-block mt-0.5 text-[10px] font-bold text-primary bg-primary/10 rounded px-1.5 py-px tracking-wider">
-                              {s.codigoEstudiante}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {s.codigoEstudiante && (
+                              <span className="inline-block text-[10px] font-bold text-primary bg-primary/10 rounded px-1.5 py-px tracking-wider">
+                                {s.codigoEstudiante}
+                              </span>
+                            )}
+                            {esConvalidante(s) && (
+                              <span
+                                className="inline-block text-[10px] font-bold rounded px-1.5 py-px tracking-wider"
+                                style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}
+                                title="Estudiante convalidante (lista oficial 2026-1)"
+                              >
+                                CONVALIDANTE
+                              </span>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <>
