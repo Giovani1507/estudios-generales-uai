@@ -808,12 +808,23 @@ router.get(
     try {
       let cookie = await getOrRefreshCookie();
 
-      // 1. Buscar ID del docente en la tabla local
-      const rows = await db
+      // 1. Buscar ID del docente en la tabla local (primero exacto, luego normalizado)
+      let rows = await db
         .select()
         .from(docentesExternosTable)
         .where(sql`upper(trim(${docentesExternosTable.name})) = upper(trim(${docente}))`)
         .limit(1);
+
+      // Segunda pasada: normalizar acentos en JS (cubre "MORÁN"↔"MORAN", etc.)
+      if (rows.length === 0 || !(rows[0].rawData as any)?.id) {
+        const allWithId = await db
+          .select()
+          .from(docentesExternosTable)
+          .where(sql`${docentesExternosTable.rawData}->>'id' IS NOT NULL`);
+        const normDocente = normalizeName(docente);
+        const match = allWithId.find((r) => normalizeName(r.name || "") === normDocente);
+        if (match) rows = [match];
+      }
 
       let teacherId: string | null = null;
       if (rows.length > 0 && (rows[0].rawData as any)?.id) {
