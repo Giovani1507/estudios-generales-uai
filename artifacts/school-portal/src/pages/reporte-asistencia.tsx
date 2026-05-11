@@ -123,10 +123,14 @@ export default function ReporteAsistencia() {
         }
       }
 
-      // Mapa nombre_normalizado → { codigo, carrera }
-      const infoPorNombre = new Map<string, { codigo: string; carrera: string }>();
-      for (const [k, v] of Object.entries(alumnosInfoRaw as Record<string, { codigo?: string; carrera?: string }>)) {
-        if (k) infoPorNombre.set(k, { codigo: v?.codigo || "", carrera: v?.carrera || "" });
+      // Mapa nombre_normalizado → { codigo, carrera, local }
+      const infoPorNombre = new Map<string, { codigo: string; carrera: string; local: string }>();
+      for (const [k, v] of Object.entries(alumnosInfoRaw as Record<string, { codigo?: string; carrera?: string; local?: string }>)) {
+        if (k) infoPorNombre.set(k, {
+          codigo: v?.codigo || "",
+          carrera: v?.carrera || "",
+          local: v?.local || "",
+        });
       }
 
       // Set de NOMBRES convalidantes normalizados (las planillas no traen código,
@@ -175,12 +179,16 @@ export default function ReporteAsistencia() {
           const carrera = info?.carrera
             || codigoCarreraMap.get((det.codigoCurso || "").toUpperCase().trim())
             || "";
+          // Local: el del alumno (consolidado) es el más preciso, ya que dice
+          // dónde estudia el alumno (CHINCHA, ICA, HUAURA, SUNAMPE, PORUMA).
+          // Si no se encuentra, caemos al sede de la planilla (donde se dicta).
+          const localAlu = info?.local || sedeLabel(det.sede);
           out.push({
             docente:   (det.docente   || "").toUpperCase(),
             curso:     (det.nombreCurso || "").toUpperCase(),
             codigo:    (det.codigoCurso || "").toUpperCase(),
             seccion:   (det.seccion   || "").toUpperCase(),
-            local:     sedeLabel(det.sede),
+            local:     localAlu,
             ciclo,
             codAlumno: codAlu,
             alumno:    nombreUp,
@@ -306,6 +314,94 @@ export default function ReporteAsistencia() {
     const des   = total - apro;
     return { total, apro, des };
   }, [filtered]);
+
+  /* ── Exportar Excel — Por alumno (cursos jalando) ──────────────── */
+  const exportarPorAlumno = async () => {
+    if (!porAlumnoSorted.length) return;
+    setExporting(true);
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Por alumno");
+      const NAVY = "001f5f"; const GOLD = "c9a84c"; const WHITE = "FFFFFF";
+      const RED  = "b91c1c"; const GREEN = "15803d";
+      const AMB_BG = "FEF3C7", AMB_TX = "92400E";
+
+      ws.columns = [
+        { key: "alumno",     width: 38 },
+        { key: "codAlumno",  width: 16 },
+        { key: "carrera",    width: 30 },
+        { key: "local",      width: 14 },
+        { key: "totalCursos",width: 14 },
+        { key: "jalando",    width: 12 },
+        { key: "pct",        width: 14 },
+        { key: "lista",      width: 60 },
+        { key: "conv",       width: 16 },
+      ];
+      const header = ws.addRow([
+        "Alumno","COD ALUMNO","Carrera","Local",
+        "Total cursos","Jalando","% Asist. promedio","Cursos jalando","Observación",
+      ]);
+      header.eachCell(c => {
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+        c.font = { bold: true, color: { argb: WHITE }, size: 10 };
+        c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        c.border = {
+          top:    { style: "thin", color: { argb: GOLD } },
+          bottom: { style: "thin", color: { argb: GOLD } },
+          left:   { style: "thin", color: { argb: GOLD } },
+          right:  { style: "thin", color: { argb: GOLD } },
+        };
+      });
+      header.height = 22;
+
+      porAlumnoSorted.forEach((a, i) => {
+        const row = ws.addRow([
+          a.alumno, a.codAlumno, a.carrera || "—", a.local,
+          a.totalCursos, a.cursosJalando, a.pctPromedio,
+          a.cursosJaladosLista || "", a.convalidante ? "CONVALIDANTE" : "",
+        ]);
+        const bg = a.convalidante ? AMB_BG : (i % 2 === 0 ? "F8F9FA" : "FFFFFF");
+        row.eachCell(c => {
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+          c.font = { size: 9 };
+          c.alignment = { vertical: "middle" };
+          c.border = {
+            left:  { style: "hair", color: { argb: "DDDDDD" } },
+            right: { style: "hair", color: { argb: "DDDDDD" } },
+            bottom:{ style: "hair", color: { argb: "DDDDDD" } },
+          };
+        });
+        // Total cursos (col 5), Jalando (col 6), % (col 7) centered
+        [5, 6, 7].forEach(c => { row.getCell(c).alignment = { horizontal: "center" }; });
+        // % format
+        row.getCell(7).numFmt = "0.00";
+        // Jalando en rojo si > 0, verde si 0
+        const jal = row.getCell(6);
+        jal.font = { bold: true, color: { argb: a.cursosJalando > 0 ? RED : GREEN }, size: 9 };
+        if (a.convalidante) {
+          const obs = row.getCell(9);
+          obs.font = { bold: true, color: { argb: AMB_TX }, size: 9 };
+          obs.alignment = { vertical: "middle", horizontal: "center" };
+        }
+      });
+
+      ws.views = [{ state: "frozen", ySplit: 1 }];
+      ws.autoFilter = { from: "A1", to: "I1" };
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const aEl = document.createElement("a");
+      const date = new Date().toISOString().slice(0, 10);
+      aEl.href = url; aEl.download = `UAI-Reporte-Asistencia-PorAlumno-${date}.xlsx`;
+      aEl.click(); URL.revokeObjectURL(url);
+      toast({ title: "Excel generado", description: `${porAlumnoSorted.length} alumnos exportados.` });
+    } catch (e: any) {
+      toast({ title: "Error al exportar", description: String(e.message), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   /* ── Exportar Excel ────────────────────────────────────────────── */
   const exportar = async () => {
@@ -452,13 +548,13 @@ export default function ReporteAsistencia() {
           </Button>
           {loaded && (
             <Button
-              onClick={exportar}
-              disabled={exporting || !sorted.length}
+              onClick={vista === "alumno" ? exportarPorAlumno : exportar}
+              disabled={exporting || (vista === "alumno" ? !porAlumnoSorted.length : !sorted.length)}
               className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {exporting
                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Generando…</>
-                : <><Download className="h-4 w-4" /> Excel</>
+                : <><Download className="h-4 w-4" /> Excel{vista === "alumno" ? " por alumno" : ""}</>
               }
             </Button>
           )}

@@ -156,6 +156,103 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
     });
   };
 
+  // --- HOJA RESUMEN (al inicio) — totales por carrera/modalidad -----------
+  const generarResumen = () => {
+    const ws = wb.addWorksheet("Resumen", { views: [{ state: "frozen", ySplit: 4 }] });
+    ws.columns = [
+      { width: 40 }, // Carrera
+      { width: 14 }, // Modalidad
+      { width: 14 }, // Matriculados
+      { width: 14 }, // Ret. OCTDA
+      { width: 14 }, // Ret. Inasist.
+      { width: 16 }, // Total retirados
+      { width: 12 }, // % retirados
+      { width: 14 }, // Activos
+    ];
+
+    // Título
+    ws.mergeCells("A1:H1");
+    const t = ws.getCell("A1");
+    t.value = `RESUMEN DE NÓMINA UAI ${periodo}`;
+    t.fill = sf(NAVY);
+    t.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 14, name: "Arial" };
+    t.alignment = CTR;
+    ws.getRow(1).height = 30;
+
+    // Headers (fila 4)
+    const headers = ["CARRERA","MODALIDAD","MATRICULADOS","RET. OCTDA","RET. INASIST.","TOTAL RETIRADOS","% RETIRADOS","ACTIVOS"];
+    headers.forEach((h, i) => {
+      const c = ws.getRow(4).getCell(i + 1);
+      c.value = h;
+      c.fill = sf(HDR_BG);
+      c.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
+      c.alignment = CTR;
+      c.border = THIN_BORDER;
+    });
+    ws.getRow(4).height = 28;
+
+    // Acumular por carrera + modalidad (PRESENCIAL y VIRTUAL separados)
+    type Acc = { mat: number; oc: number; ina: number };
+    const acc = new Map<string, Acc>();
+    for (const g of grupos) {
+      const key = `${g.carrera}||${g.modalidad || "PRESENCIAL"}`;
+      const cur = acc.get(key) || { mat: 0, oc: 0, ina: 0 };
+      cur.mat += g.matriculados || 0;
+      cur.oc  += g.retOctda || 0;
+      cur.ina += g.retInasist || 0;
+      acc.set(key, cur);
+    }
+    const filas = [...acc.entries()]
+      .map(([k, v]) => {
+        const [carrera, modalidad] = k.split("||");
+        const total = v.oc + v.ina;
+        const pct = v.mat > 0 ? (total / v.mat) * 100 : 0;
+        const activos = Math.max(v.mat - total, 0);
+        return { carrera, modalidad, mat: v.mat, oc: v.oc, ina: v.ina, total, pct, activos };
+      })
+      .sort((a, b) => a.carrera.localeCompare(b.carrera, "es") || a.modalidad.localeCompare(b.modalidad, "es"));
+
+    let r = 5;
+    filas.forEach((f, idx) => {
+      const isVirtual = f.modalidad === "VIRTUAL";
+      const bg = isVirtual ? "FFE0E7FF" : (idx % 2 === 0 ? ZEBRA_A : ZEBRA_B);
+      const vals: any[] = [
+        f.carrera, f.modalidad, f.mat, f.oc, f.ina, f.total, f.pct / 100, f.activos,
+      ];
+      vals.forEach((v, i) => {
+        const c = ws.getRow(r).getCell(i + 1);
+        c.value = v;
+        c.fill = sf(bg);
+        c.font = { size: 10, bold: i === 0 || i === 5 || i === 6 };
+        c.alignment = i === 0 ? LEFT : CTR;
+        c.border = THIN_BORDER;
+      });
+      // % como porcentaje
+      ws.getRow(r).getCell(7).numFmt = "0.00%";
+      ws.getRow(r).height = 22;
+      r++;
+    });
+
+    // Totales generales
+    const tot = filas.reduce(
+      (a, f) => ({ mat: a.mat + f.mat, oc: a.oc + f.oc, ina: a.ina + f.ina, total: a.total + f.total, activos: a.activos + f.activos }),
+      { mat: 0, oc: 0, ina: 0, total: 0, activos: 0 },
+    );
+    const totPct = tot.mat > 0 ? tot.total / tot.mat : 0;
+    const totVals: any[] = ["TOTAL GENERAL", "", tot.mat, tot.oc, tot.ina, tot.total, totPct, tot.activos];
+    totVals.forEach((v, i) => {
+      const c = ws.getRow(r).getCell(i + 1);
+      c.value = v;
+      c.fill = sf(NAVY);
+      c.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 11 };
+      c.alignment = i === 0 ? LEFT : CTR;
+      c.border = THIN_BORDER;
+    });
+    ws.getRow(r).getCell(7).numFmt = "0.00%";
+    ws.getRow(r).height = 26;
+  };
+
+  generarResumen();
   generarHoja("PRIMER CICLO", 1);
   generarHoja("SEGUNDO CICLO", 2);
 
