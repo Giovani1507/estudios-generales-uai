@@ -191,39 +191,71 @@ export function buildGrupos(reports: ParsedReport[]): NominaGrupo[] {
   const todosLosGrupos: NominaGrupo[] = [];
 
   for (const report of reports) {
-    for (const niv of report.niveles) {
-      // Ciclo 1 = semestres impares (I, III, V, VII...),  Ciclo 2 = semestres pares (II, IV, VI, VIII...)
-      const ciclo: 1 | 2 = niv.nivel % 2 === 1 ? 1 : 2;
+    // La modalidad se decide por el NOMBRE de la carrera (encabezado del PDF).
+    // Ej: "ADMINISTRACIÓN DE EMPRESAS - VIRTUAL" → todo VIRTUAL.
+    //     "ARQUITECTURA"                          → todo PRESENCIAL,
+    //                                               aunque haya secciones AV-CH
+    //                                               (son sólo aulas virtuales del
+    //                                               mismo programa presencial).
+    const carreraEsVirtual = /\bVIRTUAL\b/.test(report.carrera.toUpperCase());
+    const modalidadPrograma: "VIRTUAL" | "PRESENCIAL" = carreraEsVirtual
+      ? "VIRTUAL"
+      : "PRESENCIAL";
 
-      const bySec = new Map<string, ParsedCurso[]>();
+    for (const niv of report.niveles) {
+      // SOLO se procesan I y II semestre (ciclo 1 y 2).
+      // Cualquier nivel mayor (III, IV, V...) se descarta para la nómina.
+      if (niv.nivel < 1 || niv.nivel > 2) continue;
+      const ciclo: 1 | 2 = niv.nivel === 1 ? 1 : 2;
+
+      // Agrupamos por (LETRA DE SECCIÓN, LOCAL) — ignorando la letra de
+      // modalidad (P/V), porque la modalidad real ya se definió por la carrera.
+      // Así "AP - CH" y "AV - CH" se cuentan como UN solo grupo "A — CH".
+      type Key = string; // `${letra}||${localCod}`
+      const byGrp = new Map<Key, { letra: string; localCod: string; cursos: ParsedCurso[] }>();
+
       for (const c of niv.cursos) {
-        if (!bySec.has(c.seccion)) bySec.set(c.seccion, []);
-        bySec.get(c.seccion)!.push(c);
+        const m = c.seccion.match(/^([A-Z])([A-Z])\s*-\s*([A-Z]{2})$/);
+        if (!m) continue;
+        const [, letra, , localCod] = m;
+        const k = `${letra}||${localCod}`;
+        if (!byGrp.has(k)) byGrp.set(k, { letra, localCod, cursos: [] });
+        byGrp.get(k)!.cursos.push(c);
       }
 
-      for (const [sec, cursos] of bySec) {
-        // Acepta secciones tipo "AV - IC", "AP - SU", "XP - PO"
-        const m = sec.match(/^([A-Z])([A-Z])\s*-\s*([A-Z]{2})$/);
-        if (!m) continue;
-
-        const [, letra, modLetra, localCod] = m;
-        const modalidad = modLetra === "V" ? "VIRTUAL" : "PRESENCIAL";
+      for (const { letra, localCod, cursos } of byGrp.values()) {
         const local = LOCAL_MAP[localCod] || localCod;
 
-        // Turno: virtual siempre nocturno, presencial depende de la sección
+        // Turno: virtual siempre nocturno; presencial depende de la sección
+        // (A=Diurno, otras=Nocturno) — es la convención académica de UAI.
         const turno =
-          modalidad === "VIRTUAL"
+          modalidadPrograma === "VIRTUAL"
             ? "NOCTURNO"
             : letra === "A"
               ? "DIURNO"
               : "NOCTURNO";
 
-        const matriculadosMax = Math.max(...cursos.map((c) => c.matriculados));
+        // Si una misma asignatura tiene varias secciones de modalidad (AP+AV),
+        // las consolidamos sumando matriculados por código de curso, para que
+        // no aparezcan duplicados en el grupo "A".
+        const porCodigo = new Map<string, ParsedCurso>();
+        for (const c of cursos) {
+          const prev = porCodigo.get(c.codigo);
+          if (prev) {
+            prev.matriculados += c.matriculados;
+            prev.vacantes += c.vacantes;
+          } else {
+            porCodigo.set(c.codigo, { ...c });
+          }
+        }
+        const cursosCons = [...porCodigo.values()];
+
+        const matriculadosMax = Math.max(...cursosCons.map((c) => c.matriculados), 0);
 
         todosLosGrupos.push({
           ciclo,
           carrera: report.carrera,
-          modalidad,
+          modalidad: modalidadPrograma,
           local,
           seccion: letra,
           turno,
@@ -231,7 +263,7 @@ export function buildGrupos(reports: ParsedReport[]): NominaGrupo[] {
           retOctda: 0,
           retInasist: 0,
           totalActivos: matriculadosMax,
-          cursos: cursos.map((c) => ({
+          cursos: cursosCons.map((c) => ({
             nombre: c.curso,
             codigo: c.codigo,
             matriculados: c.matriculados,
