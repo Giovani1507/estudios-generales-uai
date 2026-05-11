@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Plus,
   FilePlus,
+  X,
 } from "lucide-react";
 import { parseNominaPdf, buildGrupos } from "@/lib/parse-nomina-pdf";
 import { exportNominaXlsx } from "@/lib/export-nomina-excel";
@@ -137,6 +138,21 @@ export default function NominaPage() {
     const carrerasUnicas = [
       ...new Set(grupos.map((g: any) => g.carrera)),
     ] as string[];
+
+    // Elimina todos los grupos de una carrera del editor (en caso de
+    // haber subido un PDF equivocado). No toca lo guardado en backend hasta
+    // que el usuario presione "Guardar".
+    function eliminarCarrera(nombreCarrera: string) {
+      const total = grupos.filter((g: any) => g.carrera === nombreCarrera).length;
+      const ok = confirm(
+        `¿Eliminar la carrera "${nombreCarrera}" del editor?\n\n` +
+        `Se quitarán ${total} grupo${total !== 1 ? "s" : ""}. ` +
+        `Los cambios sólo se aplicarán cuando presiones "Guardar".`
+      );
+      if (!ok) return;
+      const next = grupos.filter((g: any) => g.carrera !== nombreCarrera);
+      setEditing({ ...editing, data: { grupos: next } });
+    }
 
     function updateCurso(
       gIdx: number,
@@ -264,9 +280,18 @@ export default function NominaPage() {
               {carrerasUnicas.map((c: string) => (
                 <span
                   key={c}
-                  className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm"
+                  className="group inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/25 text-white text-xs font-semibold pl-3 pr-1.5 py-1 rounded-full backdrop-blur-sm transition-colors"
                 >
-                  {c}
+                  <span className="leading-none">{c}</span>
+                  <button
+                    type="button"
+                    onClick={() => eliminarCarrera(c)}
+                    title={`Eliminar ${c} del editor`}
+                    aria-label={`Eliminar ${c}`}
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/0 hover:bg-red-500/90 text-white/70 hover:text-white transition-colors"
+                  >
+                    <X className="w-3 h-3" strokeWidth={3} />
+                  </button>
                 </span>
               ))}
             </div>

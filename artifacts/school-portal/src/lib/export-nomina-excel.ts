@@ -168,10 +168,11 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
       { width: 16 }, // Total retirados
       { width: 12 }, // % retirados
       { width: 14 }, // Activos
+      { width: 12 }, // % activos
     ];
 
     // Título
-    ws.mergeCells("A1:H1");
+    ws.mergeCells("A1:I1");
     const t = ws.getCell("A1");
     t.value = `RESUMEN DE NÓMINA UAI ${periodo}`;
     t.fill = sf(NAVY);
@@ -180,7 +181,7 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
     ws.getRow(1).height = 30;
 
     // Headers (fila 4)
-    const headers = ["CARRERA","MODALIDAD","MATRICULADOS","RET. OCTDA","RET. INASIST.","TOTAL RETIRADOS","% RETIRADOS","ACTIVOS"];
+    const headers = ["CARRERA","MODALIDAD","MATRICULADOS","RET. OCTDA","RET. INASIST.","TOTAL RETIRADOS","% RETIRADOS","ACTIVOS","% ACTIVOS"];
     headers.forEach((h, i) => {
       const c = ws.getRow(4).getCell(i + 1);
       c.value = h;
@@ -216,19 +217,21 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
     filas.forEach((f, idx) => {
       const isVirtual = f.modalidad === "VIRTUAL";
       const bg = isVirtual ? "FFE0E7FF" : (idx % 2 === 0 ? ZEBRA_A : ZEBRA_B);
+      const pctActivos = f.mat > 0 ? f.activos / f.mat : 0;
       const vals: any[] = [
-        f.carrera, f.modalidad, f.mat, f.oc, f.ina, f.total, f.pct / 100, f.activos,
+        f.carrera, f.modalidad, f.mat, f.oc, f.ina, f.total, f.pct / 100, f.activos, pctActivos,
       ];
       vals.forEach((v, i) => {
         const c = ws.getRow(r).getCell(i + 1);
         c.value = v;
         c.fill = sf(bg);
-        c.font = { size: 10, bold: i === 0 || i === 5 || i === 6 };
+        c.font = { size: 10, bold: i === 0 || i === 5 || i === 6 || i === 8 };
         c.alignment = i === 0 ? LEFT : CTR;
         c.border = THIN_BORDER;
       });
-      // % como porcentaje
+      // % como porcentaje (col 7 = % retirados, col 9 = % activos)
       ws.getRow(r).getCell(7).numFmt = "0.00%";
+      ws.getRow(r).getCell(9).numFmt = "0.00%";
       ws.getRow(r).height = 22;
       r++;
     });
@@ -239,7 +242,8 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
       { mat: 0, oc: 0, ina: 0, total: 0, activos: 0 },
     );
     const totPct = tot.mat > 0 ? tot.total / tot.mat : 0;
-    const totVals: any[] = ["TOTAL GENERAL", "", tot.mat, tot.oc, tot.ina, tot.total, totPct, tot.activos];
+    const totPctAct = tot.mat > 0 ? tot.activos / tot.mat : 0;
+    const totVals: any[] = ["TOTAL GENERAL", "", tot.mat, tot.oc, tot.ina, tot.total, totPct, tot.activos, totPctAct];
     totVals.forEach((v, i) => {
       const c = ws.getRow(r).getCell(i + 1);
       c.value = v;
@@ -249,6 +253,7 @@ export async function exportNominaXlsx(periodo: string, grupos: NominaGrupo[]) {
       c.border = THIN_BORDER;
     });
     ws.getRow(r).getCell(7).numFmt = "0.00%";
+    ws.getRow(r).getCell(9).numFmt = "0.00%";
     ws.getRow(r).height = 26;
   };
 
