@@ -38,12 +38,15 @@ const DAY_NAME: Record<number, string> = {
 };
 
 // ─── Files ─────────────────────────────────────────────────────────────────
+// FICA: ÚNICA fuente autoritativa (data cerrada al 27-03-2026, ya incluye
+//       todos los CAMBIOs de 27-03 hasta 11-05 aplicados al snapshot principal).
+//       Reemplaza a los 2 archivos viejos PLANIFICACIÓN_FICA(HUAURA) y SEDE_(_FICA).
+// FCS:  archivos originales sin cambios.
 const FILES = [
+  path.resolve("../../attached_assets/DATA_CERRADA_27-03-2026_PLANIFICACION_PREGRADO_2026-1_ACT_(13_1778545609578.xlsx"),
   path.resolve("../../attached_assets/PLANIFICACIÓN_(_FILIAL_Y_PORUMA)_1778103548833.xlsx"),
   path.resolve("../../attached_assets/PLANIFICACIÓN_(PRINCIPAL)_FCS_1778103548834.xlsx"),
   path.resolve("../../attached_assets/PLANIFICACIÓN_FCS_(HUAURA)_1778103548834.xlsx"),
-  path.resolve("../../attached_assets/PLANIFICACIÓN_FICA(HUAURA)_1778103548835.xlsx"),
-  path.resolve("../../attached_assets/PLANIFICACIÓN_SEDE_(_FICA)_1778103548835.xlsx"),
 ];
 
 const OUT_FICA = path.resolve("../../artifacts/school-portal/public/planificacion-fica-2026-1.json");
