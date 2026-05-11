@@ -448,10 +448,10 @@ async function upsertPlanilla(data: {
     return "updated";
   } else {
     await db.insert(asistenciaPlanillasTable).values({
-      docente: data.docente.toUpperCase().trim(),
-      codigoCurso: data.codigoCurso.trim(),
+      docente: docenteKey,
+      codigoCurso: codigoKey,
       nombreCurso: data.nombreCurso || null,
-      seccion: data.seccion.trim(),
+      seccion: seccionKey,
       carrera: null,
       ciclo: null,
       turno: null,
@@ -787,6 +787,105 @@ router.post(
     } catch (err: any) {
       console.error("[sincronizar-asistencias] error:", err);
       res.status(500).json({ error: "SYNC_ERROR", message: err.message || "Error al sincronizar" });
+    }
+  },
+);
+
+/* ─── GET /api/sincronizar-asistencias/download-intranet ─── */
+/* Descarga el Excel de asistencia directamente desde la Intranet UAI */
+router.get(
+  "/download-intranet",
+  requireAuth,
+  requireRole("administrador", "coordinador"),
+  async (req: any, res) => {
+    const { docente, codigoCurso, seccion, termId: qTerm } = req.query as Record<string, string>;
+    if (!docente || !codigoCurso) {
+      return res.status(400).json({ error: "PARAMS", message: "Se requieren docente y codigoCurso" });
+    }
+    const termId = qTerm || DEFAULT_TERM;
+    const normSec = (s: string) => (s || "").trim().toUpperCase().replace(/[PV]$/, "");
+
+    try {
+      let cookie = await getOrRefreshCookie();
+
+      // 1. Buscar ID del docente en la tabla local
+      const rows = await db
+        .select()
+        .from(docentesExternosTable)
+        .where(sql`upper(trim(${docentesExternosTable.name})) = upper(trim(${docente}))`)
+        .limit(1);
+
+      let teacherId: string | null = null;
+      if (rows.length > 0 && (rows[0].rawData as any)?.id) {
+        teacherId = (rows[0].rawData as any).id;
+      } else {
+        let listRaw: any;
+        try {
+          listRaw = await intranetGet(`${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`, cookie);
+        } catch (e: any) {
+          if (e.message === "AUTH_EXPIRED") {
+            cookie = await loginToIntranet();
+            listRaw = await intranetGet(`${BASE_URL}/admin/reporte-docentes/get?draw=1&start=0&length=2000&termId=${termId}&_=${Date.now()}`, cookie);
+          } else throw e;
+        }
+        const found = (listRaw.data || []).find((d: any) => normalizeName(d.name || "") === normalizeName(docente));
+        if (found) teacherId = found.id;
+      }
+
+      if (!teacherId) {
+        return res.status(404).json({ error: "DOCENTE_NO_ENCONTRADO", message: "Docente no encontrado en la Intranet." });
+      }
+
+      // 2. Obtener cursos del docente
+      let courses: Array<{ id: string; text: string }>;
+      try {
+        courses = await intranetGet(`${BASE_URL}/cursos/docente/${teacherId}?termId=${termId}`, cookie);
+      } catch (e: any) {
+        if (e.message === "AUTH_EXPIRED") { cookie = await loginToIntranet(); courses = await intranetGet(`${BASE_URL}/cursos/docente/${teacherId}?termId=${termId}`, cookie); }
+        else throw e;
+      }
+
+      // 3. Encontrar el curso por codigoCurso
+      const normCodigo = codigoCurso.trim().toUpperCase();
+      const matchedCourse = courses.find((c) => c.text.toUpperCase().includes(normCodigo));
+      if (!matchedCourse) {
+        return res.status(404).json({ error: "CURSO_NO_ENCONTRADO", message: `Curso ${codigoCurso} no encontrado para este docente.` });
+      }
+
+      // 4. Obtener secciones del curso
+      let secciones: Array<{ id: string; text: string }>;
+      try {
+        secciones = await intranetGet(`${BASE_URL}/secciones-por-curso/${matchedCourse.id}/docente/${teacherId}?termId=${termId}`, cookie);
+      } catch (e: any) {
+        if (e.message === "AUTH_EXPIRED") { cookie = await loginToIntranet(); secciones = await intranetGet(`${BASE_URL}/secciones-por-curso/${matchedCourse.id}/docente/${teacherId}?termId=${termId}`, cookie); }
+        else throw e;
+      }
+
+      // 5. Encontrar la sección correcta (strip modalidad para comparar)
+      const targetSec = seccion ? normSec(seccion) : null;
+      let matchedSection = targetSec
+        ? secciones.find((s) => normSec(s.text.split(" - ")[0] || s.text) === targetSec)
+        : secciones[0];
+      if (!matchedSection) matchedSection = secciones[0];
+
+      if (!matchedSection) {
+        return res.status(404).json({ error: "SECCION_NO_ENCONTRADA", message: `Sección no encontrada para ${codigoCurso}.` });
+      }
+
+      // 6. Descargar el Excel de la Intranet
+      const buf = await downloadExcel(matchedSection.id, cookie);
+      const secLabel = normSec(matchedSection.text.split(" - ")[0] || matchedSection.text);
+      const fileName = `Reporte_Asistencia_${normCodigo}_${secLabel}_2026-1.xlsx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
+      res.send(buf);
+    } catch (err: any) {
+      console.error("[download-intranet] error:", err);
+      if (err.message === "AUTH_EXPIRED") {
+        return res.status(401).json({ error: "AUTH_EXPIRED", message: "Sesión del Intranet expirada. Vuelve a intentarlo en unos segundos." });
+      }
+      res.status(500).json({ error: "ERROR", message: err.message || "Error al descargar del intranet" });
     }
   },
 );
