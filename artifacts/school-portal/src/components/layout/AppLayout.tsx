@@ -46,6 +46,8 @@ import {
   UserX,
   FileSpreadsheet,
   RefreshCw,
+  Route,
+  Eye,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -90,12 +92,6 @@ const menuItems: MenuItem[] = [
     roles: ["administrador", "coordinador", "administrativo"],
   },
   {
-    title: "División de Tareas",
-    url: "/division-tareas",
-    icon: Users,
-    roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
     title: "Registro de Actividad",
     url: "/actividad",
     icon: Activity,
@@ -118,12 +114,6 @@ const menuItems: MenuItem[] = [
     url: "/nomina",
     icon: FileSpreadsheet,
     roles: ["administrador", "coordinador", "administrativo"],
-  },
-  {
-    title: "Sincronizar Docentes",
-    url: "/sincronizar-docentes",
-    icon: RefreshCw,
-    roles: ["administrador", "coordinador"],
   },
   {
     title: "Soporte Justificación",
@@ -151,6 +141,7 @@ function getPageTitle(pathname: string) {
   if (pathname === "/estudiantes/delegados")     return "Delegados";
   if (pathname === "/horarios/semana")           return "Horario por Semana";
   if (pathname === "/problemas-estudiantes")     return "Reportes de Problemas";
+  if (pathname === "/supervision/ruta")          return "Ruta de Supervisión";
   const match = menuItems.find((item) => item.url === pathname);
   if (match) return match.title;
   if (pathname === "/login") return "Inicio de sesión";
@@ -187,6 +178,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
     location.startsWith("/reporte-asistencia") ||
     location.startsWith("/resultados-planillas") ||
     location.startsWith("/docentes-sin-asistencias")
+  );
+  const [supervisionOpen, setSupervisionOpen] = useState(
+    location.startsWith("/supervision")
   );
   const [gridOpen, setGridOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -414,6 +408,45 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                     { href: "/reporte-asistencia",         label: "Reporte de Asistencia",      Icon: ClipboardList },
                                     { href: "/resultados-planillas",       label: "Desaprobado por Inasistencia", Icon: AlertTriangle },
                                     { href: "/docentes-sin-asistencias",   label: "Docentes sin Asistencias",   Icon: UserX },
+                                  ].map(({ href, label, Icon }) => (
+                                    <Link
+                                      key={href}
+                                      href={href}
+                                      className={`flex items-center gap-3 pl-10 pr-4 h-10 text-sm transition-colors border-t border-white/10 ${
+                                        location === href
+                                          ? "bg-white/20 text-white font-semibold"
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
+                                    >
+                                      <Icon className="w-3.5 h-3.5 shrink-0 text-white/70" />
+                                      <span className="flex-1">{label}</span>
+                                      <ChevronRight className="w-3 h-3 text-white/40" />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </SidebarMenuItem>
+                        )}
+
+                        {/* Supervisión Docente submenu after Mapeo Estudiantes */}
+                        {idx === 4 && (
+                          <SidebarMenuItem>
+                            <div className="border-b border-white/10">
+                              <button
+                                onClick={() => setSupervisionOpen((o) => !o)}
+                                className="w-full flex items-center gap-3 px-4 h-11 text-white/90 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                <Eye className="w-4 h-4 shrink-0 text-white/80" />
+                                <span className="text-sm flex-1 text-left">Supervisión Docente</span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${supervisionOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                              {supervisionOpen && (
+                                <div className="bg-black/15">
+                                  {[
+                                    { href: "/supervision/ruta", label: "Ruta de Supervisión", Icon: Route },
                                   ].map(({ href, label, Icon }) => (
                                     <Link
                                       key={href}

@@ -54,6 +54,7 @@ import JustificacionFalta from "@/pages/justificacion-falta";
 import SoporteJustificacion from "@/pages/soporte-justificacion";
 import NominaPage from "@/pages/nomina";
 import SincronizarDocentes from "@/pages/sincronizar-docentes";
+import RutaSupervision from "@/pages/ruta-supervision";
 
 const queryClient = new QueryClient();
 
@@ -246,6 +247,10 @@ function AppRouter() {
       <Route
         path="/sincronizar-docentes"
         component={() => <ProtectedRoute component={SincronizarDocentes} />}
+      />
+      <Route
+        path="/supervision/ruta"
+        component={() => <ProtectedRoute component={RutaSupervision} />}
       />
       {/* 404 */}
       <Route component={NotFound} />
