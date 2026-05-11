@@ -8,10 +8,20 @@ import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import JSZip from "jszip";
 import planificacionFica from "../data/planificacion-fica-2026-1.json" assert { type: "json" };
 import planificacionFcs from "../data/planificacion-fcs-2026-1.json" assert { type: "json" };
 
 const router = Router();
+
+/* ─── Temp storage for bulk-download ZIPs (auto-expire 15 min) ─── */
+const pendingZips = new Map<string, { buffer: Buffer; createdAt: number }>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of pendingZips.entries()) {
+    if (now - v.createdAt > 15 * 60_000) pendingZips.delete(k);
+  }
+}, 5 * 60_000);
 const tlsAgent = new Agent({ connect: { rejectUnauthorized: false } });
 const BASE_URL = "https://intranet.autonomadeica.edu.pe";
 const DEFAULT_TERM = "08de1730-801b-4d3d-81a8-e840d74c49fa";
@@ -566,6 +576,56 @@ async function syncTeacher(
   return { created, updated, failed, skipped, unchanged, sections };
 }
 
+/* ─── Descarga los Excels de un docente sin guardar en DB ─── */
+async function downloadTeacherExcels(
+  teacher: { id: string; name: string },
+  cookie: string,
+  termId: string,
+  planningSet: Set<string>,
+  onProgress?: (msg: string) => void,
+): Promise<Array<{ zipPath: string; buffer: Buffer }>> {
+  const log = (msg: string) => onProgress?.(msg);
+  const files: Array<{ zipPath: string; buffer: Buffer }> = [];
+
+  const courses: Array<{ id: string; text: string }> = await intranetGet(
+    `${BASE_URL}/cursos/docente/${teacher.id}?termId=${termId}`,
+    cookie,
+  );
+
+  const folderName = teacher.name.split(" ").slice(0, 3).join("_").replace(/[^A-Z0-9_]/gi, "");
+
+  for (const course of courses) {
+    const courseCodeMatch = course.text.match(/\b([A-Z]\d{2}[A-Z]\d{4}|[A-Z]\d{5,7})\b/);
+    const splitParts = course.text.split("-");
+    const splitCode = splitParts.length >= 3 ? splitParts[2].trim() : null;
+    const courseCode = courseCodeMatch
+      ? courseCodeMatch[1]
+      : (splitCode && splitCode.length >= 4 && !/^\d{6}$/.test(splitCode) ? splitCode : null);
+
+    const secciones: Array<{ id: string; text: string }> = await intranetGet(
+      `${BASE_URL}/secciones-por-curso/${course.id}/docente/${teacher.id}?termId=${termId}`,
+      cookie,
+    );
+
+    for (const seccion of secciones) {
+      const normSecPlan = (seccion.text.split(" - ")[0] || seccion.text).trim().toUpperCase().replace(/[PV]$/, "");
+      const planKey = [normalizeName(teacher.name), (courseCode || "").trim().toUpperCase(), normSecPlan].join("|");
+      if (!planningSet.has(planKey)) continue;
+
+      try {
+        log(`  ↳ ${courseCode || course.text} · ${normSecPlan}`);
+        const buf = await downloadExcel(seccion.id, cookie);
+        files.push({
+          zipPath: `${folderName}/${courseCode || "CURSO"}_${normSecPlan}.xlsx`,
+          buffer: buf,
+        });
+      } catch { /* skip failed sections silently */ }
+    }
+  }
+
+  return files;
+}
+
 /* ─── Función central de sync (usada por el endpoint y el scheduler) ─── */
 export async function runFullSync(termId = DEFAULT_TERM, onEvent?: (event: string, data: object) => void) {
   const send = onEvent ?? (() => {});
@@ -898,6 +958,127 @@ router.get(
       }
       res.status(500).json({ error: "ERROR", message: err.message || "Error al descargar del intranet" });
     }
+  },
+);
+
+/* ─── POST /api/sincronizar-asistencias/download-intranet-bulk (SSE) ─── */
+router.post(
+  "/download-intranet-bulk",
+  requireAuth,
+  requireRole("administrador", "coordinador"),
+  async (req: any, res) => {
+    const termId: string = req.body?.termId || DEFAULT_TERM;
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const send = (event: string, payload: object) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    try {
+      let cookie = await getOrRefreshCookie();
+      const planningSet = buildPlanningSet();
+
+      const allPlanRows = [...(planificacionFica as any[]), ...(planificacionFcs as any[])];
+      const docenteNames = [
+        ...new Set(
+          allPlanRows.map((r: any) => (r.docente || "").toUpperCase().trim()).filter(Boolean),
+        ),
+      ].sort();
+
+      const allDbDocentes = await db.select().from(docentesExternosTable);
+      const nameToTeacher = new Map<string, { id: string; name: string }>();
+      for (const row of allDbDocentes) {
+        const id = (row.rawData as any)?.id;
+        if (id) nameToTeacher.set(normalizeName(row.name || ""), { id, name: row.name });
+      }
+
+      send("start", { total: docenteNames.length });
+
+      const zip = new JSZip();
+      let totalFiles = 0;
+      let failedTeachers = 0;
+
+      for (let i = 0; i < docenteNames.length; i++) {
+        const docenteName = docenteNames[i];
+        send("teacher", { index: i + 1, total: docenteNames.length, name: docenteName });
+
+        const found = nameToTeacher.get(normalizeName(docenteName));
+        if (!found) {
+          send("teacher_error", { name: docenteName, error: "Sin ID en base de datos" });
+          failedTeachers++;
+          continue;
+        }
+
+        const tryDownload = async () => {
+          const files = await downloadTeacherExcels(
+            found,
+            cookie,
+            termId,
+            planningSet,
+            (msg) => send("progress", { message: msg }),
+          );
+          for (const f of files) { zip.file(f.zipPath, f.buffer); totalFiles++; }
+          send("teacher_done", { name: docenteName, files: files.length });
+        };
+
+        try {
+          await tryDownload();
+        } catch (err: any) {
+          if (err.message === "AUTH_EXPIRED") {
+            try {
+              cookie = await loginToIntranet();
+              await tryDownload();
+            } catch (retryErr: any) {
+              send("teacher_error", { name: docenteName, error: retryErr.message });
+              failedTeachers++;
+            }
+          } else {
+            send("teacher_error", { name: docenteName, error: err.message });
+            failedTeachers++;
+          }
+        }
+      }
+
+      send("zipping", { message: `Empaquetando ${totalFiles} archivos Excel…` });
+      const zipBuffer = await zip.generateAsync({
+        type: "nodebuffer",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      });
+
+      const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      pendingZips.set(token, { buffer: zipBuffer, createdAt: Date.now() });
+
+      send("done", { totalFiles, failedTeachers, token });
+    } catch (err: any) {
+      console.error("[download-intranet-bulk] error:", err);
+      send("error", { message: err.message || "Error al descargar del Intranet" });
+    }
+
+    res.write("event: end\ndata: {}\n\n");
+    res.end();
+  },
+);
+
+/* ─── GET /api/sincronizar-asistencias/download-intranet-bulk/result/:token ─── */
+router.get(
+  "/download-intranet-bulk/result/:token",
+  requireAuth,
+  requireRole("administrador", "coordinador"),
+  (req: any, res) => {
+    const { token } = req.params as { token: string };
+    const entry = pendingZips.get(token);
+    if (!entry) {
+      return res.status(404).json({ error: "ZIP_NOT_FOUND", message: "El ZIP no se encontró o ya expiró." });
+    }
+    pendingZips.delete(token);
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="Planillas_Intranet_2026-1.zip"`);
+    res.send(entry.buffer);
   },
 );
 

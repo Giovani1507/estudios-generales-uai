@@ -441,8 +441,13 @@ export default function PlanillasAsistencia() {
   const [syncAllLog, setSyncAllLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
   const [syncAllResult, setSyncAllResult] = useState<{ created: number; updated: number; skipped: number; failed: number } | null>(null);
   const [showSyncAllDialog, setShowSyncAllDialog] = useState(false);
+  const [downloadingBulk, setDownloadingBulk] = useState(false);
+  const [showDownloadBulkDialog, setShowDownloadBulkDialog] = useState(false);
+  const [downloadBulkLog, setDownloadBulkLog] = useState<Array<{ msg: string; type: "info" | "ok" | "err" }>>([]);
+  const [downloadBulkResult, setDownloadBulkResult] = useState<{ totalFiles: number; failedTeachers: number } | null>(null);
   const syncLogRef = useRef<HTMLDivElement>(null);
   const syncAllLogRef = useRef<HTMLDivElement>(null);
+  const downloadBulkLogRef = useRef<HTMLDivElement>(null);
 
   const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -574,6 +579,7 @@ export default function PlanillasAsistencia() {
   };
 
   const sincronizarTodo = async () => {
+    const planRows = data;
     setSyncingAll(true);
     setSyncAllLog([]);
     setSyncAllResult(null);
@@ -633,13 +639,63 @@ export default function PlanillasAsistencia() {
             } else if (event === "teacher_done") {
               created += data.created ?? 0; updated += data.updated ?? 0;
               skipped += data.skipped ?? 0; failed  += data.failed  ?? 0;
+              const unchanged = data.unchanged ?? 0;
               const parts = [];
               if (data.created)  parts.push(`${data.created} nuevas`);
               if (data.updated)  parts.push(`${data.updated} act.`);
               if (data.skipped)  parts.push(`${data.skipped} omitidas`);
               if (data.failed)   parts.push(`${data.failed} fallidas`);
+              if (unchanged && !data.created && !data.updated)
+                parts.push(`sin cambios`);
               if (parts.length)
                 addLog(`  ✓ ${parts.join(" · ")}`, "ok");
+              if (unchanged > 0 && !data.created && !data.updated) {
+                const teacherName = (data.name || "").toUpperCase().trim();
+                const teacherRows = planRows.filter((r: Row) =>
+                  r.docente?.toUpperCase().trim() === teacherName &&
+                  (String(r.ciclo) === "1" || String(r.ciclo) === "2"),
+                );
+                if (teacherRows.length > 0) {
+                  const uniqueCourses = new Map<string, Row>();
+                  for (const r of teacherRows) {
+                    const k = `${r.codigo}|${r.seccion}`;
+                    if (!uniqueCourses.has(k)) uniqueCourses.set(k, r);
+                  }
+                  try {
+                    const sr = await fetch(`${apiBase}/api/shared-state/docentesSinAsistencias`, { credentials: "include" });
+                    if (sr.ok) {
+                      const stateData = await sr.json();
+                      const existing: any[] = Array.isArray(stateData?.value) ? stateData.value : [];
+                      const filtered2 = existing.filter((f: any) =>
+                        !(f.docente?.toUpperCase().trim() === teacherName && f.motivo === "IGUAL"),
+                      );
+                      const nowIso = new Date().toISOString();
+                      const newFlags = Array.from(uniqueCourses.values()).map((c: Row) => ({
+                        id: `${teacherName}|${c.codigo}|${c.seccion}|IGUAL|${Date.now()}`,
+                        docente: teacherName,
+                        codigoCurso: c.codigo,
+                        nombreCurso: c.curso,
+                        carrera: c.carrera,
+                        ciclo: String(c.ciclo),
+                        seccion: c.seccion,
+                        sede: sedeFromLocal(c.local),
+                        motivo: "IGUAL",
+                        flaggedAt: nowIso,
+                        flaggedByName: null,
+                        correoEnviado: false,
+                        correoEnviadoAt: null,
+                        correoEnviadoByName: null,
+                      }));
+                      await fetch(`${apiBase}/api/shared-state/docentesSinAsistencias`, {
+                        method: "PUT",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ value: [...filtered2, ...newFlags] }),
+                      });
+                    }
+                  } catch { /* ignore flag errors */ }
+                }
+              }
             } else if (event === "teacher_error") {
               addLog(`  ✗ ${data.name}: ${data.error}`, "err");
             } else if (event === "done") {
@@ -656,6 +712,104 @@ export default function PlanillasAsistencia() {
       addLog(`Error de conexión: ${err.message}`, "err");
     } finally {
       setSyncingAll(false);
+    }
+  };
+
+  const handleDownloadBulk = async () => {
+    setDownloadingBulk(true);
+    setDownloadBulkLog([]);
+    setDownloadBulkResult(null);
+    setShowDownloadBulkDialog(true);
+
+    const addLog = (msg: string, type: "info" | "ok" | "err" = "info") => {
+      setDownloadBulkLog(prev => {
+        const next = [...prev, { msg, type }];
+        setTimeout(() => downloadBulkLogRef.current?.scrollTo({ top: 9999, behavior: "smooth" }), 50);
+        return next;
+      });
+    };
+
+    addLog("Iniciando descarga masiva del Intranet...", "info");
+
+    try {
+      const res = await fetch(`${apiBase}/api/sincronizar-asistencias/download-intranet-bulk`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: `Error ${res.status}` }));
+        addLog(err.message || `Error ${res.status}`, "err");
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let downloadToken: string | null = null;
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        let event = "";
+        for (const line of lines) {
+          if (line.startsWith("event:")) { event = line.slice(6).trim(); continue; }
+          if (!line.startsWith("data:")) continue;
+          try {
+            const evData = JSON.parse(line.slice(5).trim());
+            if (event === "start") {
+              addLog(`${evData.total} docentes en planificación.`, "info");
+            } else if (event === "teacher") {
+              addLog(`[${evData.index}/${evData.total}] ${evData.name}`, "info");
+            } else if (event === "progress") {
+              addLog(`  ${evData.message}`, "info");
+            } else if (event === "teacher_done") {
+              if (evData.files > 0)
+                addLog(`  ✓ ${evData.files} archivo(s)`, "ok");
+            } else if (event === "teacher_error") {
+              addLog(`  ✗ ${evData.name}: ${evData.error}`, "err");
+            } else if (event === "zipping") {
+              addLog(evData.message, "info");
+            } else if (event === "done") {
+              setDownloadBulkResult({ totalFiles: evData.totalFiles, failedTeachers: evData.failedTeachers });
+              downloadToken = evData.token;
+              addLog(`\nListo: ${evData.totalFiles} Excels descargados · ${evData.failedTeachers} docentes fallidos`, "ok");
+            } else if (event === "error") {
+              addLog(`Error: ${evData.message}`, "err");
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (downloadToken) {
+        addLog("Descargando ZIP...", "info");
+        const zipRes = await fetch(
+          `${apiBase}/api/sincronizar-asistencias/download-intranet-bulk/result/${downloadToken}`,
+          { credentials: "include" },
+        );
+        if (zipRes.ok) {
+          const blob = await zipRes.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "Planillas_Intranet_2026-1.zip";
+          a.click();
+          URL.revokeObjectURL(url);
+          addLog("✅ ZIP descargado correctamente.", "ok");
+          toast({ title: "ZIP descargado", description: "Planillas del Intranet guardadas correctamente." });
+        } else {
+          addLog("Error al descargar el ZIP.", "err");
+        }
+      }
+    } catch (err: any) {
+      addLog(`Error de conexión: ${err.message}`, "err");
+    } finally {
+      setDownloadingBulk(false);
     }
   };
 
@@ -1098,6 +1252,17 @@ export default function PlanillasAsistencia() {
             }
           </Button>
           <Button
+            onClick={() => { setDownloadBulkLog([]); setDownloadBulkResult(null); handleDownloadBulk(); }}
+            disabled={downloadingBulk}
+            variant="outline"
+            className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+          >
+            {downloadingBulk
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Descargando…</>
+              : <><Download className="h-4 w-4" /> Descargar del Intranet</>
+            }
+          </Button>
+          <Button
             variant="outline"
             onClick={() => setConfirmLimpiar(true)}
             disabled={limpiando}
@@ -1484,6 +1649,47 @@ export default function PlanillasAsistencia() {
                   <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
                 </div>
               ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Diálogo de progreso de descarga masiva del Intranet ── */}
+      <Dialog open={showDownloadBulkDialog} onOpenChange={(o) => { if (!downloadingBulk) setShowDownloadBulkDialog(o); }}>
+        <DialogContent className="max-w-2xl w-full">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {downloadingBulk
+                ? <><Loader2 className="h-4 w-4 animate-spin text-emerald-700" /> Descargando planillas del Intranet…</>
+                : <><Download className="h-4 w-4 text-emerald-700" /> Descarga del Intranet completada</>
+              }
+            </DialogTitle>
+          </DialogHeader>
+          <div
+            ref={downloadBulkLogRef}
+            className="bg-gray-950 rounded-lg p-3 h-80 overflow-y-auto font-mono text-xs space-y-0.5"
+          >
+            {downloadBulkLog.map((entry, i) => (
+              <div key={i} className={
+                entry.type === "ok"  ? "text-emerald-400" :
+                entry.type === "err" ? "text-rose-400" :
+                "text-gray-300"
+              }>
+                {entry.msg}
+              </div>
+            ))}
+            {downloadingBulk && <div className="text-emerald-400 animate-pulse">▌</div>}
+          </div>
+          {downloadBulkResult && (
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-border/50">
+                <div className="text-2xl font-bold text-emerald-600">{downloadBulkResult.totalFiles}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Excels descargados</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-border/50">
+                <div className="text-2xl font-bold text-rose-600">{downloadBulkResult.failedTeachers}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Docentes fallidos</div>
+              </div>
             </div>
           )}
         </DialogContent>

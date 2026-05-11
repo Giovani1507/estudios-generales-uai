@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save, Eraser, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Eye, Loader2, ArrowLeft, Save, Eraser } from "lucide-react";
 
 const apiBase = (import.meta.env.BASE_URL || "").replace(/\/$/, "");
 
@@ -328,34 +328,7 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
   const [dirty, setDirty] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<PlanillaRow | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [downloadingIntranet, setDownloadingIntranet] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleDownloadIntranet = async () => {
-    setDownloadingIntranet(true);
-    try {
-      const params = new URLSearchParams({ docente: curso.docente, codigoCurso: curso.codigoCurso });
-      if (curso.seccion) params.set("seccion", curso.seccion);
-      const res = await fetch(`${apiBase}/api/sincronizar-asistencias/download-intranet?${params}`, { credentials: "include" });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: "Error al descargar" }));
-        toast({ title: "Error del Intranet", description: err.message || "No se pudo descargar el reporte.", variant: "destructive" });
-        return;
-      }
-      const blob = await res.blob();
-      const cd = res.headers.get("content-disposition") || "";
-      const nameMatch = cd.match(/filename[^;=\n]*=([^;\n]*)/);
-      const fileName = nameMatch ? decodeURIComponent(nameMatch[1].replace(/['"]/g, "").trim()) : `Reporte_Asistencia_${curso.codigoCurso}.xlsx`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = fileName; a.click();
-      URL.revokeObjectURL(url);
-      toast({ title: "Descarga iniciada", description: `Archivo: ${fileName}` });
-    } catch {
-      toast({ title: "Error de conexión", description: "No se pudo conectar al servidor.", variant: "destructive" });
-    } finally {
-      setDownloadingIntranet(false);
-    }
-  };
 
   /* Cargar planillas existentes para este docente + curso (+ sección si está) */
   const loadList = async () => {
@@ -704,18 +677,6 @@ export function AsistenciaPlanillaDialog({ open, onClose, curso, allRows = [] }:
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">Planillas guardadas ({planillas.length})</h3>
                 <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleDownloadIntranet}
-                    disabled={downloadingIntranet}
-                    className="gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    {downloadingIntranet
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <Download className="h-4 w-4" />}
-                    {downloadingIntranet ? "Descargando…" : "Descargar del Intranet"}
-                  </Button>
                   <Button size="sm" onClick={() => setView("import")} className="gap-1.5 bg-primary">
                     <Upload className="h-4 w-4" /> Registrar asistencia
                   </Button>

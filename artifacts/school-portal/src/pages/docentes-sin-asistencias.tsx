@@ -49,7 +49,7 @@ export default function DocentesSinAsistencias() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"PENDIENTES" | "ENVIADOS" | "TODOS">("TODOS");
+  const [filter, setFilter] = useState<"PENDIENTES" | "ENVIADOS" | "TODOS" | "ESTA_SEMANA">("ESTA_SEMANA");
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const lastUpdatedAtRef = useRef<string | null>(null);
 
@@ -96,11 +96,31 @@ export default function DocentesSinAsistencias() {
     return m;
   }, [teachers]);
 
+  const getWeekRange = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const isThisWeek = (iso?: string | null) => {
+    if (!iso) return false;
+    const { start, end } = getWeekRange();
+    const d = new Date(iso);
+    return d >= start && d <= end;
+  };
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return list.filter(f => {
       if (filter === "PENDIENTES" && f.correoEnviado) return false;
       if (filter === "ENVIADOS" && !f.correoEnviado) return false;
+      if (filter === "ESTA_SEMANA" && !isThisWeek(f.flaggedAt)) return false;
       if (!q) return true;
       const hay = `${f.docente} ${f.nombreCurso} ${f.codigoCurso} ${f.carrera || ""} ${f.seccion || ""}`.toLowerCase();
       return hay.includes(q);
@@ -108,9 +128,10 @@ export default function DocentesSinAsistencias() {
   }, [list, filter, search]);
 
   const counts = useMemo(() => ({
-    pendientes: list.filter(f => !f.correoEnviado).length,
-    enviados:   list.filter(f =>  f.correoEnviado).length,
-    total:      list.length,
+    pendientes:  list.filter(f => !f.correoEnviado).length,
+    enviados:    list.filter(f =>  f.correoEnviado).length,
+    total:       list.length,
+    estaSemana:  list.filter(f => isThisWeek(f.flaggedAt)).length,
   }), [list]);
 
   const persist = async (next: Flag[]) => {
@@ -251,19 +272,22 @@ export default function DocentesSinAsistencias() {
               className="pl-8 h-9 bg-white"
             />
           </div>
-          <div className="flex gap-1 text-xs">
-            {(["PENDIENTES","ENVIADOS","TODOS"] as const).map(opt => (
+          <div className="flex gap-1 text-xs flex-wrap">
+            {(["ESTA_SEMANA","PENDIENTES","ENVIADOS","TODOS"] as const).map(opt => (
               <button
                 key={opt}
                 onClick={() => setFilter(opt)}
                 className={`px-3 py-1.5 rounded-full border transition ${
                   filter === opt
-                    ? "bg-[#001f5f] text-white border-[#001f5f]"
+                    ? opt === "ESTA_SEMANA"
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-[#001f5f] text-white border-[#001f5f]"
                     : "bg-white text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
-                {opt === "PENDIENTES" ? `Pendientes (${counts.pendientes})`
-                 : opt === "ENVIADOS" ? `Enviados (${counts.enviados})`
+                {opt === "ESTA_SEMANA"  ? `Esta semana (${counts.estaSemana})`
+                 : opt === "PENDIENTES" ? `Pendientes (${counts.pendientes})`
+                 : opt === "ENVIADOS"   ? `Enviados (${counts.enviados})`
                  : `Todos (${counts.total})`}
               </button>
             ))}
