@@ -33,6 +33,8 @@ type Fila = {
   ciclo: string;
   codAlumno: string;
   alumno: string;
+  carrera: string;       // ← Programa académico (lookup desde el consolidado de matrícula)
+  convalidante: boolean; // ← true si figura en la lista oficial de convalidantes 2026-1
   presentes: number;
   ausentes: number;
   pct: number;
@@ -78,10 +80,14 @@ export default function ReporteAsistencia() {
 
     try {
       const base = `${apiBase}/`;
-      const [r, ficaPlan, fcsPlan] = await Promise.all([
+      const [r, ficaPlan, fcsPlan, carreraMapRaw, convalRaw] = await Promise.all([
         fetch(`${apiBase}/api/asistencia-planillas/all-full`, { credentials: "include", signal: ctrl.signal }),
         fetch(`${base}planificacion-fica-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
         fetch(`${base}planificacion-fcs-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
+        // Lookup oficial de carreras: cod_alumno → { carrera, nombre } (consolidado de matrícula)
+        fetch(`${base}codigo-carrera-2026-1.json`).then(x => x.ok ? x.json() : {}).catch(() => ({})),
+        // Lista oficial de convalidantes 2026-1
+        fetch(`${base}convalidantes-2026-1.json`).then(x => x.ok ? x.json() : []).catch(() => []),
       ]);
       if (!r.ok) throw new Error("list");
       const detalles = (await r.json()) as PlanillaDetail[];
@@ -92,6 +98,18 @@ export default function ReporteAsistencia() {
         if (row?.codigo && row?.ciclo) {
           codigoCicloMap.set(String(row.codigo).toUpperCase().trim(), String(row.ciclo).trim());
         }
+      }
+
+      // Mapa codAlumno_upper → carrera (programa académico)
+      const carreraPorCodigo = new Map<string, string>();
+      for (const [k, v] of Object.entries(carreraMapRaw as Record<string, { carrera?: string }>)) {
+        if (k && v?.carrera) carreraPorCodigo.set(k.toUpperCase().trim(), v.carrera);
+      }
+
+      // Set de códigos convalidantes (uppercase)
+      const convalSet = new Set<string>();
+      for (const c of (convalRaw as Array<{ codigo?: string }>)) {
+        if (c?.codigo) convalSet.add(String(c.codigo).toUpperCase().trim());
       }
 
       const out: Fila[] = [];
@@ -120,6 +138,7 @@ export default function ReporteAsistencia() {
           }
           const total = pres + inas;
           const pct = total > 0 ? Math.round((pres / total) * 10000) / 100 : 0;
+          const codAlu = (a.numero || "").toUpperCase().trim();
           out.push({
             docente:   (det.docente   || "").toUpperCase(),
             curso:     (det.nombreCurso || "").toUpperCase(),
@@ -127,8 +146,10 @@ export default function ReporteAsistencia() {
             seccion:   (det.seccion   || "").toUpperCase(),
             local:     sedeLabel(det.sede),
             ciclo,
-            codAlumno: (a.numero || "").toUpperCase(),
+            codAlumno: codAlu,
             alumno:    (a.nombre  || "").toUpperCase(),
+            carrera:   carreraPorCodigo.get(codAlu) || "",
+            convalidante: convalSet.has(codAlu),
             presentes: pres,
             ausentes:  inas,
             pct,
@@ -205,15 +226,17 @@ export default function ReporteAsistencia() {
         { key: "local",     width: 12 },
         { key: "codAlumno", width: 16 },
         { key: "alumno",    width: 38 },
+        { key: "carrera",   width: 30 },
         { key: "pres",      width: 12 },
         { key: "aus",       width: 12 },
         { key: "pct",       width: 14 },
         { key: "estado",    width: 15 },
+        { key: "conv",      width: 16 },
       ];
 
       const header = ws.addRow([
         "Docente","Curso","Código","Sección","Local",
-        "COD ALUMNO","Alumno","Presentes","Ausentes","% Asistencia","Estado",
+        "COD ALUMNO","Alumno","Carrera","Presentes","Ausentes","% Asistencia","Estado","Observación",
       ]);
       header.eachCell(cell => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
@@ -228,12 +251,16 @@ export default function ReporteAsistencia() {
       });
       header.height = 22;
 
+      const AMB_BG = "FEF3C7", AMB_TX = "92400E";
       sorted.forEach((f, i) => {
         const row = ws.addRow([
           f.docente, f.curso, f.codigo, f.seccion, f.local,
-          f.codAlumno, f.alumno, f.presentes, f.ausentes, f.pct, f.estado,
+          f.codAlumno, f.alumno, f.carrera || "—",
+          f.presentes, f.ausentes, f.pct, f.estado,
+          f.convalidante ? "CONVALIDANTE" : "",
         ]);
-        const bg = i % 2 === 0 ? "F8F9FA" : "FFFFFF";
+        // Resaltamos toda la fila si es convalidante (como en el screenshot del usuario)
+        const bg = f.convalidante ? AMB_BG : (i % 2 === 0 ? "F8F9FA" : "FFFFFF");
         row.eachCell(cell => {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
           cell.font = { size: 9 };
@@ -244,20 +271,26 @@ export default function ReporteAsistencia() {
             bottom:{ style: "hair", color: { argb: "DDDDDD" } },
           };
         });
-        // color estado
-        const estadoCell = row.getCell(11);
+        // color estado (col 12)
+        const estadoCell = row.getCell(12);
         const isApro = f.estado === "APROBADO";
         estadoCell.font = { bold: true, color: { argb: isApro ? GREEN : RED }, size: 9 };
-        // color pct
-        const pctCell = row.getCell(10);
+        // color pct (col 11)
+        const pctCell = row.getCell(11);
         pctCell.numFmt = "0.00";
         pctCell.alignment = { horizontal: "center" };
-        // numeric cols center
-        [8, 9].forEach(c => { row.getCell(c).alignment = { horizontal: "center" }; });
+        // numeric cols center (presentes col 9, ausentes col 10)
+        [9, 10].forEach(c => { row.getCell(c).alignment = { horizontal: "center" }; });
+        // Observación CONVALIDANTE (col 13) en negrita ámbar
+        if (f.convalidante) {
+          const obs = row.getCell(13);
+          obs.font = { bold: true, color: { argb: AMB_TX }, size: 9 };
+          obs.alignment = { vertical: "middle", horizontal: "center" };
+        }
       });
 
       ws.views = [{ state: "frozen", ySplit: 1 }];
-      ws.autoFilter = { from: "A1", to: "K1" };
+      ws.autoFilter = { from: "A1", to: "M1" };
 
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -283,6 +316,7 @@ export default function ReporteAsistencia() {
     { key: "local",     label: "Local",    cls: "hidden lg:table-cell" },
     { key: "codAlumno", label: "Cód. Alumno", cls: "hidden lg:table-cell" },
     { key: "alumno",    label: "Alumno" },
+    { key: "carrera",   label: "Carrera",  cls: "hidden lg:table-cell" },
     { key: "presentes", label: "Pres.",    cls: "text-center" },
     { key: "ausentes",  label: "Aus.",     cls: "text-center" },
     { key: "pct",       label: "% Asist.", cls: "text-center hidden sm:table-cell" },
@@ -432,7 +466,12 @@ export default function ReporteAsistencia() {
                   ) : sorted.map((f, i) => (
                     <tr
                       key={i}
-                      className={i % 2 === 0 ? "bg-white hover:bg-indigo-50/40" : "bg-gray-50/60 hover:bg-indigo-50/40"}
+                      className={
+                        f.convalidante
+                          ? "bg-amber-50 hover:bg-amber-100/70"
+                          : (i % 2 === 0 ? "bg-white hover:bg-indigo-50/40" : "bg-gray-50/60 hover:bg-indigo-50/40")
+                      }
+                      title={f.convalidante ? "Estudiante convalidante (lista oficial 2026-1)" : undefined}
                     >
                       <td className="px-3 py-1.5 max-w-[220px] truncate" title={f.docente}>{f.docente}</td>
                       <td className="px-3 py-1.5 max-w-[200px] truncate" title={f.curso}>{f.curso}</td>
@@ -440,7 +479,22 @@ export default function ReporteAsistencia() {
                       <td className="px-3 py-1.5 hidden md:table-cell text-center">{f.seccion}</td>
                       <td className="px-3 py-1.5 hidden lg:table-cell text-center">{f.local}</td>
                       <td className="px-3 py-1.5 hidden lg:table-cell font-mono">{f.codAlumno}</td>
-                      <td className="px-3 py-1.5 max-w-[220px] truncate" title={f.alumno}>{f.alumno}</td>
+                      <td className="px-3 py-1.5 max-w-[220px]" title={f.alumno}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="truncate">{f.alumno}</span>
+                          {f.convalidante && (
+                            <span
+                              className="text-[9px] font-bold rounded px-1.5 py-px tracking-wider shrink-0"
+                              style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}
+                            >
+                              CONVALIDANTE
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-1.5 hidden lg:table-cell max-w-[220px] truncate" title={f.carrera}>
+                        {f.carrera || <span className="text-gray-300">—</span>}
+                      </td>
                       <td className="px-3 py-1.5 text-center font-semibold text-emerald-700">{f.presentes}</td>
                       <td className="px-3 py-1.5 text-center font-semibold text-rose-700">{f.ausentes}</td>
                       <td className="px-3 py-1.5 text-center hidden sm:table-cell">{f.pct.toFixed(2)}%</td>
