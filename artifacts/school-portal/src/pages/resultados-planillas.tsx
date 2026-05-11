@@ -58,6 +58,18 @@ const sedeNorm = (v?: string | null) => {
   return s;
 };
 
+// Normaliza nombres para cotejar la lista oficial de convalidantes contra el
+// nombre que aparece en la planilla de asistencia (que NO trae código).
+// Mayúsculas, sin tildes, sin puntuación, espacios colapsados.
+const normalizaNombre = (s: string): string =>
+  (s || "")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export default function ReporteJalados() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -65,6 +77,27 @@ export default function ReporteJalados() {
   const [search, setSearch] = useState("");
   const [sedeF, setSedeF] = useState<string>("TODAS");
   const [carreraF, setCarreraF] = useState<string>("TODAS");
+  const [convalidantesNombres, setConvalidantesNombres] = useState<Set<string>>(new Set());
+
+  // Carga el listado oficial de convalidantes 2026-1 (nombre+codigo).
+  // Hacemos match por NOMBRE normalizado porque las planillas de asistencia
+  // del intranet no incluyen el código del alumno.
+  useEffect(() => {
+    fetch(`${apiBase}/convalidantes-2026-1.json`)
+      .then(r => r.ok ? r.json() as Promise<Array<{ codigo: string; nombre: string }>> : [])
+      .then(list => {
+        const set = new Set<string>();
+        for (const c of list) {
+          const n = normalizaNombre(c.nombre);
+          if (n) set.add(n);
+        }
+        setConvalidantesNombres(set);
+      })
+      .catch(() => { /* silencioso: si falla, no hay marca pero el reporte sigue */ });
+  }, []);
+
+  const esConvalidante = (alumno: string): boolean =>
+    convalidantesNombres.size > 0 && convalidantesNombres.has(normalizaNombre(alumno));
 
   useEffect(() => {
     (async () => {
@@ -187,6 +220,14 @@ export default function ReporteJalados() {
       .slice(0, 8);
   }, [filtered]);
 
+  // Conteo de jalados que también figuran como convalidantes en la lista oficial.
+  // Útil para alertar al usuario que algunos jalados podrían no contar realmente.
+  const convalidantesEnJalados = useMemo(
+    () => filtered.filter(r => esConvalidante(r.alumno)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtered, convalidantesNombres],
+  );
+
   // Agrupar por carrera para visualización
   const grouped = useMemo(() => {
     const m = new Map<string, JaladoRow[]>();
@@ -246,6 +287,167 @@ export default function ReporteJalados() {
     URL.revokeObjectURL(a.href);
   };
 
+  // Descarga "para informe": solo NOMBRE + CARRERA de los jalados, ordenados
+  // alfabéticamente y deduplicados (un mismo alumno puede estar jalado en
+  // varios cursos — para el informe lo listamos una sola vez por carrera).
+  // Va a la par de la planilla de asistencia subida en "Asistencia 2026-1".
+  const exportInformeXLSX = async () => {
+    const NAV = "001F5F", GOLD = "C9A84C", WHITE = "FFFFFF", AMB_BG = "FEF3C7", AMB_TX = "92400E";
+
+    // Dedup por alumno+carrera. Marcamos cada uno si es convalidante.
+    const seen = new Map<string, { nombre: string; carrera: string; convalidante: boolean; cursos: number }>();
+    for (const r of filtered) {
+      const key = `${normalizaNombre(r.alumno)}||${r.carrera}`;
+      const cur = seen.get(key);
+      if (cur) { cur.cursos += 1; }
+      else seen.set(key, {
+        nombre: r.alumno,
+        carrera: r.carrera || "—",
+        convalidante: esConvalidante(r.alumno),
+        cursos: 1,
+      });
+    }
+    const lista = Array.from(seen.values())
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+    if (lista.length === 0) {
+      toast({ title: "Sin datos", description: "No hay jalados que exportar con los filtros actuales.", variant: "destructive" });
+      return;
+    }
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Portal Académico UAI";
+    wb.created = new Date();
+    const ws = wb.addWorksheet("Jalados — Informe", {
+      pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1 },
+    });
+
+    ws.columns = [
+      { width: 6 },   // N°
+      { width: 42 },  // Apellidos y Nombres
+      { width: 38 },  // Carrera
+      { width: 16 },  // Observación (convalidante / cursos)
+    ];
+    const TOTAL_COLS = 4;
+
+    // Logo
+    try {
+      const resp = await fetch(`${window.location.origin}${apiBase}/escudo.png`);
+      if (resp.ok) {
+        const buf = await resp.arrayBuffer();
+        const id = wb.addImage({ buffer: buf, extension: "png" });
+        ws.addImage(id, { tl: { col: 0.08, row: 0.12 }, ext: { width: 78, height: 78 }, editAs: "oneCell" } as any);
+      }
+    } catch { /* sin logo */ }
+
+    ws.mergeCells(1, 1, 4, 1);
+    ws.mergeCells(1, 2, 1, TOTAL_COLS);
+    ws.mergeCells(2, 2, 2, TOTAL_COLS);
+    ws.mergeCells(3, 2, 3, TOTAL_COLS);
+    ws.mergeCells(4, 2, 4, TOTAL_COLS);
+    for (let r = 1; r <= 4; r++) {
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        ws.getCell(r, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      }
+      ws.getRow(r).height = r === 1 ? 30 : r === 2 ? 22 : 18;
+    }
+    const setHdr = (row: number, txt: string, opts: { size?: number; bold?: boolean; color?: string; italic?: boolean } = {}) => {
+      const c = ws.getCell(row, 2);
+      c.value = txt;
+      c.font  = { name: "Calibri", size: opts.size ?? 11, bold: opts.bold ?? false, italic: opts.italic ?? false, color: { argb: "FF" + (opts.color ?? WHITE) } };
+      c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    };
+    setHdr(1, "UNIVERSIDAD AUTÓNOMA DE ICA", { size: 15, bold: true });
+    setHdr(2, "Dirección Académica · Semestre 2026-1", { size: 10, color: "BBCFEE", italic: true });
+    setHdr(3, "ESTUDIANTES DESAPROBADOS POR INASISTENCIA — INFORME", { size: 12, bold: true, color: GOLD });
+    const now = new Date();
+    setHdr(4, `Generado: ${now.toLocaleDateString("es-PE", { dateStyle: "long" })} · Total: ${lista.length} estudiante${lista.length !== 1 ? "s" : ""}`, { size: 9, color: "BBCFEE" });
+
+    ws.getRow(5).height = 6;
+
+    // Aviso
+    ws.mergeCells(6, 1, 6, TOTAL_COLS);
+    const aviso = ws.getCell(6, 1);
+    aviso.value = "Listado para informe — usar en conjunto con la planilla de asistencia subida en Asistencia 2026-1. Los marcados como CONVALIDANTE figuran en la lista oficial 2026-1 y conviene revisarlos antes de informar.";
+    aviso.font = { name: "Calibri", size: 9, italic: true, color: { argb: "FF" + AMB_TX } };
+    aviso.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + AMB_BG } };
+    aviso.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    ws.getRow(6).height = 28;
+
+    ws.getRow(7).height = 4;
+
+    // Encabezado columnas
+    const HEAD = ["N°", "APELLIDOS Y NOMBRES", "CARRERA", "OBSERVACIÓN"];
+    const headerRow = ws.getRow(8);
+    headerRow.height = 22;
+    HEAD.forEach((h, idx) => {
+      const cell = headerRow.getCell(idx + 1);
+      cell.value = h;
+      cell.font  = { name: "Calibri", size: 10, bold: true, color: { argb: "FF" + WHITE } };
+      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + NAV } };
+      cell.alignment = { horizontal: idx === 0 ? "center" : (idx === 3 ? "center" : "left"), vertical: "middle" };
+      cell.border = {
+        top:    { style: "thin", color: { argb: "FF" + GOLD } },
+        bottom: { style: "thin", color: { argb: "FF" + GOLD } },
+        left:   { style: "thin", color: { argb: "FF304B80" } },
+        right:  { style: "thin", color: { argb: "FF304B80" } },
+      };
+    });
+
+    // Filas
+    lista.forEach((c, i) => {
+      const r = ws.getRow(9 + i);
+      r.height = 16;
+      const bg = c.convalidante ? "FEF3C7" : (i % 2 === 1 ? "F2F5FB" : "FFFFFF");
+      const obs = c.convalidante
+        ? (c.cursos > 1 ? `CONVALIDANTE · ${c.cursos} cursos` : "CONVALIDANTE")
+        : (c.cursos > 1 ? `${c.cursos} cursos` : "");
+      const cells: [number, string | number, "center" | "left"][] = [
+        [1, i + 1, "center"],
+        [2, c.nombre, "left"],
+        [3, c.carrera, "left"],
+        [4, obs, "center"],
+      ];
+      for (const [col, val, align] of cells) {
+        const cell = r.getCell(col);
+        cell.value = val;
+        cell.font  = {
+          name: "Calibri",
+          size: 10,
+          bold: col === 4 && c.convalidante,
+          color: { argb: c.convalidante && col === 4 ? "FF" + AMB_TX : "FF374151" },
+        };
+        cell.alignment = { horizontal: align, vertical: "middle" };
+        cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + bg } };
+        cell.border = {
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left:   { style: "thin", color: { argb: "FFE2E8F0" } },
+          right:  { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+      }
+    });
+
+    // Footer
+    const footRow = 9 + lista.length + 1;
+    ws.mergeCells(footRow, 1, footRow, TOTAL_COLS);
+    const f = ws.getCell(footRow, 1);
+    f.value = "Documento generado por el Portal Académico — Universidad Autónoma de Ica";
+    f.font = { name: "Calibri", size: 8, italic: true, color: { argb: "FF9CA3AF" } };
+    f.alignment = { horizontal: "center", vertical: "middle" };
+    f.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFF" } };
+    ws.getRow(footRow).height = 14;
+
+    ws.views = [{ state: "frozen", xSplit: 0, ySplit: 8, activeCell: "A9" }];
+
+    const buf = await wb.xlsx.writeBuffer() as ArrayBuffer;
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `UAI-Jalados-Informe-${now.toISOString().slice(0,10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
     <div className="p-6 space-y-6 min-h-screen bg-gradient-to-br from-slate-50 to-red-50/20">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -258,9 +460,26 @@ export default function ReporteJalados() {
             Lista consolidada de alumnos con <b className="text-red-600">{UMBRAL} o más inasistencias</b> en las planillas subidas (2026-1).
           </p>
         </div>
-        <Button onClick={exportXLSX} disabled={filtered.length === 0} className="gap-2 bg-red-600 hover:bg-red-700 text-white shrink-0">
-          <Download className="h-4 w-4" /> Excel
-        </Button>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <Button
+            onClick={exportInformeXLSX}
+            disabled={filtered.length === 0}
+            title="Solo Nombre + Carrera (para informe — va junto con la planilla de asistencia del intranet)"
+            className="gap-2 text-white"
+            style={{ background: "#92400e" }}
+          >
+            <Download className="h-4 w-4" />
+            Solo Nombre + Carrera
+            {convalidantesEnJalados > 0 && (
+              <span className="text-[10px] font-bold bg-amber-200 text-amber-900 rounded-full px-1.5 py-px ml-1">
+                {convalidantesEnJalados} conv.
+              </span>
+            )}
+          </Button>
+          <Button onClick={exportXLSX} disabled={filtered.length === 0} className="gap-2 bg-red-600 hover:bg-red-700 text-white">
+            <Download className="h-4 w-4" /> Excel completo
+          </Button>
+        </div>
       </div>
 
       {/* Gráficos */}
@@ -365,7 +584,20 @@ export default function ReporteJalados() {
                   {list.map((r, i) => (
                     <tr key={`${r.codigoCurso}-${r.alumno}-${i}`} className="border-t border-border/30 hover:bg-red-50/30">
                       <td className="px-3 py-2 text-center text-muted-foreground">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium">{r.alumno}</td>
+                      <td className="px-3 py-2 font-medium">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{r.alumno}</span>
+                          {esConvalidante(r.alumno) && (
+                            <span
+                              className="text-[9px] font-bold rounded px-1.5 py-px tracking-wider"
+                              style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}
+                              title="Figura en la lista oficial de convalidantes 2026-1"
+                            >
+                              CONVALIDANTE
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-3 py-2">
                         <div className="font-medium line-clamp-1">{r.curso}</div>
                         <div className="text-[10px] text-muted-foreground font-mono">{r.codigoCurso}</div>
