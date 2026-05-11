@@ -31,10 +31,10 @@ const CARRERA_FULL: Record<string, string> = {
   T4: "OPTOMETRÍA",
 };
 
-// ─── Day number → Spanish name (Excel: 1=Sunday) ─────────────────────────
+// ─── Day number → Spanish name (Source files: 1=LUNES) ──────────────────
 const DAY_NAME: Record<number, string> = {
-  1: "DOMINGO", 2: "LUNES", 3: "MARTES", 4: "MIERCOLES",
-  5: "JUEVES", 6: "VIERNES", 7: "SABADO",
+  1: "LUNES", 2: "MARTES", 3: "MIERCOLES", 4: "JUEVES",
+  5: "VIERNES", 6: "SABADO", 7: "DOMINGO",
 };
 
 // ─── Files ─────────────────────────────────────────────────────────────────
