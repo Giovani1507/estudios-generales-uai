@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Search, Download, ClipboardCheck, ChevronUp, ChevronDown,
+  Users, BookX,
 } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import { Input } from "@/components/ui/input";
@@ -78,6 +79,7 @@ export default function ReporteAsistencia() {
   const [estadoF, setEstadoF]     = useState<"TODOS" | "APROBADO" | "DESAPROBADO">("TODOS");
   const [sortKey, setSortKey]     = useState<SortKey>("docente");
   const [sortDir, setSortDir]     = useState<"asc" | "desc">("asc");
+  const [vista, setVista]         = useState<"matricula" | "alumno">("matricula");
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -106,11 +108,18 @@ export default function ReporteAsistencia() {
       if (!r.ok) throw new Error("list");
       const detalles = (await r.json()) as PlanillaDetail[];
 
-      // Mapa codigo_upper → ciclo desde los JSON de planificación
+      // Mapa codigo_upper → ciclo y → carreraFull desde los JSON de planificación.
+      // La carrera por curso sirve como FALLBACK cuando el alumno no se pudo
+      // cruzar por nombre con el consolidado (errata, alumno nuevo, etc.).
       const codigoCicloMap = new Map<string, string>();
+      const codigoCarreraMap = new Map<string, string>();
       for (const row of [...(Array.isArray(ficaPlan) ? ficaPlan : []), ...(Array.isArray(fcsPlan) ? fcsPlan : [])]) {
-        if (row?.codigo && row?.ciclo) {
-          codigoCicloMap.set(String(row.codigo).toUpperCase().trim(), String(row.ciclo).trim());
+        if (row?.codigo) {
+          const k = String(row.codigo).toUpperCase().trim();
+          if (row?.ciclo) codigoCicloMap.set(k, String(row.ciclo).trim());
+          if (row?.carreraFull && !codigoCarreraMap.has(k)) {
+            codigoCarreraMap.set(k, String(row.carreraFull).trim());
+          }
         }
       }
 
@@ -160,6 +169,12 @@ export default function ReporteAsistencia() {
           // Si encontramos al alumno en el consolidado, usamos su código real;
           // si no, mostramos el número de fila de la planilla como respaldo.
           const codAlu = info?.codigo || (a.numero || "").toUpperCase().trim();
+          // Carrera: primero la del consolidado (más confiable), si no, la del
+          // curso desde la planificación (todos los matriculados a un curso
+          // pertenecen normalmente a la misma carrera).
+          const carrera = info?.carrera
+            || codigoCarreraMap.get((det.codigoCurso || "").toUpperCase().trim())
+            || "";
           out.push({
             docente:   (det.docente   || "").toUpperCase(),
             curso:     (det.nombreCurso || "").toUpperCase(),
@@ -169,7 +184,7 @@ export default function ReporteAsistencia() {
             ciclo,
             codAlumno: codAlu,
             alumno:    nombreUp,
-            carrera:   info?.carrera || "",
+            carrera,
             convalidante: convalNombres.has(nombreKey),
             presentes: pres,
             ausentes:  inas,
@@ -218,6 +233,70 @@ export default function ReporteAsistencia() {
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(k); setSortDir("asc"); }
+  };
+
+  /* ── Vista por alumno (cuántos cursos va jalando cada uno) ──────── */
+  type FilaAlumno = {
+    alumno: string;
+    codAlumno: string;
+    carrera: string;
+    local: string;
+    convalidante: boolean;
+    totalCursos: number;
+    cursosJalando: number;
+    pctPromedio: number;
+    cursosJaladosLista: string;   // "MATEMÁTICA I, FILOSOFÍA Y ÉTICA"
+  };
+  type SortKeyAlumno = keyof FilaAlumno;
+  const [sortKeyAlu, setSortKeyAlu] = useState<SortKeyAlumno>("cursosJalando");
+  const [sortDirAlu, setSortDirAlu] = useState<"asc" | "desc">("desc");
+
+  const porAlumno = useMemo<FilaAlumno[]>(() => {
+    if (vista !== "alumno") return [];
+    // Agrupamos por nombre normalizado (las planillas no traen código real)
+    const grupos = new Map<string, Fila[]>();
+    for (const f of filtered) {
+      const k = normalizaNombre(f.alumno);
+      if (!grupos.has(k)) grupos.set(k, []);
+      grupos.get(k)!.push(f);
+    }
+    const out: FilaAlumno[] = [];
+    for (const [, rows] of grupos) {
+      const r0 = rows[0];
+      const jalados = rows.filter(r => r.estado === "DESAPROBADO");
+      const sumPct = rows.reduce((acc, r) => acc + r.pct, 0);
+      // Carrera "ganadora": la más frecuente no vacía
+      const carreras = new Map<string, number>();
+      for (const r of rows) if (r.carrera) carreras.set(r.carrera, (carreras.get(r.carrera) || 0) + 1);
+      const carrera = [...carreras.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      out.push({
+        alumno: r0.alumno,
+        codAlumno: r0.codAlumno,
+        carrera,
+        local: r0.local,
+        convalidante: rows.some(r => r.convalidante),
+        totalCursos: rows.length,
+        cursosJalando: jalados.length,
+        pctPromedio: rows.length ? Math.round((sumPct / rows.length) * 100) / 100 : 0,
+        cursosJaladosLista: jalados.map(r => r.curso).join(", "),
+      });
+    }
+    return out;
+  }, [filtered, vista]);
+
+  const porAlumnoSorted = useMemo(() => {
+    return [...porAlumno].sort((a, b) => {
+      const av = a[sortKeyAlu]; const bv = b[sortKeyAlu];
+      const cmp = typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv), "es");
+      return sortDirAlu === "asc" ? cmp : -cmp;
+    });
+  }, [porAlumno, sortKeyAlu, sortDirAlu]);
+
+  const toggleSortAlu = (k: SortKeyAlumno) => {
+    if (sortKeyAlu === k) setSortDirAlu(d => d === "asc" ? "desc" : "asc");
+    else { setSortKeyAlu(k); setSortDirAlu(k === "alumno" || k === "carrera" ? "asc" : "desc"); }
   };
 
   /* ── Estadísticas resumen ──────────────────────────────────────── */
@@ -416,6 +495,26 @@ export default function ReporteAsistencia() {
             ))}
           </div>
 
+          {/* Toggle de vista */}
+          <div className="inline-flex rounded-lg border border-border/60 bg-white p-0.5 shadow-sm">
+            <button
+              onClick={() => setVista("matricula")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
+                vista === "matricula" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <ClipboardCheck className="h-3.5 w-3.5" /> Por matrícula
+            </button>
+            <button
+              onClick={() => setVista("alumno")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
+                vista === "alumno" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" /> Por alumno (cursos jalando)
+            </button>
+          </div>
+
           {/* Filtros */}
           <div className="flex flex-wrap gap-2">
             <div className="relative flex-1 min-w-48">
@@ -456,11 +555,13 @@ export default function ReporteAsistencia() {
               </SelectContent>
             </Select>
             <span className="self-center text-xs text-muted-foreground whitespace-nowrap">
-              {sorted.length.toLocaleString()} filas
+              {(vista === "alumno" ? porAlumnoSorted.length : sorted.length).toLocaleString()}{" "}
+              {vista === "alumno" ? "alumnos" : "filas"}
             </span>
           </div>
 
-          {/* Tabla */}
+          {/* Tabla — Por matrícula */}
+          {vista === "matricula" && (
           <div className="rounded-xl border border-border/60 overflow-hidden bg-white shadow-sm">
             <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
               <table className="w-full text-xs">
@@ -536,6 +637,86 @@ export default function ReporteAsistencia() {
               </table>
             </div>
           </div>
+          )}
+
+          {/* Tabla — Por alumno (cursos jalando) */}
+          {vista === "alumno" && (
+          <div className="rounded-xl border border-border/60 overflow-hidden bg-white shadow-sm">
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 z-10 bg-[#001f5f] text-white">
+                  <tr>
+                    {([
+                      { key: "alumno",         label: "Alumno" },
+                      { key: "codAlumno",      label: "Cód. Alumno",   cls: "hidden md:table-cell" },
+                      { key: "carrera",        label: "Carrera",       cls: "hidden lg:table-cell" },
+                      { key: "local",          label: "Local",         cls: "hidden lg:table-cell text-center" },
+                      { key: "totalCursos",    label: "Total cursos",  cls: "text-center" },
+                      { key: "cursosJalando",  label: "Jalando",       cls: "text-center" },
+                      { key: "pctPromedio",    label: "% Asist.",      cls: "text-center hidden sm:table-cell" },
+                    ] as { key: SortKeyAlumno; label: string; cls?: string }[]).map(c => (
+                      <th
+                        key={c.key}
+                        onClick={() => toggleSortAlu(c.key)}
+                        className={`px-3 py-2.5 font-semibold cursor-pointer select-none whitespace-nowrap hover:bg-[#003080] transition-colors ${c.cls ?? ""}`}
+                      >
+                        {c.label}
+                        {sortKeyAlu === c.key && (sortDirAlu === "asc"
+                          ? <ChevronUp className="inline h-3 w-3 ml-0.5" />
+                          : <ChevronDown className="inline h-3 w-3 ml-0.5" />)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {porAlumnoSorted.length === 0 ? (
+                    <tr><td colSpan={7} className="text-center py-16 text-muted-foreground">Sin resultados</td></tr>
+                  ) : porAlumnoSorted.map((a, i) => (
+                    <tr
+                      key={i}
+                      className={
+                        a.convalidante
+                          ? "bg-amber-50 hover:bg-amber-100/70"
+                          : (i % 2 === 0 ? "bg-white hover:bg-indigo-50/40" : "bg-gray-50/60 hover:bg-indigo-50/40")
+                      }
+                      title={a.cursosJaladosLista ? `Jalando: ${a.cursosJaladosLista}` : undefined}
+                    >
+                      <td className="px-3 py-1.5 max-w-[260px]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="truncate" title={a.alumno}>{a.alumno}</span>
+                          {a.convalidante && (
+                            <span
+                              className="text-[9px] font-bold rounded px-1.5 py-px tracking-wider shrink-0"
+                              style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}
+                            >
+                              CONVALIDANTE
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-1.5 hidden md:table-cell font-mono">{a.codAlumno}</td>
+                      <td className="px-3 py-1.5 hidden lg:table-cell max-w-[220px] truncate" title={a.carrera}>
+                        {a.carrera || <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-3 py-1.5 hidden lg:table-cell text-center">{a.local}</td>
+                      <td className="px-3 py-1.5 text-center font-semibold">{a.totalCursos}</td>
+                      <td className="px-3 py-1.5 text-center">
+                        {a.cursosJalando > 0 ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-rose-700">
+                            <BookX className="h-3.5 w-3.5" /> {a.cursosJalando}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-700 font-semibold">0</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-1.5 text-center hidden sm:table-cell">{a.pctPromedio.toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          )}
         </>
       )}
     </div>
