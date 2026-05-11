@@ -6,3 +6,9 @@ id = "1heFR6mVKhcXWuoBR3H9t"
 uri = "file://qr-rectificacion.png"
 type = "image"
 title = "QR - Registro de Rectificación de Matrícula"
+
+[[outputs]]
+id = "EzvGNK6d5VKqv2dwFqpWw"
+uri = "file://exports/portal-academico-dump.sql.tar.gz"
+type = "unspecified"
+title = "Respaldo completo de la base de datos del Portal Académico (.sql comprimido)"
