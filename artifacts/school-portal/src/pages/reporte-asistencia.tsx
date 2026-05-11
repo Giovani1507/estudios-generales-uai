@@ -35,6 +35,9 @@ type Fila = {
   codAlumno: string;
   alumno: string;
   carrera: string;       // ← Programa académico (lookup desde el consolidado de matrícula)
+  carreraOrigen: "consolidado" | "planilla" | "desconocido";
+  localOrigen: "consolidado" | "planilla";
+  enConsolidado: boolean; // ← true si encontramos al alumno en el consolidado
   convalidante: boolean; // ← true si figura en la lista oficial de convalidantes 2026-1
   presentes: number;
   ausentes: number;
@@ -176,13 +179,16 @@ export default function ReporteAsistencia() {
           // Carrera: primero la del consolidado (más confiable), si no, la del
           // curso desde la planificación (todos los matriculados a un curso
           // pertenecen normalmente a la misma carrera).
-          const carrera = info?.carrera
-            || codigoCarreraMap.get((det.codigoCurso || "").toUpperCase().trim())
-            || "";
+          const carreraConsolidado = info?.carrera || "";
+          const carreraPlanilla = codigoCarreraMap.get((det.codigoCurso || "").toUpperCase().trim()) || "";
+          const carrera = carreraConsolidado || carreraPlanilla;
+          const carreraOrigen: "consolidado" | "planilla" | "desconocido" =
+            carreraConsolidado ? "consolidado" : carreraPlanilla ? "planilla" : "desconocido";
           // Local: el del alumno (consolidado) es el más preciso, ya que dice
           // dónde estudia el alumno (CHINCHA, ICA, HUAURA, SUNAMPE, PORUMA).
           // Si no se encuentra, caemos al sede de la planilla (donde se dicta).
           const localAlu = info?.local || sedeLabel(det.sede);
+          const localOrigen: "consolidado" | "planilla" = info?.local ? "consolidado" : "planilla";
           out.push({
             docente:   (det.docente   || "").toUpperCase(),
             curso:     (det.nombreCurso || "").toUpperCase(),
@@ -193,6 +199,9 @@ export default function ReporteAsistencia() {
             codAlumno: codAlu,
             alumno:    nombreUp,
             carrera,
+            carreraOrigen,
+            localOrigen,
+            enConsolidado: !!info,
             convalidante: convalNombres.has(nombreKey),
             presentes: pres,
             ausentes:  inas,
@@ -248,7 +257,10 @@ export default function ReporteAsistencia() {
     alumno: string;
     codAlumno: string;
     carrera: string;
+    carreraOrigen: "consolidado" | "planilla" | "desconocido";
     local: string;
+    localOrigen: "consolidado" | "planilla";
+    enConsolidado: boolean;
     convalidante: boolean;
     totalCursos: number;
     cursosJalando: number;
@@ -277,11 +289,23 @@ export default function ReporteAsistencia() {
       const carreras = new Map<string, number>();
       for (const r of rows) if (r.carrera) carreras.set(r.carrera, (carreras.get(r.carrera) || 0) + 1);
       const carrera = [...carreras.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      // Origen de carrera: consolidado si CUALQUIER fila lo tuvo desde consolidado;
+      // de lo contrario, planilla si alguna lo tuvo de planilla; sino desconocido.
+      const carreraOrigen: "consolidado" | "planilla" | "desconocido" =
+        rows.some(r => r.carreraOrigen === "consolidado") ? "consolidado"
+        : rows.some(r => r.carreraOrigen === "planilla") ? "planilla"
+        : "desconocido";
+      const localOrigen: "consolidado" | "planilla" =
+        rows.some(r => r.localOrigen === "consolidado") ? "consolidado" : "planilla";
+      const enConsolidado = rows.some(r => r.enConsolidado);
       out.push({
         alumno: r0.alumno,
         codAlumno: r0.codAlumno,
         carrera,
+        carreraOrigen,
         local: r0.local,
+        localOrigen,
+        enConsolidado,
         convalidante: rows.some(r => r.convalidante),
         totalCursos: rows.length,
         cursosJalando: jalados.length,
@@ -330,15 +354,17 @@ export default function ReporteAsistencia() {
         { key: "alumno",     width: 38 },
         { key: "codAlumno",  width: 16 },
         { key: "carrera",    width: 30 },
+        { key: "fuenteCar",  width: 16 },
         { key: "local",      width: 14 },
+        { key: "fuenteLoc",  width: 16 },
         { key: "totalCursos",width: 14 },
         { key: "jalando",    width: 12 },
         { key: "pct",        width: 14 },
         { key: "lista",      width: 60 },
-        { key: "conv",       width: 16 },
+        { key: "obs",        width: 38 },
       ];
       const header = ws.addRow([
-        "Alumno","COD ALUMNO","Carrera","Local",
+        "Alumno","COD ALUMNO","Carrera","Fuente carrera","Local","Fuente local",
         "Total cursos","Jalando","% Asist. promedio","Cursos jalando","Observación",
       ]);
       header.eachCell(c => {
@@ -354,15 +380,44 @@ export default function ReporteAsistencia() {
       });
       header.height = 22;
 
+      // Etiquetas legibles del origen
+      const lblCar = (o: string) =>
+        o === "consolidado" ? "CONSOLIDADO" : o === "planilla" ? "PLANILLA" : "DESCONOCIDO";
+      const lblLoc = (o: string) =>
+        o === "consolidado" ? "CONSOLIDADO" : "PLANILLA (sede)";
+      // Colores de fondo para "Fuente"
+      const FUENTE_OK_BG = "DCFCE7"; // verde claro (consolidado)
+      const FUENTE_WARN_BG = "FEF3C7"; // ámbar (planilla)
+      const FUENTE_BAD_BG = "FEE2E2"; // rojo claro (desconocido)
+      const FUENTE_OK_TX = "166534";
+      const FUENTE_WARN_TX = "92400E";
+      const FUENTE_BAD_TX = "991B1B";
+
       porAlumnoSorted.forEach((a, i) => {
+        // Observación: combina convalidante + advertencia si NO está en consolidado
+        const obsParts: string[] = [];
+        if (!a.enConsolidado) obsParts.push("NO ENCONTRADO EN CONSOLIDADO");
+        if (a.carreraOrigen === "planilla") obsParts.push("Carrera tomada de planilla");
+        if (a.carreraOrigen === "desconocido") obsParts.push("Carrera no identificada");
+        if (a.localOrigen === "planilla" && a.enConsolidado === false) {
+          // ya implícito por "no encontrado", no duplicar
+        } else if (a.localOrigen === "planilla") {
+          obsParts.push("Local tomado de planilla");
+        }
+        if (a.convalidante) obsParts.push("CONVALIDANTE");
+        const obsTxt = obsParts.join(" · ");
+
         const row = ws.addRow([
-          a.alumno, a.codAlumno, a.carrera || "—", a.local,
+          a.alumno, a.codAlumno, a.carrera || "—",
+          lblCar(a.carreraOrigen),
+          a.local,
+          lblLoc(a.localOrigen),
           a.totalCursos, a.cursosJalando, a.pctPromedio,
-          a.cursosJaladosLista || "", a.convalidante ? "CONVALIDANTE" : "",
+          a.cursosJaladosLista || "", obsTxt,
         ]);
-        const bg = a.convalidante ? AMB_BG : (i % 2 === 0 ? "F8F9FA" : "FFFFFF");
+        const baseBg = a.convalidante ? AMB_BG : (i % 2 === 0 ? "F8F9FA" : "FFFFFF");
         row.eachCell(c => {
-          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: baseBg } };
           c.font = { size: 9 };
           c.alignment = { vertical: "middle" };
           c.border = {
@@ -371,22 +426,48 @@ export default function ReporteAsistencia() {
             bottom:{ style: "hair", color: { argb: "DDDDDD" } },
           };
         });
-        // Total cursos (col 5), Jalando (col 6), % (col 7) centered
-        [5, 6, 7].forEach(c => { row.getCell(c).alignment = { horizontal: "center" }; });
-        // % format
-        row.getCell(7).numFmt = "0.00";
-        // Jalando en rojo si > 0, verde si 0
-        const jal = row.getCell(6);
+        // Centrado de columnas numéricas (col 7=Total, 8=Jalando, 9=%)
+        [4, 6, 7, 8, 9].forEach(c => { row.getCell(c).alignment = { horizontal: "center" }; });
+        // % format (col 9)
+        row.getCell(9).numFmt = "0.00";
+        // Jalando (col 8) en rojo si > 0, verde si 0
+        const jal = row.getCell(8);
         jal.font = { bold: true, color: { argb: a.cursosJalando > 0 ? RED : GREEN }, size: 9 };
-        if (a.convalidante) {
-          const obs = row.getCell(9);
-          obs.font = { bold: true, color: { argb: AMB_TX }, size: 9 };
-          obs.alignment = { vertical: "middle", horizontal: "center" };
+
+        // Fuente carrera (col 4) — pintado por origen
+        const fcCell = row.getCell(4);
+        const fcBg = a.carreraOrigen === "consolidado" ? FUENTE_OK_BG
+                    : a.carreraOrigen === "planilla" ? FUENTE_WARN_BG : FUENTE_BAD_BG;
+        const fcTx = a.carreraOrigen === "consolidado" ? FUENTE_OK_TX
+                    : a.carreraOrigen === "planilla" ? FUENTE_WARN_TX : FUENTE_BAD_TX;
+        fcCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fcBg } };
+        fcCell.font = { bold: true, color: { argb: fcTx }, size: 9 };
+
+        // Fuente local (col 6)
+        const flCell = row.getCell(6);
+        const flBg = a.localOrigen === "consolidado" ? FUENTE_OK_BG : FUENTE_WARN_BG;
+        const flTx = a.localOrigen === "consolidado" ? FUENTE_OK_TX : FUENTE_WARN_TX;
+        flCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: flBg } };
+        flCell.font = { bold: true, color: { argb: flTx }, size: 9 };
+
+        // Observación (col 11) — ámbar si convalidante, rojo si no está en consolidado
+        if (obsTxt) {
+          const obs = row.getCell(11);
+          const noConsol = !a.enConsolidado;
+          obs.font = {
+            bold: true,
+            color: { argb: noConsol ? FUENTE_BAD_TX : AMB_TX },
+            size: 9,
+          };
+          obs.fill = {
+            type: "pattern", pattern: "solid",
+            fgColor: { argb: noConsol ? FUENTE_BAD_BG : AMB_BG },
+          };
         }
       });
 
       ws.views = [{ state: "frozen", ySplit: 1 }];
-      ws.autoFilter = { from: "A1", to: "I1" };
+      ws.autoFilter = { from: "A1", to: "K1" };
 
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
