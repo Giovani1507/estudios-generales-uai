@@ -105,12 +105,29 @@ function extractNumero(aula?: string, lab?: string): number {
 }
 
 // Clave de ordenamiento para la ruta de supervisión
-function routeSortKey(r: Row): [number, string, number] {
+function routeSortKey(r: Row): [number, number, number] {
   const letra = extractLetra(r.aula, r.laboratorio);
   const num   = extractNumero(r.aula, r.laboratorio);
   // Virtual/zoom sin aula va al final
   const letraNorm = letra || "ZZ";
   return [toMinutes(r.hora), letraNorm.charCodeAt(0), num];
+}
+
+// Convertir minutos a HH:MM
+function minToHHMM(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+// Fila enriquecida con datos de visita programada
+interface VisitRow extends Row {
+  letra: string;       // pabellón A, B, C... ("" si no tiene aula física)
+  orden: number;       // # de visita en la ruta del día
+  entrada: string;     // hora de entrada del supervisor (HH:MM)
+  salida: string;      // hora de salida (HH:MM)
+  entradaMin: number;
+  salidaMin: number;
 }
 
 export default function RutaSupervision() {
@@ -136,6 +153,7 @@ export default function RutaSupervision() {
     });
   };
   const [search, setSearch] = useState("");
+  const [duracionMin, setDuracionMin] = useState(60); // duración de visita por aula
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -200,30 +218,74 @@ export default function RutaSupervision() {
     return Array.from(earliest.values());
   }, [allData, facultad, local, ciclo, diaFiltro, modalidadesSel, search]);
 
-  // Agrupado por día, dentro de cada día ordenado por hora → letra → número
+  // Planificador de ruta: agrupa por día, recorre todos los pabellones A primero,
+  // luego B, C, D... y calcula entrada/salida sucesivas con visitas de `duracionMin`.
+  // Salta clases que ya terminaron cuando el supervisor podría llegar.
   const byDay = useMemo(() => {
-    const map = new Map<string, Row[]>();
+    const map = new Map<string, VisitRow[]>();
     DIAS_ORDER.forEach(d => map.set(d, []));
+
+    // Agrupar filas filtradas por día
+    const dayGroups = new Map<string, Row[]>();
     for (const r of filtered) {
-      if (!map.has(r.dia)) map.set(r.dia, []);
-      map.get(r.dia)!.push(r);
+      if (!dayGroups.has(r.dia)) dayGroups.set(r.dia, []);
+      dayGroups.get(r.dia)!.push(r);
     }
-    map.forEach((rows, day) => {
-      rows.sort((a, b) => {
-        const [ta, la, na] = routeSortKey(a);
-        const [tb, lb, nb] = routeSortKey(b);
-        if (ta !== tb) return ta - tb;
-        if (la !== lb) return la - lb;
-        return na - nb;
-      });
-      map.set(day, rows);
-    });
+
+    for (const [dia, rows] of dayGroups) {
+      // Agrupar por letra de pabellón ("Z" = sin aula física, va al final)
+      const byLetter = new Map<string, Row[]>();
+      for (const r of rows) {
+        const letra = extractLetra(r.aula, r.laboratorio) || "Z";
+        if (!byLetter.has(letra)) byLetter.set(letra, []);
+        byLetter.get(letra)!.push(r);
+      }
+
+      const letrasSorted = Array.from(byLetter.keys()).sort();
+      const visits: VisitRow[] = [];
+      let currentMin = -Infinity; // reloj del supervisor
+      let orden = 1;
+
+      for (const letra of letrasSorted) {
+        const groupRows = byLetter.get(letra)!.slice().sort((a, b) => {
+          const ta = toMinutes(a.hora), tb = toMinutes(b.hora);
+          if (ta !== tb) return ta - tb;
+          return extractNumero(a.aula, a.laboratorio) - extractNumero(b.aula, b.laboratorio);
+        });
+
+        for (const r of groupRows) {
+          const claseInicio = toMinutes(r.hora);
+          const claseFin    = toMinutes(r.horaFin);
+          const entradaMin  = Math.max(claseInicio, currentMin);
+
+          // Si el supervisor llegaría después o justo cuando termina la clase, no entra
+          if (entradaMin >= claseFin) continue;
+
+          const salidaMin = Math.min(entradaMin + duracionMin, claseFin);
+
+          visits.push({
+            ...r,
+            letra: letra === "Z" ? "" : letra,
+            orden: orden++,
+            entradaMin,
+            salidaMin,
+            entrada: minToHHMM(entradaMin),
+            salida:  minToHHMM(salidaMin),
+          });
+          currentMin = salidaMin;
+        }
+      }
+
+      map.set(dia, visits);
+    }
     return map;
-  }, [filtered]);
+  }, [filtered, duracionMin]);
 
   const diasConClases = DIAS_ORDER.filter(d => (byDay.get(d) ?? []).length > 0);
+  const totalVisitas  = Array.from(byDay.values()).reduce((s, v) => s + v.length, 0);
   const totalAulas    = new Set(filtered.map(r => r.aula || r.laboratorio || "virtual").filter(Boolean)).size;
   const totalDocentes = new Set(filtered.map(r => r.docente)).size;
+  const totalOmitidas = filtered.length - totalVisitas;
 
   const filterLabel = [
     facultad  !== "TODAS" ? `Facultad: ${facultad}` : null,
@@ -247,29 +309,31 @@ export default function RutaSupervision() {
     };
 
     const wb = new ExcelJS.Workbook();
-    const headers = ["HORA INICIO", "HORA FIN", "AULA", "LABORATORIO", "LETRA", "CARRERA", "CICLO", "SECCIÓN", "CURSO", "TIPO", "DOCENTE", "MODALIDAD", "LOCAL"];
-    const widths  = [12, 12, 14, 16, 8, 38, 8, 10, 36, 8, 36, 14, 12];
+    const headers = ["#", "ENTRADA", "SALIDA", "AULA", "LABORATORIO", "LETRA", "CLASE INI", "CLASE FIN", "CARRERA", "CICLO", "SECCIÓN", "CURSO", "TIPO", "DOCENTE", "MODALIDAD", "LOCAL"];
+    const widths  = [5, 10, 10, 14, 16, 7, 10, 10, 38, 7, 10, 36, 8, 36, 14, 12];
 
-    const buildSheet = (name: string, rows: Row[]) => {
+    const buildSheet = (name: string, rows: VisitRow[], includeDia = false) => {
       const ws = wb.addWorksheet(name.slice(0, 31), { views: [{ state: "frozen", ySplit: 3 }] });
-      ws.columns = widths.map(w => ({ width: w }));
-      const lastCol = headers.length;
+      const fullHeaders = includeDia ? ["DÍA", ...headers] : headers;
+      const fullWidths  = includeDia ? [12, ...widths]    : widths;
+      ws.columns = fullWidths.map(w => ({ width: w }));
+      const lastCol = fullHeaders.length;
 
       ws.mergeCells(1, 1, 1, lastCol);
       const t = ws.getCell(1, 1);
-      t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — RUTA DE SUPERVISIÓN · 2026-I`;
+      t.value = `UNIVERSIDAD AUTÓNOMA DE ICA — RUTA DE SUPERVISIÓN · 2026-I · Visitas de ${duracionMin} min`;
       t.font = { bold: true, size: 13, color: { argb: WHITE } };
       t.fill = sf(NAVY_X); t.alignment = CTR; t.border = THIN;
       ws.getRow(1).height = 26;
 
       ws.mergeCells(2, 1, 2, lastCol);
       const s = ws.getCell(2, 1);
-      s.value = `Filtros: ${filterLabel}   ·   ${rows.length} clases`;
+      s.value = `Filtros: ${filterLabel}   ·   ${rows.length} visitas`;
       s.font = { italic: true, size: 10, color: { argb: "FF555555" } };
       s.alignment = LEFT; s.border = THIN;
       ws.getRow(2).height = 18;
 
-      headers.forEach((h, i) => {
+      fullHeaders.forEach((h, i) => {
         const c = ws.getRow(3).getCell(i + 1);
         c.value = h; c.font = { bold: true, size: 10, color: { argb: WHITE } };
         c.fill = sf(NAVY_X); c.alignment = CTR; c.border = THIN;
@@ -279,23 +343,30 @@ export default function RutaSupervision() {
       let ri = 4;
       for (const row of rows) {
         const rr = ws.getRow(ri);
-        rr.getCell(1).value = padH(row.hora);
-        rr.getCell(2).value = padH(row.horaFin);
-        rr.getCell(3).value = row.aula || "";
-        rr.getCell(4).value = row.laboratorio || "";
-        rr.getCell(5).value = extractLetra(row.aula, row.laboratorio) || "—";
-        rr.getCell(6).value = row.carreraFull || row.carrera;
-        rr.getCell(7).value = row.ciclo;
-        rr.getCell(8).value = row.seccion;
-        rr.getCell(9).value = row.curso;
-        rr.getCell(10).value = row.tipo;
-        rr.getCell(11).value = row.docente;
-        rr.getCell(12).value = row.modalidad;
-        rr.getCell(13).value = row.local;
+        let off = 0;
+        if (includeDia) { rr.getCell(1).value = DIAS_LABEL[row.dia] ?? row.dia; off = 1; }
+        rr.getCell(off + 1).value  = row.orden;
+        rr.getCell(off + 2).value  = row.entrada;
+        rr.getCell(off + 3).value  = row.salida;
+        rr.getCell(off + 4).value  = row.aula || "";
+        rr.getCell(off + 5).value  = row.laboratorio || "";
+        rr.getCell(off + 6).value  = row.letra || "—";
+        rr.getCell(off + 7).value  = padH(row.hora);
+        rr.getCell(off + 8).value  = padH(row.horaFin);
+        rr.getCell(off + 9).value  = row.carreraFull || row.carrera;
+        rr.getCell(off + 10).value = row.ciclo;
+        rr.getCell(off + 11).value = row.seccion;
+        rr.getCell(off + 12).value = row.curso;
+        rr.getCell(off + 13).value = row.tipo;
+        rr.getCell(off + 14).value = row.docente;
+        rr.getCell(off + 15).value = row.modalidad;
+        rr.getCell(off + 16).value = row.local;
         for (let c = 1; c <= lastCol; c++) {
           rr.getCell(c).border = THIN;
           rr.getCell(c).font = { size: 10 };
-          rr.getCell(c).alignment = (c === 6 || c === 9 || c === 11) ? LEFT : CTR;
+          // CARRERA, CURSO, DOCENTE alineados a la izquierda
+          const colIdx = c - off;
+          rr.getCell(c).alignment = (colIdx === 9 || colIdx === 12 || colIdx === 14) ? LEFT : CTR;
         }
         rr.height = 18;
         ri++;
@@ -303,16 +374,12 @@ export default function RutaSupervision() {
       ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: Math.max(3, ri - 1), column: lastCol } };
     };
 
-    buildSheet("Resumen", filtered.slice().sort((a, b) => {
-      const da = DIAS_ORDER.indexOf(a.dia);
-      const db = DIAS_ORDER.indexOf(b.dia);
-      if (da !== db) return da - db;
-      const [ta, la, na] = routeSortKey(a);
-      const [tb, lb, nb] = routeSortKey(b);
-      if (ta !== tb) return ta - tb;
-      if (la !== lb) return la - lb;
-      return na - nb;
-    }));
+    // Hoja resumen con todas las visitas de todos los días
+    const allVisits: VisitRow[] = [];
+    for (const dia of diasConClases) {
+      allVisits.push(...(byDay.get(dia) ?? []));
+    }
+    buildSheet("Resumen", allVisits, true);
     for (const dia of diasConClases) {
       buildSheet(DIAS_LABEL[dia], byDay.get(dia) ?? []);
     }
@@ -345,16 +412,21 @@ export default function RutaSupervision() {
       const col  = DIA_COLOR[dia] ?? { bg: "#f8fafc", text: "#334155", border: "#e2e8f0" };
       const cellStyle = `border-bottom:1px solid ${col.border};border-right:1px solid ${col.border};padding:4px 7px;vertical-align:middle;`;
       const rowsHtml = rows.map((r, i) => {
-        const letra = extractLetra(r.aula, r.laboratorio);
-        const lc    = LETRA_COLOR[letra] ?? { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1" };
+        const lc = LETRA_COLOR[r.letra] ?? { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1" };
         return `
         <tr style="background:${i % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-          <td style="${cellStyle}white-space:nowrap;font-weight:700;color:${col.text};font-size:8px;">${padH(r.hora)}–${padH(r.horaFin)}</td>
+          <td style="${cellStyle}white-space:nowrap;text-align:center;font-weight:900;color:${col.text};font-size:11px;">${r.orden}</td>
+          <td style="${cellStyle}white-space:nowrap;text-align:center;">
+            <span style="background:${lc.bg};color:${lc.text};padding:2px 6px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid ${lc.border};display:inline-block;line-height:1.1;">
+              ${r.entrada}<br/><span style="font-size:7px;opacity:0.6;">↓</span><br/>${r.salida}
+            </span>
+          </td>
           <td style="${cellStyle}font-size:8px;">
             ${r.aula    ? `<span style="background:${lc.bg};color:${lc.text};padding:1px 6px;border-radius:4px;font-size:8px;font-weight:800;border:1px solid ${lc.border};display:inline-block;">${r.aula}</span>` : ""}
             ${r.laboratorio ? `<span style="background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:4px;font-size:8px;font-weight:800;border:1px solid #6ee7b7;display:inline-block;">${r.laboratorio}</span>` : ""}
             ${!r.aula && !r.laboratorio ? `<span style="color:#94a3b8;font-size:7px;">${r.modalidad}</span>` : ""}
           </td>
+          <td style="${cellStyle}white-space:nowrap;font-size:7px;color:#94a3b8;">${padH(r.hora)}<br/>${padH(r.horaFin)}</td>
           <td style="${cellStyle}font-size:8px;">
             <span style="background:#001F5F;color:white;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;margin-bottom:2px;">${r.carreraFull}</span><br/>
             <span style="background:#C9A84C;color:#001F5F;padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;display:inline-block;">C${r.ciclo}·${r.seccion}</span>
@@ -369,13 +441,15 @@ export default function RutaSupervision() {
         <div style="margin-bottom:16px;">
           <div style="background:${col.text};color:white;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;break-after:avoid;page-break-after:avoid;">
             <span style="font-weight:800;font-size:12px;">${DIAS_LABEL[dia]}</span>
-            <span style="background:white;color:${col.text};padding:2px 10px;border-radius:20px;font-size:9px;font-weight:700;">${rows.length} clase${rows.length !== 1 ? "s" : ""}</span>
+            <span style="background:white;color:${col.text};padding:2px 10px;border-radius:20px;font-size:9px;font-weight:700;">${rows.length} visita${rows.length !== 1 ? "s" : ""} · ${duracionMin} min c/u</span>
           </div>
           <table style="width:100%;border-collapse:collapse;border:1px solid ${col.border};border-top:none;">
             <thead style="display:table-header-group;">
               <tr style="background:${col.bg};">
-                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};white-space:nowrap;">HORA</th>
+                <th style="padding:4px 6px;text-align:center;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">#</th>
+                <th style="padding:4px 6px;text-align:center;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};white-space:nowrap;">VISITA</th>
                 <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">AULA / LAB</th>
+                <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CLASE</th>
                 <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CARRERA / CICLO</th>
                 <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">CURSO</th>
                 <th style="padding:4px 6px;text-align:left;font-size:8px;color:${col.text};font-weight:700;border-bottom:1px solid ${col.border};">DOCENTE</th>
@@ -412,8 +486,8 @@ export default function RutaSupervision() {
     <div>
       <h1 style="font-size:18px;font-weight:900;color:#001F5F;">RUTA DE SUPERVISIÓN · 2026-I</h1>
       <p style="font-size:11px;color:#64748b;margin-top:2px;">Universidad Autónoma de Ica · Filtros: ${filterLabel}</p>
-      <p style="font-size:10px;color:#94a3b8;">Total: ${filtered.length} clases · ${diasConClases.length} días · ${totalDocentes} docentes · ${totalAulas} aulas</p>
-      <p style="font-size:9px;color:#94a3b8;margin-top:2px;">Ordenado por hora → letra de aula (A→B→C→D)</p>
+      <p style="font-size:10px;color:#94a3b8;">Total: <b>${totalVisitas} visitas</b> · ${diasConClases.length} días · ${totalDocentes} docentes · ${totalAulas} aulas${totalOmitidas > 0 ? ` · ${totalOmitidas} omitidas` : ""}</p>
+      <p style="font-size:9px;color:#94a3b8;margin-top:2px;">Recorrido: todas las aulas A → luego B → C → D... · Visitas de ${duracionMin} min (se ajusta al fin de clase)</p>
     </div>
   </div>
   ${diasHtml}
@@ -442,7 +516,10 @@ export default function RutaSupervision() {
         </div>
         <div>
           <h1 className="text-xl font-bold" style={{ color: NAVY }}>Ruta de Supervisión</h1>
-          <p className="text-xs text-muted-foreground">Ordenado por hora → pabellón (A → B → C → D) · 2026-I</p>
+          <p className="text-xs text-muted-foreground">
+            Recorre primero todas las aulas <b>A</b>, luego <b>B</b>, <b>C</b>, <b>D</b>... ·
+            Visitas de <b>{duracionMin} min</b> por aula · 2026-I
+          </p>
         </div>
         <div className="ml-auto flex gap-2">
           <Button
@@ -468,12 +545,13 @@ export default function RutaSupervision() {
       </div>
 
       {/* Tarjetas de resumen */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: "Clases",       value: filtered.length,      color: NAVY      },
-          { label: "Días activos", value: diasConClases.length, color: "#1d4ed8" },
-          { label: "Docentes",     value: totalDocentes,        color: "#7e22ce" },
-          { label: "Aulas",        value: totalAulas,           color: "#059669" },
+          { label: "Visitas",      value: totalVisitas,         color: NAVY       },
+          { label: "Días activos", value: diasConClases.length, color: "#1d4ed8"  },
+          { label: "Docentes",     value: totalDocentes,        color: "#7e22ce"  },
+          { label: "Aulas",        value: totalAulas,           color: "#059669"  },
+          { label: "Omitidas",     value: totalOmitidas,        color: "#dc2626"  },
         ].map(s => (
           <Card key={s.label} className="shadow-sm">
             <CardContent className="pt-4 pb-3 text-center">
@@ -497,6 +575,24 @@ export default function RutaSupervision() {
           </span>
         ))}
         <span className="text-xs text-slate-400 ml-1">→ el supervisor recorre A primero, luego B, C, D...</span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-slate-500" />
+          <span className="text-xs text-slate-600 font-medium">Duración por aula:</span>
+          <Select value={String(duracionMin)} onValueChange={v => setDuracionMin(Number(v))}>
+            <SelectTrigger className="h-7 text-xs w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">30 min</SelectItem>
+              <SelectItem value="45">45 min</SelectItem>
+              <SelectItem value="60">60 min</SelectItem>
+              <SelectItem value="75">75 min</SelectItem>
+              <SelectItem value="90">90 min</SelectItem>
+              <SelectItem value="120">2 horas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -643,7 +739,7 @@ export default function RutaSupervision() {
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr style={{ background: col.bg, borderBottom: `2px solid ${col.border}` }}>
-                          {["HORA", "AULA / LAB", "CARRERA / CICLO", "CURSO", "DOCENTE", "LOCAL"].map(h => (
+                          {["#", "VISITA", "AULA / LAB", "CLASE", "CARRERA / CICLO", "CURSO", "DOCENTE", "LOCAL"].map(h => (
                             <th
                               key={h}
                               className="px-3 py-2 text-left font-bold whitespace-nowrap"
@@ -656,7 +752,7 @@ export default function RutaSupervision() {
                       </thead>
                       <tbody>
                         {rows.map((r, i) => {
-                          const letra = extractLetra(r.aula, r.laboratorio);
+                          const letra = r.letra;
                           const lc    = LETRA_COLOR[letra] ?? { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1" };
                           const isEven = i % 2 === 0;
                           const cellBorder = `1px solid #e2e8f0`;
@@ -666,15 +762,26 @@ export default function RutaSupervision() {
                               style={{ background: isEven ? "white" : "#f8fafc", borderBottom: cellBorder }}
                               className="hover:bg-slate-100 transition-colors"
                             >
-                              {/* HORA */}
+                              {/* ORDEN # */}
                               <td
-                                className="px-3 py-2.5 whitespace-nowrap font-bold align-middle"
-                                style={{ borderRight: cellBorder, color: col.text, minWidth: 90 }}
+                                className="px-3 py-2.5 align-middle text-center font-extrabold"
+                                style={{ borderRight: cellBorder, color: col.text, minWidth: 36, fontSize: 13 }}
                               >
-                                <div className="flex flex-col items-start">
-                                  <span>{padH(r.hora)}</span>
-                                  <span className="text-[9px] text-slate-400 font-normal">↓</span>
-                                  <span>{padH(r.horaFin)}</span>
+                                {r.orden}
+                              </td>
+
+                              {/* VISITA programada (entrada → salida) */}
+                              <td
+                                className="px-3 py-2.5 whitespace-nowrap align-middle"
+                                style={{ borderRight: cellBorder, minWidth: 110 }}
+                              >
+                                <div
+                                  className="inline-flex flex-col items-center px-2 py-1 rounded-md font-bold"
+                                  style={{ background: lc.bg, color: lc.text, border: `1px solid ${lc.border}`, minWidth: 78 }}
+                                >
+                                  <span className="text-[12px] leading-tight">{r.entrada}</span>
+                                  <span className="text-[8px] opacity-60 leading-none">↓</span>
+                                  <span className="text-[12px] leading-tight">{r.salida}</span>
                                 </div>
                               </td>
 
@@ -707,6 +814,18 @@ export default function RutaSupervision() {
                                       {r.modalidad}
                                     </span>
                                   )}
+                                </div>
+                              </td>
+
+                              {/* CLASE — horario real de la clase */}
+                              <td
+                                className="px-3 py-2.5 whitespace-nowrap align-middle text-[10px] text-slate-500 font-medium"
+                                style={{ borderRight: cellBorder, minWidth: 78 }}
+                              >
+                                <div className="flex flex-col items-start leading-tight">
+                                  <span>{padH(r.hora)}</span>
+                                  <span className="text-[8px] text-slate-300">↓</span>
+                                  <span>{padH(r.horaFin)}</span>
                                 </div>
                               </td>
 
