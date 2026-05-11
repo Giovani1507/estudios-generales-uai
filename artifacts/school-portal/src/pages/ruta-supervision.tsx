@@ -172,7 +172,7 @@ export default function RutaSupervision() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return allData.filter(r => {
+    const base = allData.filter(r => {
       if (facultad  !== "TODAS" && r.facultad !== facultad)  return false;
       if (local     !== "TODOS" && r.local    !== local)     return false;
       if (ciclo     !== "TODOS" && r.ciclo    !== ciclo)     return false;
@@ -186,6 +186,18 @@ export default function RutaSupervision() {
       }
       return true;
     });
+
+    // Solo primera clase del día por docente: para cada (docente + día) conservar
+    // únicamente el registro con la hora más temprana.
+    const earliest = new Map<string, Row>();
+    for (const r of base) {
+      const key = `${r.docente}||${r.dia}`;
+      const prev = earliest.get(key);
+      if (!prev || toMinutes(r.hora) < toMinutes(prev.hora)) {
+        earliest.set(key, r);
+      }
+    }
+    return Array.from(earliest.values());
   }, [allData, facultad, local, ciclo, diaFiltro, modalidadesSel, search]);
 
   // Agrupado por día, dentro de cada día ordenado por hora → letra → número
