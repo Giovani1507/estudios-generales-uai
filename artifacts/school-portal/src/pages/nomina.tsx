@@ -3,6 +3,16 @@ import { useLogPageEntry } from "@/hooks/use-activity-log";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Loader2,
   Trash2,
   Save,
@@ -34,6 +44,10 @@ export default function NominaPage() {
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorFileRef = useRef<HTMLInputElement>(null);
+
+  // Diálogos de confirmación (reemplazan al confirm() nativo)
+  const [carreraAEliminar, setCarreraAEliminar] = useState<{ nombre: string; total: number } | null>(null);
+  const [nominaAEliminar, setNominaAEliminar] = useState<{ id: number; nombre: string } | null>(null);
 
   async function loadList() {
     setLoadingList(true);
@@ -124,7 +138,6 @@ export default function NominaPage() {
   }
 
   async function deleteNomina(id: number) {
-    if (!confirm("¿Eliminar esta nómina?")) return;
     await fetch(`${apiBase}/api/nominas/${id}`, {
       method: "DELETE",
       credentials: "include",
@@ -142,16 +155,15 @@ export default function NominaPage() {
     // Elimina todos los grupos de una carrera del editor (en caso de
     // haber subido un PDF equivocado). No toca lo guardado en backend hasta
     // que el usuario presione "Guardar".
-    function eliminarCarrera(nombreCarrera: string) {
+    function pedirEliminarCarrera(nombreCarrera: string) {
       const total = grupos.filter((g: any) => g.carrera === nombreCarrera).length;
-      const ok = confirm(
-        `¿Eliminar la carrera "${nombreCarrera}" del editor?\n\n` +
-        `Se quitarán ${total} grupo${total !== 1 ? "s" : ""}. ` +
-        `Los cambios sólo se aplicarán cuando presiones "Guardar".`
-      );
-      if (!ok) return;
-      const next = grupos.filter((g: any) => g.carrera !== nombreCarrera);
+      setCarreraAEliminar({ nombre: nombreCarrera, total });
+    }
+    function confirmarEliminarCarrera() {
+      if (!carreraAEliminar) return;
+      const next = grupos.filter((g: any) => g.carrera !== carreraAEliminar.nombre);
       setEditing({ ...editing, data: { grupos: next } });
+      setCarreraAEliminar(null);
     }
 
     function updateCurso(
@@ -285,7 +297,7 @@ export default function NominaPage() {
                   <span className="leading-none">{c}</span>
                   <button
                     type="button"
-                    onClick={() => eliminarCarrera(c)}
+                    onClick={() => pedirEliminarCarrera(c)}
                     title={`Eliminar ${c} del editor`}
                     aria-label={`Eliminar ${c}`}
                     className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/0 hover:bg-red-500/90 text-white/70 hover:text-white transition-colors"
@@ -436,6 +448,45 @@ export default function NominaPage() {
             </div>
           ))}
         </div>
+
+        {/* Confirmar eliminar carrera del editor */}
+        <AlertDialog
+          open={!!carreraAEliminar}
+          onOpenChange={(o) => !o && setCarreraAEliminar(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="w-5 h-5" /> Eliminar carrera del editor
+              </AlertDialogTitle>
+              <AlertDialogDescription className="pt-2 text-slate-600">
+                Se quitarán{" "}
+                <span className="font-bold text-slate-900">
+                  {carreraAEliminar?.total} grupo
+                  {carreraAEliminar && carreraAEliminar.total !== 1 ? "s" : ""}
+                </span>{" "}
+                de la carrera{" "}
+                <span className="font-bold text-slate-900">
+                  {carreraAEliminar?.nombre}
+                </span>
+                .
+                <br />
+                <span className="text-xs text-slate-400">
+                  Los cambios sólo se aplicarán cuando presiones “Guardar”.
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                onClick={confirmarEliminarCarrera}
+              >
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -594,7 +645,7 @@ export default function NominaPage() {
                       variant="ghost"
                       size="sm"
                       className="text-red-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => deleteNomina(n.id)}
+                      onClick={() => setNominaAEliminar({ id: n.id, nombre: n.carrera })}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -610,6 +661,39 @@ export default function NominaPage() {
           )}
         </div>
       </section>
+
+      {/* Confirmar eliminar nómina guardada */}
+      <AlertDialog
+        open={!!nominaAEliminar}
+        onOpenChange={(o) => !o && setNominaAEliminar(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" /> Eliminar nómina
+            </AlertDialogTitle>
+            <AlertDialogDescription className="pt-2 text-slate-600">
+              ¿Seguro que quieres eliminar{" "}
+              <span className="font-bold text-slate-900">
+                {nominaAEliminar?.nombre}
+              </span>
+              ? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={async () => {
+                if (nominaAEliminar) await deleteNomina(nominaAEliminar.id);
+                setNominaAEliminar(null);
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
