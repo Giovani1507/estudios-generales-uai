@@ -104,15 +104,6 @@ function extractNumero(aula?: string, lab?: string): number {
   return m ? parseInt(m[1]) : 9999;
 }
 
-// Clave de ordenamiento para la ruta de supervisión
-function routeSortKey(r: Row): [number, number, number] {
-  const letra = extractLetra(r.aula, r.laboratorio);
-  const num   = extractNumero(r.aula, r.laboratorio);
-  // Virtual/zoom sin aula va al final
-  const letraNorm = letra || "ZZ";
-  return [toMinutes(r.hora), letraNorm.charCodeAt(0), num];
-}
-
 // Convertir minutos a HH:MM
 function minToHHMM(min: number): string {
   const h = Math.floor(min / 60);
@@ -129,6 +120,20 @@ interface VisitRow extends Row {
   entradaMin: number;
   salidaMin: number;
 }
+
+// Fila omitida (no entró en la ruta) con motivo
+interface OmittedRow extends Row {
+  letra: string;
+  motivo: string;     // ej: "El supervisor llegaría 09:40, clase termina 09:20"
+  llegadaMin: number; // hora a la que el supervisor habría llegado
+}
+
+// ID estable para marcar visitas como supervisadas
+function visitId(r: Pick<Row, "dia" | "docente" | "curso" | "seccion" | "hora">) {
+  return `${r.dia}|${r.docente}|${r.curso}|${r.seccion}|${r.hora}`;
+}
+
+const SUPERVISADOS_KEY = "ruta-supervision:supervisados:v1";
 
 export default function RutaSupervision() {
   const [allData,   setAllData]   = useState<Row[]>([]);
@@ -154,6 +159,31 @@ export default function RutaSupervision() {
   };
   const [search, setSearch] = useState("");
   const [duracionMin, setDuracionMin] = useState(60); // duración de visita por aula
+
+  // Visitas marcadas como "ya supervisadas" — se persisten en localStorage
+  const [supervisados, setSupervisados] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(SUPERVISADOS_KEY);
+      return saved ? new Set(JSON.parse(saved) as string[]) : new Set();
+    } catch { return new Set(); }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(SUPERVISADOS_KEY, JSON.stringify(Array.from(supervisados)));
+    } catch { /* ignore */ }
+  }, [supervisados]);
+  const toggleSupervisado = (id: string) => {
+    setSupervisados(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const limpiarSupervisados = () => {
+    if (window.confirm("¿Borrar todas las marcas de supervisado?")) {
+      setSupervisados(new Set());
+    }
+  };
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -190,11 +220,13 @@ export default function RutaSupervision() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    // Importante: el filtro de DÍA se aplica DESPUÉS de la dedup semanal,
+    // para que la regla "cada docente aparece una vez en toda la semana"
+    // se mantenga incluso al filtrar por un día específico.
     const base = allData.filter(r => {
       if (facultad  !== "TODAS" && r.facultad !== facultad)  return false;
       if (local     !== "TODOS" && r.local    !== local)     return false;
       if (ciclo     !== "TODOS" && r.ciclo    !== ciclo)     return false;
-      if (diaFiltro !== "TODOS" && r.dia      !== diaFiltro) return false;
       if (modalidadesSel.size > 0 && modalidadesSel.size < MODALIDADES.length) {
         if (!modalidadesSel.has(r.modalidad)) return false;
       }
@@ -210,7 +242,6 @@ export default function RutaSupervision() {
     // Así la ruta del Martes contiene docentes distintos a los del Lunes.
     const rank = (r: Row) => {
       const di = DIAS_ORDER.indexOf(r.dia);
-      // Días desconocidos van al final
       const dayKey = di === -1 ? 999 : di;
       return dayKey * 10000 + toMinutes(r.hora);
     };
@@ -221,17 +252,22 @@ export default function RutaSupervision() {
         earliest.set(r.docente, r);
       }
     }
-    return Array.from(earliest.values());
+    const dedup = Array.from(earliest.values());
+
+    // Ahora aplicamos el filtro de día sobre el conjunto deduplicado
+    if (diaFiltro === "TODOS") return dedup;
+    return dedup.filter(r => r.dia === diaFiltro);
   }, [allData, facultad, local, ciclo, diaFiltro, modalidadesSel, search]);
 
   // Planificador de ruta: agrupa por día, recorre todos los pabellones A primero,
   // luego B, C, D... y calcula entrada/salida sucesivas con visitas de `duracionMin`.
-  // Salta clases que ya terminaron cuando el supervisor podría llegar.
-  const byDay = useMemo(() => {
-    const map = new Map<string, VisitRow[]>();
-    DIAS_ORDER.forEach(d => map.set(d, []));
+  // Las clases que ya terminaron cuando el supervisor podría llegar se registran
+  // en `omitted` junto con el motivo.
+  const planning = useMemo(() => {
+    const visits  = new Map<string, VisitRow[]>();
+    const omitted = new Map<string, OmittedRow[]>();
+    DIAS_ORDER.forEach(d => { visits.set(d, []); omitted.set(d, []); });
 
-    // Agrupar filas filtradas por día
     const dayGroups = new Map<string, Row[]>();
     for (const r of filtered) {
       if (!dayGroups.has(r.dia)) dayGroups.set(r.dia, []);
@@ -239,7 +275,6 @@ export default function RutaSupervision() {
     }
 
     for (const [dia, rows] of dayGroups) {
-      // Agrupar por letra de pabellón ("Z" = sin aula física, va al final)
       const byLetter = new Map<string, Row[]>();
       for (const r of rows) {
         const letra = extractLetra(r.aula, r.laboratorio) || "Z";
@@ -248,8 +283,9 @@ export default function RutaSupervision() {
       }
 
       const letrasSorted = Array.from(byLetter.keys()).sort();
-      const visits: VisitRow[] = [];
-      let currentMin = -Infinity; // reloj del supervisor
+      const dayVisits: VisitRow[] = [];
+      const dayOmitted: OmittedRow[] = [];
+      let currentMin = -Infinity;
       let orden = 1;
 
       for (const letra of letrasSorted) {
@@ -264,12 +300,19 @@ export default function RutaSupervision() {
           const claseFin    = toMinutes(r.horaFin);
           const entradaMin  = Math.max(claseInicio, currentMin);
 
-          // Si el supervisor llegaría después o justo cuando termina la clase, no entra
-          if (entradaMin >= claseFin) continue;
+          // Clase ya terminó cuando el supervisor llegaría → omitir
+          if (entradaMin >= claseFin) {
+            dayOmitted.push({
+              ...r,
+              letra: letra === "Z" ? "" : letra,
+              llegadaMin: entradaMin,
+              motivo: `Llegada ${minToHHMM(entradaMin)} · clase termina ${padH(r.horaFin)}`,
+            });
+            continue;
+          }
 
           const salidaMin = Math.min(entradaMin + duracionMin, claseFin);
-
-          visits.push({
+          dayVisits.push({
             ...r,
             letra: letra === "Z" ? "" : letra,
             orden: orden++,
@@ -282,16 +325,28 @@ export default function RutaSupervision() {
         }
       }
 
-      map.set(dia, visits);
+      visits.set(dia, dayVisits);
+      omitted.set(dia, dayOmitted);
     }
-    return map;
+    return { visits, omitted };
   }, [filtered, duracionMin]);
 
-  const diasConClases = DIAS_ORDER.filter(d => (byDay.get(d) ?? []).length > 0);
+  const byDay         = planning.visits;
+  const omittedByDay  = planning.omitted;
+  const diasConClases = DIAS_ORDER.filter(d => (byDay.get(d) ?? []).length > 0 || (omittedByDay.get(d) ?? []).length > 0);
   const totalVisitas  = Array.from(byDay.values()).reduce((s, v) => s + v.length, 0);
+  const totalOmitidas = Array.from(omittedByDay.values()).reduce((s, v) => s + v.length, 0);
   const totalAulas    = new Set(filtered.map(r => r.aula || r.laboratorio || "virtual").filter(Boolean)).size;
   const totalDocentes = new Set(filtered.map(r => r.docente)).size;
-  const totalOmitidas = filtered.length - totalVisitas;
+
+  // Progreso de supervisión sobre las visitas actuales
+  const visitIdsActuales = useMemo(() => {
+    const ids = new Set<string>();
+    for (const v of byDay.values()) for (const r of v) ids.add(visitId(r));
+    return ids;
+  }, [byDay]);
+  const supervisadosActuales = Array.from(supervisados).filter(id => visitIdsActuales.has(id)).length;
+  const progresoPct = totalVisitas > 0 ? Math.round((supervisadosActuales / totalVisitas) * 100) : 0;
 
   const filterLabel = [
     facultad  !== "TODAS" ? `Facultad: ${facultad}` : null,
@@ -305,7 +360,6 @@ export default function RutaSupervision() {
 
   const exportExcel = async () => {
     const NAVY_X = "FF001F5F";
-    const GOLD_X = "FFC9A84C";
     const WHITE  = "FFFFFFFF";
     const sf = (a: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: a } });
     const CTR  = { horizontal: "center" as const, vertical: "middle" as const, wrapText: true };
@@ -528,6 +582,18 @@ export default function RutaSupervision() {
           </p>
         </div>
         <div className="ml-auto flex gap-2">
+          {supervisadosActuales > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={limpiarSupervisados}
+              title="Borrar todas las marcas de supervisado"
+            >
+              <X className="w-3.5 h-3.5 mr-1" />
+              Limpiar marcas ({supervisadosActuales})
+            </Button>
+          )}
           <Button
             size="sm"
             className="text-white font-semibold bg-emerald-600 hover:bg-emerald-700"
@@ -554,7 +620,6 @@ export default function RutaSupervision() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: "Visitas",      value: totalVisitas,         color: NAVY       },
-          { label: "Días activos", value: diasConClases.length, color: "#1d4ed8"  },
           { label: "Docentes",     value: totalDocentes,        color: "#7e22ce"  },
           { label: "Aulas",        value: totalAulas,           color: "#059669"  },
           { label: "Omitidas",     value: totalOmitidas,        color: "#dc2626"  },
@@ -566,6 +631,21 @@ export default function RutaSupervision() {
             </CardContent>
           </Card>
         ))}
+        {/* Progreso de supervisión */}
+        <Card className="shadow-sm">
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-2xl font-bold" style={{ color: "#15803d" }}>
+              {supervisadosActuales}<span className="text-sm text-slate-400">/{totalVisitas}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">Supervisados ({progresoPct}%)</p>
+            <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full transition-all"
+                style={{ width: `${progresoPct}%`, background: "#15803d" }}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Leyenda de letras */}
@@ -737,15 +817,24 @@ export default function RutaSupervision() {
                     className="ml-auto text-xs font-bold px-2.5 py-0.5 rounded-full"
                     style={{ background: col.text, color: "white" }}
                   >
-                    {rows.length} clase{rows.length !== 1 ? "s" : ""}
+                    {rows.length} visita{rows.length !== 1 ? "s" : ""}
                   </span>
+                  {(omittedByDay.get(dia) ?? []).length > 0 && (
+                    <span
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "#fee2e2", color: "#dc2626", border: "1px solid #fecaca" }}
+                    >
+                      {(omittedByDay.get(dia) ?? []).length} omitida{(omittedByDay.get(dia) ?? []).length !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </CardHeader>
                 <CardContent className="p-0">
+                  {rows.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr style={{ background: col.bg, borderBottom: `2px solid ${col.border}` }}>
-                          {["#", "VISITA", "AULA / LAB", "CLASE", "CARRERA / CICLO", "CURSO", "DOCENTE", "LOCAL"].map(h => (
+                          {["✓", "#", "VISITA", "AULA / LAB", "CLASE", "CARRERA / CICLO", "CURSO", "DOCENTE", "LOCAL"].map(h => (
                             <th
                               key={h}
                               className="px-3 py-2 text-left font-bold whitespace-nowrap"
@@ -762,16 +851,36 @@ export default function RutaSupervision() {
                           const lc    = LETRA_COLOR[letra] ?? { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1" };
                           const isEven = i % 2 === 0;
                           const cellBorder = `1px solid #e2e8f0`;
+                          const id      = visitId(r);
+                          const checked = supervisados.has(id);
                           return (
                             <tr
-                              key={i}
-                              style={{ background: isEven ? "white" : "#f8fafc", borderBottom: cellBorder }}
+                              key={id}
+                              style={{
+                                background: checked ? "#ecfdf5" : (isEven ? "white" : "#f8fafc"),
+                                borderBottom: cellBorder,
+                                opacity: checked ? 0.6 : 1,
+                              }}
                               className="hover:bg-slate-100 transition-colors"
                             >
+                              {/* CHECKBOX supervisado */}
+                              <td
+                                className="px-3 py-2.5 align-middle text-center"
+                                style={{ borderRight: cellBorder, minWidth: 40 }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={() => toggleSupervisado(id)}
+                                  className="h-5 w-5"
+                                  aria-label={`Marcar como supervisado: ${r.docente} - ${r.curso} (${DIAS_LABEL[r.dia] ?? r.dia} ${r.entrada})`}
+                                />
+                              </td>
+
                               {/* ORDEN # */}
                               <td
                                 className="px-3 py-2.5 align-middle text-center font-extrabold"
-                                style={{ borderRight: cellBorder, color: col.text, minWidth: 36, fontSize: 13 }}
+                                style={{ borderRight: cellBorder, color: col.text, minWidth: 36, fontSize: 13, textDecoration: checked ? "line-through" : "none" }}
                               >
                                 {r.orden}
                               </td>
@@ -890,6 +999,45 @@ export default function RutaSupervision() {
                       </tbody>
                     </table>
                   </div>
+                  )}
+
+                  {/* Panel de clases omitidas (no entran en la ruta) */}
+                  {(omittedByDay.get(dia) ?? []).length > 0 && (
+                    <details className="border-t border-rose-100 bg-rose-50/40">
+                      <summary className="cursor-pointer px-5 py-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 select-none flex items-center gap-2">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        Clases omitidas en este día ({(omittedByDay.get(dia) ?? []).length})
+                      </summary>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-rose-100/60 border-b border-rose-200">
+                              {["HORA", "AULA / LAB", "CURSO", "DOCENTE", "MOTIVO"].map(h => (
+                                <th key={h} className="px-3 py-1.5 text-left font-bold text-rose-800 border-r border-rose-200">
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(omittedByDay.get(dia) ?? []).map((o, i) => (
+                              <tr key={i} className="border-b border-rose-100 hover:bg-rose-50">
+                                <td className="px-3 py-2 align-middle whitespace-nowrap text-slate-700 font-mono">
+                                  {padH(o.hora)}–{padH(o.horaFin)}
+                                </td>
+                                <td className="px-3 py-2 align-middle whitespace-nowrap text-slate-600">
+                                  {o.aula || o.laboratorio || <span className="text-slate-400">{o.modalidad}</span>}
+                                </td>
+                                <td className="px-3 py-2 align-middle text-slate-700 font-medium">{o.curso}</td>
+                                <td className="px-3 py-2 align-middle text-slate-600">{o.docente}</td>
+                                <td className="px-3 py-2 align-middle text-rose-700 text-[11px]">{o.motivo}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  )}
                 </CardContent>
               </Card>
             );
