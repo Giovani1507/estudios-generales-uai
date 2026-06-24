@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+// import tailwindcss from "@tailwindcss/vite";  // Temporarily disabled - lightningcss binary issue with Node.js 24
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { mockupPreviewPlugin } from "./mockupPreviewPlugin";
@@ -32,7 +32,7 @@ export default defineConfig({
   plugins: [
     mockupPreviewPlugin(),
     react(),
-    tailwindcss(),
+    // tailwindcss(),  // Temporarily disabled - lightningcss binary issue with Node.js 24
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined

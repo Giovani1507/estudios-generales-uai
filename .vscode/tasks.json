@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Instalar dependencias",
+      "type": "shell",
+      "command": "pnpm install",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Crear tablas (PostgreSQL)",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File scripts/setup-db.ps1",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "API Server",
+      "type": "shell",
+      "command": "pnpm --filter @workspace/api-server run dev",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Portal web",
+      "type": "shell",
+      "command": "pnpm --filter @workspace/school-portal run dev",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Iniciar todo (local)",
+      "dependsOn": ["API Server", "Portal web"],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}

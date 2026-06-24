@@ -1,9 +1,15 @@
+import { config as loadDotenv } from "dotenv";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { fileURLToPath } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
+
+loadDotenv({
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env"),
+});
 
 // Asegura que el HTML nunca se sirva desde caché del navegador,
 // para que cada usuario reciba siempre la última versión publicada.
@@ -36,27 +42,14 @@ const noCacheHtmlPlugin = (): Plugin => {
   };
 };
 
-const rawPort = process.env.PORT;
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
+// Replit inyecta PORT/BASE_PATH; en local usamos .env o estos defaults.
+const rawPort = process.env.PORT ?? "3000";
 const port = Number(rawPort);
-
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
   base: basePath,
@@ -95,6 +88,17 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    // En Replit el router une /api con el api-server; en local, proxy a :8080.
+    ...(process.env.REPL_ID === undefined
+      ? {
+          proxy: {
+            "/api": {
+              target: "http://127.0.0.1:8080",
+              changeOrigin: true,
+            },
+          },
+        }
+      : {}),
     fs: {
       strict: true,
       deny: ["**/.*"],
@@ -104,5 +108,15 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    ...(process.env.REPL_ID === undefined
+      ? {
+          proxy: {
+            "/api": {
+              target: "http://127.0.0.1:8080",
+              changeOrigin: true,
+            },
+          },
+        }
+      : {}),
   },
 });

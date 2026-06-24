@@ -1,3 +1,4 @@
+import "../load-env.js";
 import app from "./app";
 import { seedDefaultUsers, seedIngresantes } from "./lib/seed.js";
 import { runFullSync, loginToIntranet } from "./routes/sincronizar-asistencias.js";
