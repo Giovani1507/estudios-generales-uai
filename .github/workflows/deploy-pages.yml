@@ -9,6 +9,8 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       BASE_PATH: /estudios-generales-uai/
 
